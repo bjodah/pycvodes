@@ -1,0 +1,27 @@
+package:
+    name: pycvodes
+    version: 0.3.0.git
+
+source:
+    path: ../
+
+build:
+    number: 0
+
+requirements:
+    build:
+        - python
+        - numpy
+        - sundials
+        - cython
+    run:
+        - numpy
+        - python
+
+test:
+    imports:
+        - pycvodes
+
+about:
+    home: https://github.com/bjodah/pycvodes
+    license: BSD
