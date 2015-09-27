@@ -1,6 +1,6 @@
 package:
     name: pycvodes
-    version: 0.3.0.git
+    version: 0.1.0.git
 
 source:
     path: ../
@@ -17,6 +17,8 @@ requirements:
     run:
         - numpy
         - python
+    test:
+        - pytest
 
 test:
     imports:
