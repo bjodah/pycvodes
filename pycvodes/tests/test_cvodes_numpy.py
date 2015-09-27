@@ -36,7 +36,7 @@ def _get_f_j(k):
         fout[1] = k0*y[0] - k1*y[1]
         fout[2] = k1*y[1] - k2*y[2]
 
-    def j(t, y, jmat_out, dfdx_out):
+    def j(t, y, jmat_out, dfdx_out=None, fy=None):
         jmat_out[0, 0] = -k0
         jmat_out[0, 1] = 0
         jmat_out[0, 2] = 0
@@ -46,9 +46,10 @@ def _get_f_j(k):
         jmat_out[2, 0] = 0
         jmat_out[2, 1] = k1
         jmat_out[2, 2] = -k2
-        dfdx_out[0] = 0
-        dfdx_out[1] = 0
-        dfdx_out[2] = 0
+        if dfdx_out is not None:
+            dfdx_out[0] = 0
+            dfdx_out[1] = 0
+            dfdx_out[2] = 0
     return f, j
 
 methods = [('adams', 5), ('bdf', 23)]

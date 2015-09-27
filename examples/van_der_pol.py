@@ -11,12 +11,13 @@ def get_f_and_j(mu):
         dydt[0] = y[1]
         dydt[1] = -y[0] + mu*y[1]*(1 - y[0]**2)
 
-    def j(t, y, Jmat, dfdt):
+    def j(t, y, Jmat, dfdt=None, fy=None):
         Jmat[0, 0] = 0
         Jmat[0, 1] = 1
         Jmat[1, 0] = -1 - mu*2*y[1]*y[0]
         Jmat[1, 1] = mu*(1 - y[0]**2)
-        dfdt[:] = 0
+        if dfdt is not None:
+            dfdt[:] = 0
 
     return f, j
 

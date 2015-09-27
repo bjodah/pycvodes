@@ -52,18 +52,18 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
    ...     dydt[0] = y[1]
    ...     dydt[1] = -y[0] + mu*y[1]*(1 - y[0]**2)
    ... 
-   >>> def j(t, y, Jmat, dfdt):
+   >>> def j(t, y, Jmat, dfdt=None, fy=None):
    ...     Jmat[0, 0] = 0
    ...     Jmat[0, 1] = 1
-   ...     Jmat[1, 0] = -1 -mu*2*y[1]*y[0]
+   ...     Jmat[1, 0] = -1 - mu*2*y[1]*y[0]
    ...     Jmat[1, 1] = mu*(1 - y[0]**2)
-   ...     dfdt[0] = 0
-   ...     dfdt[1] = 0
+   ...     if dfdt is not None:
+   ...         dfdt[:] = 0
    ...
    >>> y0 = [1, 0]; dt0=1e-8; t0=0.0; atol=1e-8; rtol=1e-8
    >>> tout = np.linspace(0, 10.0, 200)
    >>> yout = integrate_predefined(f, j, y0, tout, atol, rtol, dt0,
-   ...                             method='bsimp')  # Implicit Bulirsch-Stoer
+   ...                             method='bdf')
    >>> import matplotlib.pyplot as plt
    >>> plt.plot(tout, yout)
 

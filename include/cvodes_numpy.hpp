@@ -83,25 +83,25 @@ namespace cvodes_numpy{
                 const_cast<double *>(y));
             PyObject * py_fy = PyArray_SimpleNewFromData(1, ydims, NPY_DOUBLE,
                                                          const_cast<double *>(fy));
-            PyObject * py_arglist = Py_BuildValue("(dOOO)", t, py_yarr, py_fy, py_jmat);
+            PyObject * py_arglist = Py_BuildValue("(dOOOO)", t, py_yarr, py_jmat, Py_None,py_fy);
             PyObject * py_result = PyEval_CallObject(this->py_jac, py_arglist);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fy);
             Py_DECREF(py_yarr);
             if (py_result == nullptr){
                 PyErr_SetString(PyExc_RuntimeError, "jac() failed");
-                //throw std::runtime_error("jac() failed");
+                throw std::runtime_error("jac() failed");
             } else if (py_result != Py_None){
                 // py_result is not None
                 PyErr_SetString(PyExc_RuntimeError, "jac() did not return None");
-                //throw std::runtime_error("jac() failed");
+                throw std::runtime_error("jac() failed");
             }
             Py_DECREF(py_result);
         }
         void dense_jac_cmaj(double t, const double * const y, const double * const fy,
                             double * const jac, long int ldim){
             npy_intp Jdims[2] { static_cast<npy_intp>(this->ny), static_cast<npy_intp>(this->ny) };
-            npy_intp strides[2] { static_cast<npy_intp>(ldim*sizeof(double)), 1 };
+            npy_intp strides[2] { sizeof(double), static_cast<npy_intp>(ldim*sizeof(double)) };
             PyObject * py_jmat = PyArray_New(
                 &PyArray_Type, 2, Jdims, NPY_DOUBLE, strides,
                 static_cast<void *>(const_cast<double *>(jac)), sizeof(double),
@@ -112,7 +112,7 @@ namespace cvodes_numpy{
         void banded_padded_jac_cmaj(double t, const double * const y, const double * const fy,
                                     double * const jac, long int ldim){
             npy_intp Jdims[2] { 1 + this->mlower + this->mupper, static_cast<npy_intp>(this->ny) };
-            npy_intp strides[2] { static_cast<npy_intp>(ldim*sizeof(double)), 1 };
+            npy_intp strides[2] { sizeof(double), static_cast<npy_intp>(ldim*sizeof(double)) };
             PyObject * py_jmat = PyArray_New(
                 &PyArray_Type, 2, Jdims, NPY_DOUBLE, strides,
                 static_cast<void *>(const_cast<double *>(jac + this->mupper)), sizeof(double),

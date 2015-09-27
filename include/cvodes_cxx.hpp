@@ -90,6 +90,19 @@ namespace cvodes_cxx {
             set_tol(rtol, atol_.n_vec);
         }
 
+        // set stop time
+        void set_stop_time(realtype tend){
+            int status = CVodeSetStopTime(this->mem, tend);
+            switch(status){
+            case CV_ILL_INPUT:
+                throw std::runtime_error("tend not beyond current t");
+            case CV_MEM_NULL:
+                throw std::runtime_error("memory pointer is null");
+            case CV_SUCCESS:
+                break;
+            }
+        }
+
         // user data
         void set_user_data(void *user_data){
             int status = CVodeSetUserData(this->mem, user_data);
@@ -341,9 +354,10 @@ namespace cvodes_cxx {
                 for (int i=0; i<ny; ++i)
                     yout.push_back(0);
             }
+            this->set_stop_time(xend);
             do {
                 status = this->step(xend, y.n_vec, &cur_t, CV_ONE_STEP);
-                xout.push_back(x0);
+                xout.push_back(cur_t);
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 for (int di=0; di<nderiv; ++di){ // Derivatives for interpolation
