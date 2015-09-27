@@ -11,10 +11,10 @@ namespace sundials_cxx {
         class Vector {
         public:
             N_Vector n_vec {nullptr};
-            Vector(int n){
+            Vector(long int n){
                 this->n_vec = N_VNew_Serial(n);
             }
-            Vector(int n, realtype * const data){
+            Vector(long int n, realtype * const data){
                 this->n_vec = N_VMake_Serial(n, const_cast<realtype*>(data));
             }
             Vector(std::vector<realtype> v){
@@ -23,7 +23,7 @@ namespace sundials_cxx {
             ~Vector(){
                 N_VDestroy_Serial(this->n_vec);
             }
-            realtype& operator[](int idx){
+            realtype& operator[](long int idx){
                 return *(NV_DATA_S(this->n_vec)+idx);
             }
             void dump(realtype * out){

@@ -319,17 +319,17 @@ namespace cvodes_cxx {
                 break;
             }
         }
-        int CVode(realtype tout, N_Vector yout, realtype *tret, int itask){
+        int step(realtype tout, N_Vector yout, realtype *tret, int itask){
             return CVode(this->mem, tout, yout, tret, itask);
         }
 
         std::pair<std::vector<double>, std::vector<double> >
-        adaptive(int ny, const realtype x0, const realtype xend,
+        adaptive(long int ny, const realtype x0, const realtype xend,
                  const realtype * const y0, int nderiv=0){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
-            int stauts;
+            int status;
             SVector y {ny};
             SVector work {ny};
             xout.push_back(x0);
@@ -342,17 +342,17 @@ namespace cvodes_cxx {
                     yout.push_back(0);
             }
             do {
-                status = this->CVode(xend, y.n_vec, &cur_t, CV_ONE_STEP);
+                status = this->step(xend, y.n_vec, &cur_t, CV_ONE_STEP);
                 xout.push_back(x0);
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 for (int di=0; di<nderiv; ++di){ // Derivatives for interpolation
-                    this->get_dky(tout[iout-1], di+1, work);
+                    this->get_dky(cur_t, di+1, work);
                     for (int i=0; i<ny; ++i)
                         yout.push_back(work[i]);
                 }
             } while (status != CV_TSTOP_RETURN);
-            return std::pair(xout, yout);
+            return std::pair<std::vector<double>, std::vector<double>>(xout, yout);
         }
 
         void predefined(int nt, int ny, const realtype * const tout, const realtype * const y0,
@@ -368,10 +368,10 @@ namespace cvodes_cxx {
 
             bool early_exit = false;
             for(int iout=1; (iout < nt) && (!early_exit); iout++) {
-                status = this->CVode(tout[iout], y.n_vec, &cur_t, CV_NORMAL);
+                status = this->step(tout[iout], y.n_vec, &cur_t, CV_NORMAL);
                 if(status != CV_SUCCESS){
                     early_exit = true;
-                    //throw std::runtime_error("Unsuccessful CVodes step.");
+                    //throw std::runtime_error("Unsuccessful CVode step.");
                 }
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
                 for (int di=0; di<nderiv; ++di){ // Derivatives for interpolation
@@ -423,7 +423,7 @@ namespace cvodes_cxx {
         if (odesys->mupper != mupper)
             throw std::runtime_error("mupper mismatch");
         if (odesys->mlower != mlower)
-            throw std::runtime_error("mupper mismatch");
+            throw std::runtime_error("mlower mismatch");
         odesys->banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data, Jac->ldim);
         return 0;
     }
@@ -465,20 +465,21 @@ namespace cvodes_cxx {
     }
 
     template <class OdeSys>
-    void get_integrator(OdeSys * odesys,
-                        const std::vector<realtype> atol,
-                        const realtype rtol, const int lmm,
-                        const realtype * const y0,
-                        const realtype t0,
-                        int direct_mode=0,
-                        bool with_jacobian=false,
-                        int iterative=0
-                        ){
+    Integrator get_integrator(OdeSys * odesys,
+                              const std::vector<realtype> atol,
+                              const realtype rtol, const int lmm,
+                              const realtype * const y0,
+                              const realtype t0,
+                              int direct_mode=0,
+                              bool with_jacobian=false,
+                              int iterative=0
+                              )
+    {
         const int ny = odesys->ny;
         Integrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::ADAMS,
                 (iterative) ? IterType::FUNCTIONAL : IterType::NEWTON};
         integr.set_user_data((void *)odesys);
-        integr.init(f_cb<OdeSys>, tout[0], y0, ny);
+        integr.init(f_cb<OdeSys>, t0, y0, ny);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
         }else{
@@ -525,25 +526,26 @@ namespace cvodes_cxx {
     }
 
     template <class OdeSys>
-    auto simple_adaptive(OdeSys * odesys,
-                         const std::vector<realtype> atol,
-                         const realtype rtol, const int lmm,
-                         const realtype * const y0,
-                         const realtype t0,
-                         const realtype tend,
-                         int direct_mode=0,
-                         bool with_jacobian=false,
-                         int iterative=0
-                         ){
+    std::pair<std::vector<double>, std::vector<double> >
+    simple_adaptive(OdeSys * odesys,
+                    const std::vector<realtype> atol,
+                    const realtype rtol, const int lmm,
+                    const realtype * const y0,
+                    const realtype t0,
+                    const realtype tend,
+                    int direct_mode=0,
+                    bool with_jacobian=false,
+                    int iterative=0
+                    ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
         //     direct_mode == 2 => banded
         // iterative == 1 => iterative (GMRES)
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
-        auto integr = get_integrator(odesys, atol, rtol, lmm, y0, t0,
-                                     direct_mode, with_jacobian, iterative);
-        return integr.adaptive(ny, t0, tend, y0);
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
+                                             direct_mode, with_jacobian, iterative);
+        return integr.adaptive(odesys->ny, t0, tend, y0);
     }
     template <class OdeSys>
     void simple_predefined(OdeSys * odesys,
@@ -563,9 +565,9 @@ namespace cvodes_cxx {
         // iterative == 1 => iterative (GMRES)
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
-        auto integr = get_integrator(odesys, atol, rtol, lmm, y0, tout[0],
-                                     direct_mode, with_jacobian, iterative);
-        integr.predefined(nout, ny, tout, y0, yout);
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0],
+                                             direct_mode, with_jacobian, iterative);
+        integr.predefined(nout, odesys->ny, tout, y0, yout);
 #if defined(DEBUG)
         std::cout << "n_steps=" << integr.get_n_steps() << std::endl;
         std::cout << "n_rhs_evals=" << integr.get_n_rhs_evals() << std::endl;

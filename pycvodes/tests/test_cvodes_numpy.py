@@ -74,7 +74,7 @@ def test_integrate_adaptive(method, forgiveness):
                        atol=forgiveness*atol)
 
 
-@pytest.mark.parametrize("method,forgiveness,use_jac", methods)
+@pytest.mark.parametrize("method,forgiveness", methods)
 def test_integrate_predefined(method, forgiveness):
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0

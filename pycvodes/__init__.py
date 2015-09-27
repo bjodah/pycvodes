@@ -5,7 +5,7 @@ from __future__ import division, absolute_import
 from ._cvodes_numpy import adaptive, predefined, requires_jac
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
-assert __version__  # silence pyflakes
+assert __version__, requires_jac # silence pyflakes
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,

@@ -21,7 +21,7 @@ cdef class Cvodes:
     def adaptive(self, cnp.ndarray[cnp.float64_t, ndim=1] y0,
                  double t0, double tend,
                  double atol, double rtol,
-                 double hstart=0.0, int step_type_idx=8):
+                 double hstart=0.0, int step_type_idx=1):
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
         return self.thisptr.adaptive(<PyObject*>y0, t0, tend, atol,
@@ -36,7 +36,7 @@ cdef class Cvodes:
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
         yout[0, :] = y0
-        self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*> yout,
+        self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*>yout,
                                 dx0, atol, rtol, step_type_idx, dx_max, dx_min)
         return yout
 
@@ -68,7 +68,7 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, method='bdf'):
     integr = Cvodes(rhs, jac, len(y0))
     nsteps = integr.adaptive(np.array(y0, dtype=np.float64),
                              x0, xend, dx0, atol, rtol,
-                             step_type_indices.index(method))
+                             steppers.index(method))
     return integr.get_xout(nsteps), integr.get_yout(nsteps)
 
 
@@ -78,4 +78,4 @@ def predefined(rhs, jac, y0, xout, dx0, atol, rtol, method='bdf'):
     integr = Cvodes(rhs, jac, len(y0))
     return integr.predefined(np.array(y0, dtype=np.float64),
                              np.array(xout, dtype=np.float64),
-                             dx0, atol, rtol, step_type_indices.index(method))
+                             dx0, atol, rtol, steppers.index(method))

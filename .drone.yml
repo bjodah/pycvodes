@@ -3,6 +3,7 @@ git:
     path: github.com/bjodah/pycvodes
 script:
   - if [[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then export PYCVODES_RELEASE_VERSION=$DRONE_BRANCH; echo ${PYCVODES_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
+  - ./scripts/ci_download_and_install_sundials.sh
   - python2 setup.py build_ext --inplace
   - python3 setup.py build_ext --inplace
   - PYTHONPATH=$(pwd) python2 -m pytest

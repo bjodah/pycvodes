@@ -16,15 +16,18 @@ pkg_name = 'pycvodes'
 # Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
 
+LLAPACK = os.environ.get('LLAPACK', 'lapack')
+
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
-            '--help-commands', 'egg_info', 'clean', '--version'):
+        '--help-commands', 'egg_info', 'clean', '--version'):
     USE_CYTHON = os.path.exists('pycvodes/_cvodes_numpy.pyx')
     ext = '.pyx' if USE_CYTHON else '.cpp'
     ext_modules = [
         Extension('pycvodes._cvodes_numpy',
                   ['pycvodes/_cvodes_numpy'+ext],
                   language='c++', extra_compile_args=['-std=c++11'],
-                  libraries=['sundials_cvodes', 'lapack', 'sundials_nvecserial'])
+                  libraries=['sundials_cvodes', LLAPACK,
+                             'sundials_nvecserial'])
     ]
     if USE_CYTHON:
         from Cython.Build import cythonize
