@@ -1,17 +1,13 @@
-image: bjodah/dockerfile-bjodah-scicomp:14.04a
+image: bjodah/dockerfile-bjodah-scicomp:14.04b
 git:
     path: github.com/bjodah/pycvodes
 script:
   - if [[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then export PYCVODES_RELEASE_VERSION=$DRONE_BRANCH; echo ${PYCVODES_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
   - ./scripts/ci_download_and_install_sundials.sh
-  - python2 setup.py build_ext --inplace
-  - python3 setup.py build_ext --inplace
-  - PYTHONPATH=$(pwd) python2 -m pytest
-  - PYTHONPATH=$(pwd) python3 -m pytest
+  - PYTHONPATH=$(pwd) ./scripts/run_tests.sh pycvodes
   - python2 setup.py sdist
   - ./scripts/generate_docs.sh
-  - tar cjf doc.tar.bz2 doc/
-  - scp doc.tar.bz2 dist/* pycvodes@hera.physchem.kth.se:~/
+  - scp -r doc/ dist/* htmlcov/ pycvodes@hera.physchem.kth.se:~/public_html/
   - touch doc/_build/html/.nojekyll
   - git config --global user.name "drone"
   - git config --global user.email "drone@hera.physchem.kth.se"
