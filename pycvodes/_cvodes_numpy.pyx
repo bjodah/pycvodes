@@ -12,8 +12,8 @@ cdef class Cvodes:
 
     cdef PyCvodes *thisptr
 
-    def __cinit__(self, object f, object j, size_t ny):
-        self.thisptr = new PyCvodes(<PyObject *>f, <PyObject *>j, ny)
+    def __cinit__(self, object f, object j, size_t ny, int ml=-1, int mu=-1):
+        self.thisptr = new PyCvodes(<PyObject *>f, <PyObject *>j, ny, ml, mu)
 
     def __dealloc__(self):
         del self.thisptr
@@ -61,21 +61,27 @@ cdef class Cvodes:
 steppers = ['adams', 'bdf']
 requires_jac = ('bdf',)
 
-def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, method='bdf'):
+def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, method='bdf',
+             lband=None, uband=None):
     cdef size_t nsteps
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")
-    integr = Cvodes(rhs, jac, len(y0))
+    integr = Cvodes(rhs, jac, len(y0),
+                    -1 if lband is None else lband,
+                    -1 if uband is None else uband)
     nsteps = integr.adaptive(np.array(y0, dtype=np.float64),
                              x0, xend, dx0, atol, rtol,
                              steppers.index(method))
     return integr.get_xout(nsteps), integr.get_yout(nsteps)
 
 
-def predefined(rhs, jac, y0, xout, dx0, atol, rtol, method='bdf'):
+def predefined(rhs, jac, y0, xout, dx0, atol, rtol, method='bdf',
+             lband=None, uband=None):
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")
-    integr = Cvodes(rhs, jac, len(y0))
+    integr = Cvodes(rhs, jac, len(y0),
+                    -1 if lband is None else lband,
+                    -1 if uband is None else uband)
     return integr.predefined(np.array(y0, dtype=np.float64),
                              np.array(xout, dtype=np.float64),
                              dx0, atol, rtol, steppers.index(method))

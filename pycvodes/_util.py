@@ -5,7 +5,14 @@ from __future__ import division
 import numpy as np
 
 
-def _check_callable(f, j, x0, y0):
+def _get_jmat_out(ny, lband=None, uband=None):
+    if lband is not None:
+        return np.empty((1+lband+uband, ny))
+    else:
+        return np.empty((ny, ny))
+
+
+def _check_callable(f, j, x0, y0, lband=None, uband=None):
     ny = len(y0)
     _fout = np.empty(ny)
     _ret = f(x0, y0, _fout)
@@ -15,14 +22,14 @@ def _check_callable(f, j, x0, y0):
     if j is None:
         return  # Not all methods require a jacobian
 
-    _jmat_out = np.empty((ny, ny))
+    _jmat_out = _get_jmat_out(ny, lband, uband)
     _dfdx_out = np.empty(ny)
     _ret = j(x0, y0, _jmat_out, _dfdx_out)
     if _ret is not None:
         raise ValueError("j() must return None")
 
 
-def _check_indexing(f, j, x0, y0):
+def _check_indexing(f, j, x0, y0, lband=None, uband=None):
     ny = len(y0)
     _fout_short = np.empty(ny-1)
     try:
@@ -44,7 +51,7 @@ def _check_indexing(f, j, x0, y0):
     else:
         raise ValueError("All elements in Jout not assigned in j()")
 
-    _jmat_out = np.empty((ny, ny))
+    _jmat_out = _get_jmat_out(ny, lband, uband)
     _dfdx_out_short = np.empty(ny-1)
     try:
         j(x0, y0, _jmat_out, _dfdx_out_short)

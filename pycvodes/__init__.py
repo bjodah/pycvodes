@@ -48,11 +48,12 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
             values corresponding to xout (axis 0)
     """
     # Sanity checks to reduce risk of having a segfault:
+    lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
     if check_callable:
-        _check_callable(rhs, jac, x0, y0)
+        _check_callable(rhs, jac, x0, y0, lband, uband)
 
     if check_indexing:
-        _check_indexing(rhs, jac, x0, y0)
+        _check_indexing(rhs, jac, x0, y0, lband, uband)
 
     return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, **kwargs)
 
@@ -93,10 +94,11 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     values corresponding to xout (axis 0)
     """
     # Sanity checks to reduce risk of having a segfault:
+    lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
     if check_callable:
-        _check_callable(rhs, jac, xout[0], y0)
+        _check_callable(rhs, jac, xout[0], y0, lband, uband)
 
     if check_indexing:
-        _check_indexing(rhs, jac, xout[0], y0)
+        _check_indexing(rhs, jac, xout[0], y0, lband, uband)
 
     return predefined(rhs, jac, y0, xout, dx0, atol, rtol, **kwargs)

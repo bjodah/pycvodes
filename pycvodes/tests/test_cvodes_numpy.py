@@ -52,20 +52,38 @@ def _get_f_j(k):
             dfdx_out[2] = 0
     return f, j
 
-methods = [('adams', 5), ('bdf', 23)]
+methods = [('adams', 1.8, False),
+           ('adams', 1.8, True),
+           ('bdf', 1.8, False),
+           ('bdf', 3.4, True)]
 
 
-@pytest.mark.parametrize("method,forgiveness", methods)
-def test_integrate_adaptive(method, forgiveness):
+def bandify(cb, mlower, mupper):
+    def j(t, y, jmat_out, dfdx_out=None, fy=None):
+        jmat = np.empty((len(y), len(y)))
+        cb(t, y, jmat, dfdx_out, fy)
+        for ci in range(len(y)):
+            for ri in range(max(0, ci-mupper), min(len(y), ci+mlower+1)):
+                jmat_out[ri - ci + mupper, ci] = jmat[ri, ci]
+    return j
+
+
+@pytest.mark.parametrize("method,forgiveness,banded", methods)
+def test_integrate_adaptive(method, forgiveness, banded):
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
-    f, j = _get_f_j(k)
-    if not use_jac:
-        j = None
     atol, rtol = 1e-8, 1e-8
     kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
                   method=method)
+    f, j = _get_f_j(k)
+    if not use_jac:
+        j = None
+    else:
+        if banded:
+            j = bandify(j, 1, 0)
+            kwargs['lband'] = 1
+            kwargs['uband'] = 0
     # Run twice to catch possible side-effects:
     xout, yout = integrate_adaptive(f, j, y0, **kwargs)
     xout, yout = integrate_adaptive(f, j, y0, **kwargs)
@@ -75,20 +93,26 @@ def test_integrate_adaptive(method, forgiveness):
                        atol=forgiveness*atol)
 
 
-@pytest.mark.parametrize("method,forgiveness", methods)
-def test_integrate_predefined(method, forgiveness):
+@pytest.mark.parametrize("method,forgiveness,banded", methods)
+def test_integrate_predefined(method, forgiveness, banded):
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
     f, j = _get_f_j(k)
+    kwargs = {'method': method}
     if not use_jac:
         j = None
+    else:
+        if banded:
+            j = bandify(j, 1, 0)
+            kwargs['lband'] = 1
+            kwargs['uband'] = 0
     xout = np.linspace(0, 3, 31)
     dx0 = 1e-10
     atol, rtol = 1e-8, 1e-8
     # Run twice to catch possible side-effects:
-    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, method=method)
-    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, method=method)
+    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
+    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
     print(yout)
     print(yref)

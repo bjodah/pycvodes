@@ -8,7 +8,9 @@ SUNDIALS_URLS=(\
 "http://pkgs.fedoraproject.org/repo/pkgs/sundials/${SUNDIALS_FNAME}/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
 "http://computation.llnl.gov/casc/sundials/download/code/${SUNDIALS_FNAME}" \
 )
-
+tmpdir=$(mktemp -d)
+trap "rm -r $tmpdir" EXIT SIGINT SIGTERM
+cd $tmpdir
 for URL in "${SUNDIALS_URLS[@]}"; do
     echo "Downloading ${URL}..."
     timeout $TIMEOUT wget --quiet --tries=2 --timeout=$TIMEOUT $URL
