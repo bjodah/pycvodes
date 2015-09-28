@@ -8,3 +8,5 @@ cython_debug/
 doc/
 MANIFEST
 pycvodes/_cvodes_numpy.cpp
+.coverage
+htmlcov/
