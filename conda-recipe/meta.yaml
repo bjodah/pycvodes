@@ -17,12 +17,12 @@ requirements:
     run:
         - numpy
         - python
-    test:
-        - pytest
 
 test:
     imports:
         - pycvodes
+    requires:
+        - pytest
 
 about:
     home: https://github.com/bjodah/pycvodes
