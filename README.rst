@@ -15,9 +15,10 @@ pycvodes
 `pycvodes <https://github.com/bjodah/pycvodes>`_ provides a
 `Python <http://www.python.org>`_ binding to the
 `Ordinary Differential Equation <https://en.wikipedia.org/wiki/Ordinary_differential_equation>`_
-integration routines exposed by `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ from the
-`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_.
-Cvodes allows a user to numerically integrate (systems of) differential equations.
+integration routines from `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ in the
+`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pyvodes`` allows a user to numerically integrate
+(systems of) differential equations. Note that routines for sensitivity analysis is not yet exposed in this binding (which makes
+the functionality essentially the same as cvode). 
 
 The following multistep methods are available:
 
@@ -83,6 +84,7 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
 License
 -------
 The source code is Open Source and is released under the simplified 2-clause BSD license. See `LICENSE <LICENSE>`_ for further details.
+
 Contributors are welcome to suggest improvements at https://github.com/bjodah/pycvodes
 
 Author

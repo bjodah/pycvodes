@@ -1,3 +1,11 @@
+v0.2.0
+======
+- New function signature: integrate_predefined and integrate_adaptive now
+  also return an info dict containing ``nrhs`` and ``njac`` containing
+  number of calls to each function made during last integration.
+- Expose ``pycvodes.steppers`` tuple.
+- check_callbable and check_indexing kwargs now defaults to False
+
 v0.1.1
 ======
 - Added lband, uband kwargs (compatible with scipy's signature)

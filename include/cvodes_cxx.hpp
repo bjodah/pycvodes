@@ -413,7 +413,7 @@ namespace cvodes_cxx {
     template<class OdeSys>
     int f_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
         OdeSys * odesys = (OdeSys*)user_data;
-        odesys->f(t, NV_DATA_S(y), NV_DATA_S(ydot));
+        odesys->rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
         return 0;
     }
 

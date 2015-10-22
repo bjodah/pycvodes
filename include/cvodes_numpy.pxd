@@ -5,7 +5,8 @@ from libcpp.vector cimport vector
 
 cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
     cdef cppclass PyCvodes:
-        size_t ny
+        const size_t ny
+        size_t nrhs, njac
         int mlower, mupper
         vector[double] xout
         vector[double] yout

@@ -20,7 +20,8 @@ namespace cvodes_numpy{
     class PyCvodes {
     public:
         PyObject *py_rhs, *py_jac;
-        size_t ny;
+        const size_t ny;
+        size_t nrhs, njac;
         int mlower, mupper;
         std::vector<double> xout;
         std::vector<double> yout;
@@ -55,7 +56,7 @@ namespace cvodes_numpy{
                                                     (this->mlower > -1) ? 2 : 1, with_jacobian);
         }
 
-        void f(double xval, const double * const y, double * const dydx){
+        void rhs(double xval, const double * const y, double * const dydx){
             npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
             PyObject * py_yarr = PyArray_SimpleNewFromData(
                 1, dims, NPY_DOUBLE, static_cast<void*>(const_cast<double*>(y)));
@@ -66,6 +67,7 @@ namespace cvodes_numpy{
             Py_DECREF(py_arglist);
             Py_DECREF(py_dydx);
             Py_DECREF(py_yarr);
+            nrhs++;
             if (py_result == nullptr){
                 PyErr_SetString(PyExc_RuntimeError, "rhs() failed");
                 throw std::runtime_error("f() failed");
@@ -88,6 +90,7 @@ namespace cvodes_numpy{
             Py_DECREF(py_arglist);
             Py_DECREF(py_fy);
             Py_DECREF(py_yarr);
+            njac++;
             if (py_result == nullptr){
                 PyErr_SetString(PyExc_RuntimeError, "jac() failed");
                 throw std::runtime_error("jac() failed");
