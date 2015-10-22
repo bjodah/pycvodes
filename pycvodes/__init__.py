@@ -2,14 +2,14 @@
 
 from __future__ import division, absolute_import
 
-from ._cvodes_numpy import adaptive, predefined, requires_jac
+from ._cvodes_numpy import adaptive, predefined, requires_jac, steppers
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
-assert __version__, requires_jac  # silence pyflakes
+assert (__version__, requires_jac, steppers)  # silence pyflakes
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                       check_callable=True, check_indexing=True, **kwargs):
+                       check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
 
@@ -32,9 +32,9 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         absolute tolerance
     rtol: float
         relative tolerance
-    check_callable: bool (default: True)
+    check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
-    check_indexing: bool (default: True)
+    check_indexing: bool (default: False)
         perform item setting sanity checks on ``rhs`` and ``jac``.
     \*\*kwargs:
          'method': str
@@ -42,10 +42,11 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
 
     Returns
     -------
-    (xout, yout):
+    (xout, yout, info):
         xout: 1-dimensional array of values for the independent variable
         yout: 2-dimensional array of the dependent variables (axis 1) for
             values corresponding to xout (axis 0)
+        info: dictionary with information about the integration
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
@@ -59,7 +60,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-                         check_callable=True, check_indexing=True, **kwargs):
+                         check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
 
@@ -80,9 +81,9 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         absolute tolerance
     rtol: float
         relative tolerance
-    check_callable: bool (default: True)
+    check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
-    check_indexing: bool (default: True)
+    check_indexing: bool (default: False)
         perform item setting sanity checks on ``rhs`` and ``jac``.
     \*\*kwargs:
          'method': str
@@ -90,8 +91,10 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
 
     Returns
     -------
-    2-dimensional array of the dependent variables (axis 1) for
-    values corresponding to xout (axis 0)
+    (result, info):
+        result: 2-dimensional array of the dependent variables (axis 1) for
+            values corresponding to xout (axis 0)
+        info: dictionary with information about the integration
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)

@@ -85,12 +85,15 @@ def test_integrate_adaptive(method, forgiveness, banded):
             kwargs['lband'] = 1
             kwargs['uband'] = 0
     # Run twice to catch possible side-effects:
-    xout, yout = integrate_adaptive(f, j, y0, **kwargs)
-    xout, yout = integrate_adaptive(f, j, y0, **kwargs)
+    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
+    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
+    assert info['nrhs'] > 0
+    if method in requires_jac:
+        assert info['njac'] > 0
 
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
@@ -111,11 +114,14 @@ def test_integrate_predefined(method, forgiveness, banded):
     dx0 = 1e-10
     atol, rtol = 1e-8, 1e-8
     # Run twice to catch possible side-effects:
-    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
-    yout = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
+    yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
+    yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
     print(yout)
     print(yref)
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
+    assert nfo['nrhs'] > 0
+    if method in requires_jac:
+        assert nfo['njac'] > 0

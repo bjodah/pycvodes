@@ -1,6 +1,6 @@
 package:
     name: pycvodes
-    version: 0.1.0.git
+    version: 0.2.0.git
 
 source:
     path: ../
@@ -15,8 +15,9 @@ requirements:
         - sundials
         - cython
     run:
-        - numpy
         - python
+        - numpy
+        - sundials
 
 test:
     imports:

@@ -11,13 +11,18 @@ pycvodes
 .. image:: https://img.shields.io/pypi/l/pycvodes.svg
    :target: https://github.com/bjodah/pycvodes/blob/master/LICENSE
    :alt: License
+.. image:: http://hera.physchem.kth.se/~pycvodes/master/htmlcov/coverage.svg
+   :target: http://hera.physchem.kth.se/~pycvodes/master/htmlcov
+   :alt: coverage
+
 
 `pycvodes <https://github.com/bjodah/pycvodes>`_ provides a
 `Python <http://www.python.org>`_ binding to the
 `Ordinary Differential Equation <https://en.wikipedia.org/wiki/Ordinary_differential_equation>`_
-integration routines exposed by `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ from the
-`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_.
-Cvodes allows a user to numerically integrate (systems of) differential equations.
+integration routines from `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ in the
+`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pyvodes`` allows a user to numerically integrate
+(systems of) differential equations. Note that routines for sensitivity analysis is not yet exposed in this binding (which makes
+the functionality essentially the same as cvode). 
 
 The following multistep methods are available:
 
@@ -71,10 +76,11 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
    ...
    >>> y0 = [1, 0]; dt0=1e-8; t0=0.0; atol=1e-8; rtol=1e-8
    >>> tout = np.linspace(0, 10.0, 200)
-   >>> yout = integrate_predefined(f, j, y0, tout, atol, rtol, dt0,
-   ...                             method='bdf')
+   >>> yout, info = integrate_predefined(f, j, y0, tout, atol, rtol, dt0,
+   ...                                   method='bdf')
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(tout, yout)
+   >>> series = plt.plot(tout, yout)
+   >>> plt.show()  # doctest: +SKIP
 
 
 .. image:: https://raw.githubusercontent.com/bjodah/pycvodes/master/examples/van_der_pol.png
@@ -83,6 +89,7 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
 License
 -------
 The source code is Open Source and is released under the simplified 2-clause BSD license. See `LICENSE <LICENSE>`_ for further details.
+
 Contributors are welcome to suggest improvements at https://github.com/bjodah/pycvodes
 
 Author
