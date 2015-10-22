@@ -1,2 +1,3 @@
+import sys
 import pytest
-pytest.main(['--pyargs', 'pycvodes'])
+sys.exit(pytest.main(['--pyargs', 'pycvodes']))

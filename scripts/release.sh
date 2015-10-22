@@ -3,6 +3,7 @@
 #
 #    $ ./scripts/release.sh v1.2.3
 #
+
 if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
     exit 1

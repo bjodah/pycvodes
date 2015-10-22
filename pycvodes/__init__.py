@@ -42,10 +42,11 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
 
     Returns
     -------
-    (xout, yout):
+    (xout, yout, info):
         xout: 1-dimensional array of values for the independent variable
         yout: 2-dimensional array of the dependent variables (axis 1) for
             values corresponding to xout (axis 0)
+        info: dictionary with information about the integration
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
@@ -90,8 +91,10 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
 
     Returns
     -------
-    2-dimensional array of the dependent variables (axis 1) for
-    values corresponding to xout (axis 0)
+    (result, info):
+        result: 2-dimensional array of the dependent variables (axis 1) for
+            values corresponding to xout (axis 0)
+        info: dictionary with information about the integration
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)

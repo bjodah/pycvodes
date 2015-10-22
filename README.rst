@@ -11,6 +11,10 @@ pycvodes
 .. image:: https://img.shields.io/pypi/l/pycvodes.svg
    :target: https://github.com/bjodah/pycvodes/blob/master/LICENSE
    :alt: License
+.. image:: http://hera.physchem.kth.se/~pycvodes/master/htmlcov/coverage.svg
+   :target: http://hera.physchem.kth.se/~pycvodes/master/htmlcov
+   :alt: coverage
+
 
 `pycvodes <https://github.com/bjodah/pycvodes>`_ provides a
 `Python <http://www.python.org>`_ binding to the
@@ -72,10 +76,11 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
    ...
    >>> y0 = [1, 0]; dt0=1e-8; t0=0.0; atol=1e-8; rtol=1e-8
    >>> tout = np.linspace(0, 10.0, 200)
-   >>> yout = integrate_predefined(f, j, y0, tout, atol, rtol, dt0,
-   ...                             method='bdf')
+   >>> yout, info = integrate_predefined(f, j, y0, tout, atol, rtol, dt0,
+   ...                                   method='bdf')
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(tout, yout)
+   >>> series = plt.plot(tout, yout)
+   >>> plt.show()  # doctest: +SKIP
 
 
 .. image:: https://raw.githubusercontent.com/bjodah/pycvodes/master/examples/van_der_pol.png
