@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from math import exp, pi
 import numpy as np
 import pytest
 
@@ -69,34 +70,6 @@ def bandify(cb, mlower, mupper):
 
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
-def test_integrate_adaptive(method, forgiveness, banded):
-    use_jac = method in requires_jac
-    k = k0, k1, k2 = 2.0, 3.0, 4.0
-    y0 = [0.7, 0.3, 0.5]
-    atol, rtol = 1e-8, 1e-8
-    kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
-                  method=method)
-    f, j = _get_f_j(k)
-    if not use_jac:
-        j = None
-    else:
-        if banded:
-            j = bandify(j, 1, 0)
-            kwargs['lband'] = 1
-            kwargs['uband'] = 0
-    # Run twice to catch possible side-effects:
-    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
-    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
-    yref = decay_get_Cref(k, y0, xout)
-    assert np.allclose(yout, yref,
-                       rtol=forgiveness*rtol,
-                       atol=forgiveness*atol)
-    assert info['nrhs'] > 0
-    if method in requires_jac:
-        assert info['njac'] > 0
-
-
-@pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_predefined(method, forgiveness, banded):
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
@@ -125,3 +98,77 @@ def test_integrate_predefined(method, forgiveness, banded):
     assert nfo['nrhs'] > 0
     if method in requires_jac:
         assert nfo['njac'] > 0
+
+
+@pytest.mark.parametrize("method,forgiveness,banded", methods)
+def test_integrate_adaptive(method, forgiveness, banded):
+    use_jac = method in requires_jac
+    k = k0, k1, k2 = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
+                  method=method)
+    f, j = _get_f_j(k)
+    if not use_jac:
+        j = None
+    else:
+        if banded:
+            j = bandify(j, 1, 0)
+            kwargs['lband'] = 1
+            kwargs['uband'] = 0
+    # Run twice to catch possible side-effects:
+    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
+    xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
+    yref = decay_get_Cref(k, y0, xout)
+    assert np.allclose(yout, yref,
+                       rtol=forgiveness*rtol,
+                       atol=forgiveness*atol)
+    assert info['nrhs'] > 0
+    if method in requires_jac:
+        assert info['njac'] > 0
+
+
+def test_derivative_1():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=0.0, atol=1e-8, rtol=1e-8, nderiv=1, method='adams')
+    yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
+    assert yout.shape == (3, 2, 1)
+    ref = np.array([
+        [[exp(0)], [exp(0)]],
+        [[exp(1)], [exp(1)]],
+        [[exp(2)], [exp(2)]],
+    ])
+    assert np.allclose(yout, ref)
+
+
+def test_derivative_2():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=0.0, atol=1e-12, rtol=1e-12, nderiv=3, method='adams')
+    yout, info = integrate_predefined(f, None, [1], [0, 1, 2, 3, 4], **kwargs)
+    assert yout.shape == (5, 4, 1)
+    ref = np.array([
+        [[exp(0)], [exp(0)], [0], [0]],  # higher order deriv. skipped for t0
+        [[exp(1)]]*4,
+        [[exp(2)]]*4,
+        [[exp(3)]]*4,
+        [[exp(4)]]*4,
+    ])
+    assert np.allclose(yout, ref)
+
+
+def test_derivative_3():
+    def f(t, y, fout):
+        fout[0] = y[1]
+        fout[1] = -y[0]
+    kwargs = dict(dx0=0.0, atol=1e-13, rtol=1e-13, nderiv=2, method='adams')
+    xout, yout, info = integrate_adaptive(f, None, [0, 1], 0, 4*pi, **kwargs)
+    assert yout.shape[1:] == (3, 2)
+    sinx, cosx = np.sin(xout), np.cos(xout)
+    ref = np.empty((len(xout), 3, 2))
+    ref[:, 0, 0], ref[:, 0, 1] = sinx, cosx
+    ref[:, 1, 0], ref[:, 1, 1] = cosx, -sinx
+    ref[:, 2, 0], ref[:, 2, 1] = -sinx, -cosx
+    discrepancy = yout[3:, ...] - ref[3:, ...]
+    assert np.allclose(discrepancy, 0, rtol=1e-6, atol=1e-6)

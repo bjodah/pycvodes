@@ -12,6 +12,7 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
         vector[double] yout
 
         PyCvodes(PyObject*, PyObject*, size_t, int, int)
-        size_t adaptive(PyObject*, double, double, double, double, double, int) except +
-        void predefined(PyObject*, PyObject*, PyObject*, double, double, double, int,
-                        double, double) except +
+        size_t adaptive(PyObject*, double, double, double, double, int,
+                        double, double, double, int, int) except +
+        void predefined(PyObject*, PyObject*, PyObject*, double, double, int,
+                        double, double, double, int, int) except +

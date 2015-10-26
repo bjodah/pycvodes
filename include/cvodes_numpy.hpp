@@ -30,30 +30,36 @@ namespace cvodes_numpy{
             py_rhs(py_rhs), py_jac(py_jac), ny(ny), mlower(ml), mupper(mu) {}
 
         size_t adaptive(PyObject *py_y0, double x0, double xend,
-                        double dx0, double atol, double rtol,
-                        int step_type_idx){
+                        double atol, double rtol, int step_type_idx,
+                        double dx0, double dx_min=0.0, double dx_max=0.0,
+                        int iterative=0, int nderiv=0){
             const bool with_jacobian = py_jac != Py_None;
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
+            nrhs = 0; njac = 0;
             auto xy_out = cvodes_cxx::simple_adaptive(this, std::vector<double>(1, atol),
-                                                      rtol, step_type_idx, y0, x0, xend,
-                                                      (this->mlower > -1) ? 2 : 1, with_jacobian);
+                                                      rtol, step_type_idx, y0, x0, xend, dx0, dx_min, dx_max,
+                                                      (this->mlower > -1) ? 2 : 1, with_jacobian,
+                                                      iterative, nderiv);
             this->xout = xy_out.first;
             this->yout = xy_out.second;
             return this->xout.size();
         }
 
         void predefined(PyObject *py_y0, PyObject *py_xout, PyObject *py_yout,
-                        double dx0, double atol, double rtol,
-                        int step_type_idx, double dx_max=0.0, double dx_min=0.0,
-                        int iterative=0) {
+                        double atol, double rtol,
+                        int step_type_idx,
+                        double dx0, double dx_min=0.0, double dx_max=0.0,
+                        int iterative=0, int nderiv=0) {
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
             auto xout = (double*)PyArray_GETPTR1(py_xout, 0);
             auto yout = (double*)PyArray_GETPTR1(py_yout, 0);
             const npy_intp nt = PyArray_DIMS(py_xout)[0];
             const bool with_jacobian = py_jac != Py_None;
+            nrhs = 0; njac = 0;
             cvodes_cxx::simple_predefined<PyCvodes>(this, std::vector<double>(1, atol), rtol,
-                                                    step_type_idx, y0, nt, xout, yout,
-                                                    (this->mlower > -1) ? 2 : 1, with_jacobian);
+                                                    step_type_idx, y0, nt, xout, yout, dx0, dx_min, dx_max,
+                                                    (this->mlower > -1) ? 2 : 1, with_jacobian,
+                                                    iterative, nderiv);
         }
 
         void rhs(double xval, const double * const y, double * const dydx){
