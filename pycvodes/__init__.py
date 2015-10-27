@@ -10,7 +10,7 @@ assert (__version__, requires_jac, steppers)  # silence pyflakes
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                        dx_min=.0, dx_max=.0, nderiv=0,
-                       roots=None, nroots=0,
+                       roots=None, nroots=0, sparse=False,
                        check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
@@ -44,6 +44,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         with signature roots(x, yarr[:ny], out[:nroots]) -> None
     nroots: int (default: 0)
         number of root functions in roots
+    sparse: bool
+        when nderiv is sufficiently high, setting this to ``True`` may reduce length of xout.
     check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing: bool (default: False)
@@ -69,9 +71,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         _check_indexing(rhs, jac, x0, y0, lband, uband)
 
     return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                    dx_min, dx_max, nderiv,
-                    roots=roots, nroots=nroots,
-                    **kwargs)
+                    dx_min, dx_max, nderiv, roots=roots, nroots=nroots,
+                    sparse=sparse, **kwargs)
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,

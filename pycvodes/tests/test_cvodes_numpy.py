@@ -201,3 +201,40 @@ def test_roots_predefined():
     assert np.allclose(discrepancy, 0)
     assert len(info['root_indices']) == 1
     assert info['root_indices'][0] == 2
+
+
+def test_adaptive_nderiv_4():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    discrepancy = np.exp(xout) - yout[:, 0].flatten()
+    assert np.allclose(discrepancy, 0, atol=1e-3)
+
+
+def test_adaptive_nderiv():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    discrepancy = np.exp(xout) - yout[:, 0].flatten()
+    assert np.allclose(discrepancy, 0, atol=1e-3)
+
+
+def test_adaptive_nderiv_sparse():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout_dense, yout_dense, info_dense = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    xout_spars, yout_spars, info_spars = integrate_adaptive(f, None, [1], 0, 2, sparse=True, **kwargs)
+
+    discrepancy_dense = np.exp(xout_dense) - yout_dense[:, 0].flatten()
+    discrepancy_spars = np.exp(xout_spars) - yout_spars[:, 0].flatten()
+    assert np.allclose(discrepancy_dense, 0, atol=1e-3)
+    assert np.allclose(discrepancy_spars, 0, atol=1e-3)
+    assert len(xout_dense) > 1
+    assert len(xout_spars) > 1
+    assert len(xout_dense) > len(xout_spars)

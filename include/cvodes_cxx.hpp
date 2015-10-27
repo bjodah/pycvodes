@@ -6,6 +6,7 @@
 // sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
 
 #include <assert.h>
+#include <cmath>
 #include <cstring>
 #include <memory>
 #include <utility>
@@ -23,6 +24,15 @@
 #ifndef NDEBUG
 #include <iostream> // DEBUG
 #endif
+
+// Overflows easily, check your architecture
+int factorial(int n) {
+    int res = 1;
+    while (n > 1) {
+        res *= n--;
+    }
+    return res;
+}
 
 namespace cvodes_cxx {
 
@@ -348,9 +358,9 @@ namespace cvodes_cxx {
         }
 
         void get_dky(realtype t, int k, SVector &dky) {
-#         if !defined(NDEBUG)
-            std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
-#         endif
+// #         if !defined(NDEBUG)
+//             std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
+// #         endif
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
             case CV_SUCCESS:
@@ -380,7 +390,7 @@ namespace cvodes_cxx {
 
         std::pair<std::vector<double>, std::vector<double> >
         adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv, std::vector<int>& root_indices){
+                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, bool sparse=false){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -388,6 +398,10 @@ namespace cvodes_cxx {
             int idx = 0;
             SVector y {ny};
             SVector work {ny};
+            // for sparse
+            CVodeMem cv_mem = (CVodeMem) this->mem;
+            double atol = cv_mem->cv_Sabstol;
+            const double rtol = cv_mem->cv_reltol;
             xout.push_back(x0);
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
@@ -407,9 +421,24 @@ namespace cvodes_cxx {
             do {
                 idx++;
                 status = this->step(xend, y, &cur_t, Task::ONE_STEP);
+                if (sparse){
+                    for (int yidx=0; yidx<ny; ++yidx){
+                        if (cv_mem->cv_itol == 2) // CV_SV L360 cvodes.c
+                            atol = NV_DATA_S(cv_mem->cv_Vabstol)[yidx];
+                        double approx = 0.0;
+                        for (int di=0; di<nderiv+1; ++di)
+                            approx += yout[(nderiv+1)*(idx-1)]/factorial(di)*pow(cur_t-xout[idx-1], di);
+                        double tolQ = std::abs(approx - y[0])/(atol + rtol*y[0]);
 // #             if !defined(NDEBUG)
-//                 std::cout << status;
+//                         std::cout << " " << yidx << " "<< approx - y[0] << " " << tolQ << std::endl;
 // #             endif
+                        if (tolQ > 1)
+                            goto save_point;
+                    }
+                    idx--;
+                    continue;
+                }
+            save_point:
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN)
                         root_indices.push_back(idx);
@@ -421,7 +450,7 @@ namespace cvodes_cxx {
                     yout.push_back(y[i]);
                 // Derivatives for interpolation
                 for (int di=0; di<nderiv; ++di){
-                    if (this->get_n_steps() < 2*nderiv)
+                    if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
                     else
@@ -467,7 +496,7 @@ namespace cvodes_cxx {
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
                 // Derivatives for interpolation
                 for (int di=0; di<nderiv; ++di){
-                    if (this->get_n_steps() < 2*nderiv)
+                    if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
                     else
@@ -644,7 +673,8 @@ namespace cvodes_cxx {
                     const bool with_jacobian=false,
                     const int iterative=0,
                     const int nderiv=0,
-                    std::vector<int>& root_indices=std::vector<int>()
+                    std::vector<int>& root_indices=std::vector<int>(),
+                    bool sparse=false
                     ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -655,7 +685,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
                                              dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices);
+        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse);
     }
     template <class OdeSys>
     void simple_predefined(OdeSys * odesys,
