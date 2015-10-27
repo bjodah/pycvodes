@@ -1,3 +1,8 @@
+v0.2.1
+======
+- Added support for (first) derivative in output
+- Min and max step now allowed to be set
+
 v0.2.0
 ======
 - New function signature: integrate_predefined and integrate_adaptive now
