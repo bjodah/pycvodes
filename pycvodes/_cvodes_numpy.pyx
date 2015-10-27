@@ -1,7 +1,6 @@
 # -*- coding: utf-8; mode: cython -*-
 
 from cpython.object cimport PyObject
-from libcpp cimport bool
 cimport numpy as cnp
 import numpy as np
 
@@ -26,7 +25,7 @@ cdef class Cvodes:
                  double atol, double rtol,
                  int step_type_idx=1,
                  double dx0=.0, double dx_min=.0, double dx_max=.0,
-                 int nderiv=0, bool sparse=False):
+                 int nderiv=0, int sparse=0):
         cdef int iterative = 0
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
@@ -85,7 +84,7 @@ requires_jac = ('bdf',)
 
 def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
              dx_min=0.0, dx_max=0.0, nderiv=0, method='bdf',
-             lband=None, uband=None, roots=None, nroots=0, sparse=False):
+             lband=None, uband=None, roots=None, nroots=0, sparse=0):
     cdef size_t nsteps
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")

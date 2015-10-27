@@ -1,6 +1,5 @@
 # -*- coding: utf-8; mode: cython -*-
 
-from libcpp cimport bool
 from cpython.object cimport PyObject
 from libcpp.vector cimport vector
 
@@ -15,6 +14,6 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
 
         PyCvodes(PyObject*, PyObject*, PyObject*, size_t, int, int, int)
         size_t adaptive(PyObject*, double, double, double, double, int,
-                        double, double, double, int, int, bool) except +
+                        double, double, double, int, int, int) except +
         void predefined(PyObject*, PyObject*, PyObject*, double, double, int,
                         double, double, double, int, int) except +

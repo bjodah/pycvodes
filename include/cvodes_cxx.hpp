@@ -390,7 +390,7 @@ namespace cvodes_cxx {
 
         std::pair<std::vector<double>, std::vector<double> >
         adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, bool sparse=false){
+                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, int sparse=0){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -422,6 +422,8 @@ namespace cvodes_cxx {
                 idx++;
                 status = this->step(xend, y, &cur_t, Task::ONE_STEP);
                 if (sparse){
+                    if (status == CV_TSTOP_RETURN || status == CV_ROOT_RETURN)
+                        goto save_point;
                     for (int yidx=0; yidx<ny; ++yidx){
                         if (cv_mem->cv_itol == 2) // CV_SV L360 cvodes.c
                             atol = NV_DATA_S(cv_mem->cv_Vabstol)[yidx];
@@ -429,10 +431,10 @@ namespace cvodes_cxx {
                         for (int di=0; di<nderiv+1; ++di)
                             approx += yout[(nderiv+1)*(idx-1)]/factorial(di)*pow(cur_t-xout[idx-1], di);
                         double tolQ = std::abs(approx - y[0])/(atol + rtol*y[0]);
-// #             if !defined(NDEBUG)
-//                         std::cout << " " << yidx << " "<< approx - y[0] << " " << tolQ << std::endl;
-// #             endif
-                        if (tolQ > 1)
+#             if !defined(NDEBUG)
+                        std::cout << " " << yidx << " "<< approx - y[0] << " " << tolQ << " " << sparse << std::endl;
+#             endif
+                        if (tolQ > sparse)
                             goto save_point;
                     }
                     idx--;
@@ -440,10 +442,14 @@ namespace cvodes_cxx {
                 }
             save_point:
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
-                    if (status == CV_ROOT_RETURN)
+                    if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
-                    else
+#             if !defined(NDEBUG)
+                        std::cout << "Root found!: " << idx << std::endl;
+#             endif
+                    }else{
                         throw std::runtime_error("Unsuccessful CVode step.");
+                    }
                 }
                 xout.push_back(cur_t);
                 for (int i=0; i<ny; ++i)
@@ -674,7 +680,7 @@ namespace cvodes_cxx {
                     const int iterative=0,
                     const int nderiv=0,
                     std::vector<int>& root_indices=std::vector<int>(),
-                    bool sparse=false
+                    int sparse=0
                     ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense

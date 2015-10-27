@@ -34,7 +34,7 @@ namespace cvodes_numpy{
         size_t adaptive(PyObject *py_y0, double x0, double xend,
                         double atol, double rtol, int step_type_idx,
                         double dx0, double dx_min=0.0, double dx_max=0.0,
-                        int iterative=0, int nderiv=0, bool sparse=false){
+                        int iterative=0, int nderiv=0, int sparse=0){
             const bool with_jacobian = py_jac != Py_None;
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
             nrhs = 0; njac = 0;

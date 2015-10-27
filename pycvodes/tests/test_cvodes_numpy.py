@@ -90,8 +90,6 @@ def test_integrate_predefined(method, forgiveness, banded):
     yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
-    print(yout)
-    print(yref)
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
@@ -170,7 +168,7 @@ def test_derivative_3():
     ref[:, 0, 0], ref[:, 0, 1] = sinx, cosx
     ref[:, 1, 0], ref[:, 1, 1] = cosx, -sinx
     ref[:, 2, 0], ref[:, 2, 1] = -sinx, -cosx
-    discrepancy = yout[4:, ...] - ref[4:, ...]
+    discrepancy = yout[7:, ...] - ref[7:, ...]
     assert np.allclose(discrepancy, 0, rtol=1e-6, atol=1e-6)
 
 
@@ -228,8 +226,10 @@ def test_adaptive_nderiv_sparse():
         fout[0] = y[0]
     kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
                   nderiv=4)
-    xout_dense, yout_dense, info_dense = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
-    xout_spars, yout_spars, info_spars = integrate_adaptive(f, None, [1], 0, 2, sparse=True, **kwargs)
+    xout_dense, yout_dense, info_dense = integrate_adaptive(
+        f, None, [1], 0, 2, **kwargs)
+    xout_spars, yout_spars, info_spars = integrate_adaptive(
+        f, None, [1], 0, 2, sparse=3, **kwargs)
 
     discrepancy_dense = np.exp(xout_dense) - yout_dense[:, 0].flatten()
     discrepancy_spars = np.exp(xout_spars) - yout_spars[:, 0].flatten()

@@ -10,7 +10,7 @@ assert (__version__, requires_jac, steppers)  # silence pyflakes
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                        dx_min=.0, dx_max=.0, nderiv=0,
-                       roots=None, nroots=0, sparse=False,
+                       roots=None, nroots=0, sparse=0,
                        check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
@@ -44,8 +44,11 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         with signature roots(x, yarr[:ny], out[:nroots]) -> None
     nroots: int (default: 0)
         number of root functions in roots
-    sparse: bool
-        when nderiv is sufficiently high, setting this to ``True`` may reduce length of xout.
+    sparse: int (default: 0)
+        when nderiv is sufficiently high, setting this to >0 may reduce length
+        of xout. the logic is if forward polynomial extrapolation from previous
+        point has an error less than ``(atol+rtol*|y|)*sparse``, then that
+        point is skipped.
     check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing: bool (default: False)
