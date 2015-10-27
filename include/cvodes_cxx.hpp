@@ -390,7 +390,8 @@ namespace cvodes_cxx {
 
         std::pair<std::vector<double>, std::vector<double> >
         adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, int sparse=0){
+                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, int sparse=0,
+                 bool return_on_root=false){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -464,6 +465,8 @@ namespace cvodes_cxx {
                     for (int i=0; i<ny; ++i)
                         yout.push_back(work[i]);
                 }
+                if (return_on_root && status == CV_ROOT_RETURN)
+                    break;
             } while (status != CV_TSTOP_RETURN);
             return std::pair<std::vector<double>, std::vector<double>>(xout, yout);
         }
@@ -680,7 +683,8 @@ namespace cvodes_cxx {
                     const int iterative=0,
                     const int nderiv=0,
                     std::vector<int>& root_indices=std::vector<int>(),
-                    int sparse=0
+                    int sparse=0,
+                    bool return_on_root=false
                     ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -691,7 +695,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
                                              dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse);
+        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse, return_on_root);
     }
     template <class OdeSys>
     void simple_predefined(OdeSys * odesys,

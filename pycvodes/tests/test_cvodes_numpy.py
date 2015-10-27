@@ -238,3 +238,17 @@ def test_adaptive_nderiv_sparse():
     assert len(xout_dense) > 1
     assert len(xout_spars) > 1
     assert len(xout_dense) > len(xout_spars)
+
+
+def test_return_on_root():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1, return_on_root=True)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    assert len(info['root_indices']) == 1
+    assert abs(xout[-1] - 1) < 1e-11
+    assert abs(yout[-1, 0] - exp(1)) < 1e-11
