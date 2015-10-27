@@ -170,5 +170,34 @@ def test_derivative_3():
     ref[:, 0, 0], ref[:, 0, 1] = sinx, cosx
     ref[:, 1, 0], ref[:, 1, 1] = cosx, -sinx
     ref[:, 2, 0], ref[:, 2, 1] = -sinx, -cosx
-    discrepancy = yout[3:, ...] - ref[3:, ...]
+    discrepancy = yout[4:, ...] - ref[4:, ...]
     assert np.allclose(discrepancy, 0, rtol=1e-6, atol=1e-6)
+
+
+def test_roots_adaptive():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    assert len(info['root_indices']) == 1
+    assert np.min(np.abs(xout - 1)) < 1e-11
+
+
+def test_roots_predefined():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1)
+    xout = [0, 0.5, 1.5, 2]
+    yout, info = integrate_predefined(f, None, [1], xout, **kwargs)
+    discrepancy = np.exp(xout) - yout.flatten()
+    assert np.allclose(discrepancy, 0)
+    assert len(info['root_indices']) == 1
+    assert info['root_indices'][0] == 2

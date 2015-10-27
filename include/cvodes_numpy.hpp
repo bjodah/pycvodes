@@ -13,21 +13,23 @@
 namespace cvodes_numpy{
     // typedef int (*RhsFn)(double t, const double y[], double dydt[], void *params);
     // typedef int (*JacFn)(double t, const double y[], double *dfdy, double dfdt[], void *params);
-    int rhs(double t, const double y[], double f[], void * params);
-    int jac(double x, const double y[], double *dfdy, double dfdt[], void *params);
+    // int rhs(double t, const double y[], double f[], void * params);
+    // int jac(double x, const double y[], double *dfdy, double dfdt[], void *params);
+    // int roots(double x, const double y[], double * const out, void * params);
 
 
     class PyCvodes {
     public:
-        PyObject *py_rhs, *py_jac;
+        PyObject *py_rhs, *py_jac, *py_roots;
         const size_t ny;
         size_t nrhs, njac;
-        int mlower, mupper;
+        const int mlower, mupper, nroots;
         std::vector<double> xout;
         std::vector<double> yout;
+        std::vector<int> root_indices;
 
-        PyCvodes(PyObject * py_rhs, PyObject * py_jac, size_t ny, int ml=-1, int mu=-1) :
-            py_rhs(py_rhs), py_jac(py_jac), ny(ny), mlower(ml), mupper(mu) {}
+        PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
+            py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}
 
         size_t adaptive(PyObject *py_y0, double x0, double xend,
                         double atol, double rtol, int step_type_idx,
@@ -36,10 +38,11 @@ namespace cvodes_numpy{
             const bool with_jacobian = py_jac != Py_None;
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
             nrhs = 0; njac = 0;
+            this->root_indices.clear();
             auto xy_out = cvodes_cxx::simple_adaptive(this, std::vector<double>(1, atol),
                                                       rtol, step_type_idx, y0, x0, xend, dx0, dx_min, dx_max,
                                                       (this->mlower > -1) ? 2 : 1, with_jacobian,
-                                                      iterative, nderiv);
+                                                      iterative, nderiv, this->root_indices);
             this->xout = xy_out.first;
             this->yout = xy_out.second;
             return this->xout.size();
@@ -56,10 +59,11 @@ namespace cvodes_numpy{
             const npy_intp nt = PyArray_DIMS(py_xout)[0];
             const bool with_jacobian = py_jac != Py_None;
             nrhs = 0; njac = 0;
+            this->root_indices.clear();
             cvodes_cxx::simple_predefined<PyCvodes>(this, std::vector<double>(1, atol), rtol,
                                                     step_type_idx, y0, nt, xout, yout, dx0, dx_min, dx_max,
                                                     (this->mlower > -1) ? 2 : 1, with_jacobian,
-                                                    iterative, nderiv);
+                                                    iterative, nderiv, this->root_indices);
         }
 
         void rhs(double xval, const double * const y, double * const dydx){
@@ -81,6 +85,28 @@ namespace cvodes_numpy{
                 // py_result is not None
                 PyErr_SetString(PyExc_RuntimeError, "rhs() did not return None");
                 throw std::runtime_error("f() failed");
+            }
+            Py_DECREF(py_result);
+        }
+        void roots(double xval, const double * const y, double * const out){
+            npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
+            npy_intp rdims[1] { static_cast<npy_intp>(this->nroots) };
+            PyObject * py_yarr = PyArray_SimpleNewFromData(
+                1, ydims, NPY_DOUBLE, static_cast<void*>(const_cast<double*>(y)));
+            PyObject * py_out = PyArray_SimpleNewFromData(
+                1, rdims, NPY_DOUBLE, static_cast<void*>(out));
+            PyObject * py_arglist = Py_BuildValue("(dOO)", xval, py_yarr, py_out);
+            PyObject * py_result = PyEval_CallObject(this->py_roots, py_arglist);
+            Py_DECREF(py_arglist);
+            Py_DECREF(py_out);
+            Py_DECREF(py_yarr);
+            if (py_result == nullptr){
+                PyErr_SetString(PyExc_RuntimeError, "roots() failed");
+                throw std::runtime_error("roots() failed");
+            } else if (py_result != Py_None){
+                // py_result is not None
+                PyErr_SetString(PyExc_RuntimeError, "roots() did not return None");
+                throw std::runtime_error("roots() failed");
             }
             Py_DECREF(py_result);
         }

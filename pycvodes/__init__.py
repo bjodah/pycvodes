@@ -10,6 +10,7 @@ assert (__version__, requires_jac, steppers)  # silence pyflakes
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                        dx_min=.0, dx_max=.0, nderiv=0,
+                       roots=None, nroots=0,
                        check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
@@ -39,6 +40,10 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         maximum step (default: 0.0)
     nderiv: int
         number of derivatives (default: 0)
+    roots: callback (default: None)
+        with signature roots(x, yarr[:ny], out[:nroots]) -> None
+    nroots: int (default: 0)
+        number of root functions in roots
     check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing: bool (default: False)
@@ -64,11 +69,14 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         _check_indexing(rhs, jac, x0, y0, lband, uband)
 
     return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                    dx_min, dx_max, nderiv, **kwargs)
+                    dx_min, dx_max, nderiv,
+                    roots=roots, nroots=nroots,
+                    **kwargs)
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
                          dx_min=.0, dx_max=.0, nderiv=0,
+                         roots=None, nroots=0,
                          check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
@@ -96,6 +104,10 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         maximum step (default: 0.0)
     nderiv: int
         number of derivatives (default: 0)
+    roots: callback (default: None)
+        with signature roots(x, yarr[:ny], out[:nroots]) -> None
+    nroots: int (default: 0)
+        number of root functions in roots
     check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing: bool (default: False)
@@ -120,4 +132,6 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         _check_indexing(rhs, jac, xout[0], y0, lband, uband)
 
     return predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-                      dx_min, dx_max, nderiv, **kwargs)
+                      dx_min, dx_max, nderiv,
+                      roots=roots, nroots=nroots,
+                      **kwargs)
