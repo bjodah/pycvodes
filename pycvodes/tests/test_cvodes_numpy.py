@@ -90,8 +90,6 @@ def test_integrate_predefined(method, forgiveness, banded):
     yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
-    print(yout)
-    print(yref)
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
@@ -170,5 +168,87 @@ def test_derivative_3():
     ref[:, 0, 0], ref[:, 0, 1] = sinx, cosx
     ref[:, 1, 0], ref[:, 1, 1] = cosx, -sinx
     ref[:, 2, 0], ref[:, 2, 1] = -sinx, -cosx
-    discrepancy = yout[3:, ...] - ref[3:, ...]
+    discrepancy = yout[7:, ...] - ref[7:, ...]
     assert np.allclose(discrepancy, 0, rtol=1e-6, atol=1e-6)
+
+
+def test_roots_adaptive():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    assert len(info['root_indices']) == 1
+    assert np.min(np.abs(xout - 1)) < 1e-11
+
+
+def test_roots_predefined():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1)
+    xout = [0, 0.5, 1.5, 2]
+    yout, info = integrate_predefined(f, None, [1], xout, **kwargs)
+    discrepancy = np.exp(xout) - yout.flatten()
+    assert np.allclose(discrepancy, 0)
+    assert len(info['root_indices']) == 1
+    assert info['root_indices'][0] == 2
+
+
+def test_adaptive_nderiv_4():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    discrepancy = np.exp(xout) - yout[:, 0].flatten()
+    assert np.allclose(discrepancy, 0, atol=1e-3)
+
+
+def test_adaptive_nderiv():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    discrepancy = np.exp(xout) - yout[:, 0].flatten()
+    assert np.allclose(discrepancy, 0, atol=1e-3)
+
+
+def test_adaptive_nderiv_sparse():
+    def f(t, y, fout):
+        fout[0] = y[0]
+    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
+                  nderiv=4)
+    xout_dense, yout_dense, info_dense = integrate_adaptive(
+        f, None, [1], 0, 2, **kwargs)
+    xout_spars, yout_spars, info_spars = integrate_adaptive(
+        f, None, [1], 0, 2, sparse=3, **kwargs)
+
+    discrepancy_dense = np.exp(xout_dense) - yout_dense[:, 0].flatten()
+    discrepancy_spars = np.exp(xout_spars) - yout_spars[:, 0].flatten()
+    assert np.allclose(discrepancy_dense, 0, atol=1e-3)
+    assert np.allclose(discrepancy_spars, 0, atol=1e-3)
+    assert len(xout_dense) > 1
+    assert len(xout_spars) > 1
+    assert len(xout_dense) > len(xout_spars)
+
+
+def test_return_on_root():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1, return_on_root=True)
+    xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
+    assert len(info['root_indices']) == 1
+    assert abs(xout[-1] - 1) < 1e-11
+    assert abs(yout[-1, 0] - exp(1)) < 1e-11

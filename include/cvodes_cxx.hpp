@@ -6,9 +6,11 @@
 // sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
 
 #include <assert.h>
+#include <cmath>
 #include <cstring>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -22,6 +24,15 @@
 #ifndef NDEBUG
 #include <iostream> // DEBUG
 #endif
+
+// Overflows easily, check your architecture
+int factorial(int n) {
+    int res = 1;
+    while (n > 1) {
+        res *= n--;
+    }
+    return res;
+}
 
 namespace cvodes_cxx {
 
@@ -58,9 +69,8 @@ namespace cvodes_cxx {
         // init
         void init(CVRhsFn cb, realtype t0, N_Vector y) {
             int status = CVodeInit(this->mem, cb, t0, y);
-            check_flag(status);
-            if (status == CV_MEM_NULL)
-                throw std::runtime_error("CVodeInit failed (CVodeCreate not called).");
+            if (status == CV_ILL_INPUT)
+                throw std::runtime_error("CVodeInit failed (CV_ILL_INPUT).");
             else if (status == CV_MEM_FAIL)
                 throw std::runtime_error("CVodeInit failed (allocation failed).");
             else
@@ -87,6 +97,21 @@ namespace cvodes_cxx {
             SVector yvec (ny, const_cast<realtype*>(y));
             reinit(t0, yvec.n_vec);
         }
+        // Root finding
+        void root_init(const int nrtfn, CVRootFn g){
+            if (!nrtfn)
+                return;
+            int status = CVodeRootInit(this->mem, nrtfn, g);
+            if (status == CV_ILL_INPUT)
+                throw std::runtime_error("CVodeRootInit failed (CV_ILL_INPUT).");
+            else if (status == CV_MEM_FAIL)
+                throw std::runtime_error("CVodeRootInit failed (allocation failed).");
+            else
+                check_flag(status);
+        }
+
+
+        // Step size specification
         void set_init_step(realtype h0){
             int status = CVodeSetInitStep(this->mem, h0);
             check_flag(status);
@@ -333,9 +358,9 @@ namespace cvodes_cxx {
         }
 
         void get_dky(realtype t, int k, SVector &dky) {
-#         if !defined(NDEBUG)
-            std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
-#         endif
+// #         if !defined(NDEBUG)
+//             std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
+// #         endif
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
             case CV_SUCCESS:
@@ -365,13 +390,19 @@ namespace cvodes_cxx {
 
         std::pair<std::vector<double>, std::vector<double> >
         adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv=0){
+                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, int sparse=0,
+                 bool return_on_root=false){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
             int status;
+            int idx = 0;
             SVector y {ny};
             SVector work {ny};
+            // for sparse
+            CVodeMem cv_mem = (CVodeMem) this->mem;
+            double atol = cv_mem->cv_Sabstol;
+            const double rtol = cv_mem->cv_reltol;
             xout.push_back(x0);
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
@@ -389,15 +420,44 @@ namespace cvodes_cxx {
             }
             this->set_stop_time(xend);
             do {
+                idx++;
                 status = this->step(xend, y, &cur_t, Task::ONE_STEP);
-                if(status != CV_SUCCESS && status != CV_TSTOP_RETURN)
-                    throw std::runtime_error("Unsuccessful CVode step.");
+                if (sparse){
+                    if (status == CV_TSTOP_RETURN || status == CV_ROOT_RETURN)
+                        goto save_point;
+                    for (int yidx=0; yidx<ny; ++yidx){
+                        if (cv_mem->cv_itol == 2) // CV_SV L360 cvodes.c
+                            atol = NV_DATA_S(cv_mem->cv_Vabstol)[yidx];
+                        double approx = 0.0;
+                        for (int di=0; di<nderiv+1; ++di)
+                            approx += yout[(nderiv+1)*(idx-1)]/factorial(di)*pow(cur_t-xout[idx-1], di);
+                        double tolQ = std::abs(approx - y[0])/(atol + rtol*y[0]);
+#             if !defined(NDEBUG)
+                        std::cout << " " << yidx << " "<< approx - y[0] << " " << tolQ << " " << sparse << std::endl;
+#             endif
+                        if (tolQ > sparse)
+                            goto save_point;
+                    }
+                    idx--;
+                    continue;
+                }
+            save_point:
+                if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
+                    if (status == CV_ROOT_RETURN){
+                        root_indices.push_back(idx);
+#             if !defined(NDEBUG)
+                        std::cout << "Root found!: " << idx << std::endl;
+#             endif
+                    }else{
+                        throw std::runtime_error("Unsuccessful CVode step.");
+                    }
+                }
                 xout.push_back(cur_t);
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 // Derivatives for interpolation
                 for (int di=0; di<nderiv; ++di){
-                    if (this->get_n_steps() < nderiv + 1)
+                    if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
                     else
@@ -405,12 +465,14 @@ namespace cvodes_cxx {
                     for (int i=0; i<ny; ++i)
                         yout.push_back(work[i]);
                 }
+                if (return_on_root && status == CV_ROOT_RETURN)
+                    break;
             } while (status != CV_TSTOP_RETURN);
             return std::pair<std::vector<double>, std::vector<double>>(xout, yout);
         }
 
         void predefined(int nt, int ny, const realtype * const tout, const realtype * const y0,
-                        realtype * const yout, int nderiv=0){
+                        realtype * const yout, int nderiv, std::vector<int>& root_indices){
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -432,13 +494,18 @@ namespace cvodes_cxx {
             for(int iout=1; (iout < nt); iout++) {
                 status = this->step(tout[iout], y, &cur_t, Task::NORMAL);
                 if(status != CV_SUCCESS){
-                    throw std::runtime_error("Unsuccessful CVode step.");
-                    //early_exit = true;
+                    if (status == CV_ROOT_RETURN){
+                        root_indices.push_back(iout);
+                        iout--;
+                        continue;
+                    }else{
+                        throw std::runtime_error("Unsuccessful CVode step.");
+                    }
                 }
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
                 // Derivatives for interpolation
                 for (int di=0; di<nderiv; ++di){
-                    if (this->get_n_steps() < nderiv + 1)
+                    if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
                     else
@@ -446,11 +513,6 @@ namespace cvodes_cxx {
                     work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
                 }
             }
-        }
-
-        void predefined(const std::vector<realtype> tout, const std::vector<realtype> y0,
-                       realtype * const yout, int nderiv=0){
-            this->predefined(tout.size(), y0.size(), &tout[0], &y0[0], yout, nderiv);
         }
 
         ~Integrator(){
@@ -463,6 +525,13 @@ namespace cvodes_cxx {
     int f_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
         OdeSys * odesys = (OdeSys*)user_data;
         odesys->rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
+        return 0;
+    }
+
+    template<class OdeSys>
+    int roots_cb(realtype t, N_Vector y, realtype *gout, void *user_data){
+        OdeSys * odesys = (OdeSys*)user_data;
+        odesys->roots(t, NV_DATA_S(y), gout);
         return 0;
     }
 
@@ -546,6 +615,7 @@ namespace cvodes_cxx {
                 (iterative) ? IterType::FUNCTIONAL : IterType::NEWTON};
         integr.set_user_data((void *)odesys);
         integr.init(f_cb<OdeSys>, t0, y0, ny);
+        integr.root_init(odesys->nroots, roots_cb<OdeSys>);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
         }else{
@@ -611,7 +681,10 @@ namespace cvodes_cxx {
                     const int direct_mode=0,
                     const bool with_jacobian=false,
                     const int iterative=0,
-                    const int nderiv=0
+                    const int nderiv=0,
+                    std::vector<int>& root_indices=std::vector<int>(),
+                    int sparse=0,
+                    bool return_on_root=false
                     ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -622,7 +695,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
                                              dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv);
+        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse, return_on_root);
     }
     template <class OdeSys>
     void simple_predefined(OdeSys * odesys,
@@ -638,7 +711,8 @@ namespace cvodes_cxx {
                            const int direct_mode=0,
                            const bool with_jacobian=false,
                            const int iterative=0,
-                           const int nderiv=0
+                           const int nderiv=0,
+                           std::vector<int>& root_indices=std::vector<int>()
                            ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -649,7 +723,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0],
                                              dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv);
+        integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv, root_indices);
 #if !defined(NDEBUG)
         std::cout << "n_steps=" << integr.get_n_steps() << std::endl;
         std::cout << "n_rhs_evals=" << integr.get_n_rhs_evals() << std::endl;
