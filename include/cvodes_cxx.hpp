@@ -2,6 +2,7 @@
 #define CVODES_CXX_HPP_QN7AB5PXNFYNI4JXC567B2OE4R
 
 // Thin C++11 wrapper around CVODES v2.8.2 (SUNDIALS v2.6.2)
+// far from all functionality is available yet.
 // sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
 
 #include <assert.h>
@@ -15,9 +16,10 @@
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <iostream> // DEBUG
 #endif
 
@@ -28,13 +30,24 @@ namespace cvodes_cxx {
 
     // Wrapper for Revision 4306 of cvodes.c
 
-    // Linear multistep method:
-    enum class LMM : int {ADAMS=CV_ADAMS, BDF=CV_BDF};
+    enum class LMM : int {ADAMS=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
 
+    enum class Task : int {NORMAL=CV_NORMAL, ONE_STEP=CV_ONE_STEP};
     enum class IterType : int {NEWTON=CV_NEWTON, FUNCTIONAL=CV_FUNCTIONAL};
     enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
     enum class PrecType : int {NONE=PREC_NONE, LEFT=PREC_LEFT,
             RIGHT=PREC_RIGHT, BOTH=PREC_BOTH};
+
+    void check_flag(int flag) {
+        switch (flag){
+        case CV_SUCCESS:
+            break;
+        case CV_MEM_NULL:
+            throw std::runtime_error("cvode_mem is NULL");
+        default:
+            throw std::runtime_error("Unhandled flag");
+        }
+    }
 
     class Integrator{ // Thin wrapper class of CVode in CVODES
     public:
@@ -45,8 +58,13 @@ namespace cvodes_cxx {
         // init
         void init(CVRhsFn cb, realtype t0, N_Vector y) {
             int status = CVodeInit(this->mem, cb, t0, y);
-            if (status < 0)
-                throw std::runtime_error("CVodeInit failed.");
+            check_flag(status);
+            if (status == CV_MEM_NULL)
+                throw std::runtime_error("CVodeInit failed (CVodeCreate not called).");
+            else if (status == CV_MEM_FAIL)
+                throw std::runtime_error("CVodeInit failed (allocation failed).");
+            else
+                check_flag(status);
         }
         void init(CVRhsFn cb, realtype t0, SVector &y) {
             this->init(cb, t0, y.n_vec);
@@ -55,7 +73,7 @@ namespace cvodes_cxx {
             SVector yvec (ny, const_cast<realtype*>(y));
             this->init(cb, t0, yvec.n_vec);
             // it is ok that yvec is destructed here
-            // (see CVodeInit in cvodes.c which at L848 calls cvAllocVectors (L3790) which )
+            // (see CVodeInit in cvodes.c which at L848 calls cvAllocVectors (L3790))
         }
 
         // reinit
@@ -70,7 +88,22 @@ namespace cvodes_cxx {
             reinit(t0, yvec.n_vec);
         }
         void set_init_step(realtype h0){
-            CVodeSetInitStep(this->mem, h0);
+            int status = CVodeSetInitStep(this->mem, h0);
+            check_flag(status);
+        }
+        void set_min_step(realtype hmin){
+            int status = CVodeSetMinStep(this->mem, hmin);
+            if (status == CV_ILL_INPUT)
+                throw std::runtime_error("hmin non-positive or exceeding maximum allowable step size");
+            else
+                check_flag(status);
+        }
+        void set_max_step(realtype hmax){
+            int status = CVodeSetMaxStep(this->mem, hmax);
+            if (status == CV_ILL_INPUT)
+                throw std::runtime_error("hmax non-positive or smaller than minimumem allowable step size");
+            else
+                check_flag(status);
         }
 
 
@@ -93,14 +126,10 @@ namespace cvodes_cxx {
         // set stop time
         void set_stop_time(realtype tend){
             int status = CVodeSetStopTime(this->mem, tend);
-            switch(status){
-            case CV_ILL_INPUT:
+            if (status == CV_ILL_INPUT)
                 throw std::runtime_error("tend not beyond current t");
-            case CV_MEM_NULL:
-                throw std::runtime_error("memory pointer is null");
-            case CV_SUCCESS:
-                break;
-            }
+            else
+                check_flag(status);
         }
 
         // user data
@@ -237,54 +266,45 @@ namespace cvodes_cxx {
             return res;
         }
 
-        void cv_check_flag(int flag) {
-            switch (flag){
-            case CV_SUCCESS:
-                break;
-            case CV_MEM_NULL:
-                throw std::runtime_error("cvode_mem is NULL");
-            }
-        }
-
         long int get_n_steps(){
             long int res=0;
             int flag = CVodeGetNumSteps(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
         long int get_n_rhs_evals(){
             long int res=0;
             int flag = CVodeGetNumRhsEvals(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
         long int get_n_lin_solv_setups(){
             long int res=0;
             int flag = CVodeGetNumLinSolvSetups(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
         long int get_n_err_test_fails(){
             long int res=0;
             int flag = CVodeGetNumErrTestFails(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
         long int get_n_nonlin_solv_iters(){
             long int res=0;
             int flag = CVodeGetNumNonlinSolvIters(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
         long int get_n_nonlin_solv_conv_fails(){
             long int res=0;
             int flag = CVodeGetNumNonlinSolvConvFails(this->mem, &res);
-            cv_check_flag(flag);
+            check_flag(flag);
             return res;
         }
 
@@ -313,6 +333,9 @@ namespace cvodes_cxx {
         }
 
         void get_dky(realtype t, int k, SVector &dky) {
+#         if !defined(NDEBUG)
+            std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
+#         endif
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
             case CV_SUCCESS:
@@ -320,20 +343,24 @@ namespace cvodes_cxx {
                 break;
             case CV_BAD_K:
                 throw std::runtime_error("CVodeGetDky failed with (invalid k)");
-                break;
             case CV_BAD_T:
                 throw std::runtime_error("CVodeGetDky failed with (invalid t)");
-                break;
             case CV_BAD_DKY:
                 throw std::runtime_error("CVodeGetDky failed with (dky.n_vec was NULL)");
-                break;
             case CV_MEM_NULL:
                 throw std::runtime_error("CVodeGetDky failed with (cvode_mem was NULL)");
-                break;
+            default:
+                throw std::runtime_error("Undhandled flag in get_dky()");
             }
         }
-        int step(realtype tout, N_Vector yout, realtype *tret, int itask){
-            return CVode(this->mem, tout, yout, tret, itask);
+        int step(realtype tout, SVector &yout, realtype *tret, Task task){
+            return CVode(this->mem, tout, yout.n_vec, tret, static_cast<int>(task));
+        }
+        void call_rhs(realtype t, SVector y, SVector &ydot){
+            CVodeMem cv_mem = (CVodeMem) this->mem;
+            int status = cv_mem->cv_f(t, y.n_vec, ydot.n_vec, cv_mem->cv_user_data);
+            if (status)
+                throw std::runtime_error("call_rhs failed.");
         }
 
         std::pair<std::vector<double>, std::vector<double> >
@@ -350,18 +377,31 @@ namespace cvodes_cxx {
                 y[i] = y0[i];
                 yout.push_back(y0[i]);
             }
-            for (int di=0; di<nderiv; ++di){
+            this->reinit(x0, y);
+            if (nderiv >= 1){
+                this->call_rhs(x0, y, work);
                 for (int i=0; i<ny; ++i)
+                    yout.push_back(work[i]);
+            }
+            for (int di=1; di<nderiv; ++di){
+                for (int i=0; i<ny; ++i)  // higher order too expensive
                     yout.push_back(0);
             }
             this->set_stop_time(xend);
             do {
-                status = this->step(xend, y.n_vec, &cur_t, CV_ONE_STEP);
+                status = this->step(xend, y, &cur_t, Task::ONE_STEP);
+                if(status != CV_SUCCESS && status != CV_TSTOP_RETURN)
+                    throw std::runtime_error("Unsuccessful CVode step.");
                 xout.push_back(cur_t);
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
-                for (int di=0; di<nderiv; ++di){ // Derivatives for interpolation
-                    this->get_dky(cur_t, di+1, work);
+                // Derivatives for interpolation
+                for (int di=0; di<nderiv; ++di){
+                    if (this->get_n_steps() < nderiv + 1)
+                        // Too few points collected
+                        work.zero_out();
+                    else
+                        this->get_dky(cur_t, di+1, work);
                     for (int i=0; i<ny; ++i)
                         yout.push_back(work[i]);
                 }
@@ -378,29 +418,38 @@ namespace cvodes_cxx {
 
             for (int i=0; i<ny; ++i)
                 y[i] = y0[i];
+            this->reinit(tout[0], y);
             y.dump(yout);
+            if (nderiv >= 1){
+                this->call_rhs(tout[0], y, work);
+                work.dump(&yout[ny]);
+            }
+            for (int di=1; di<nderiv; ++di){
+                for (int i=0; i<ny; ++i)  // too expensive
+                    yout[ny*(di+1) + i] = 0;
+            }
 
-            bool early_exit = false;
-            for(int iout=1; (iout < nt) && (!early_exit); iout++) {
-                status = this->step(tout[iout], y.n_vec, &cur_t, CV_NORMAL);
+            for(int iout=1; (iout < nt); iout++) {
+                status = this->step(tout[iout], y, &cur_t, Task::NORMAL);
                 if(status != CV_SUCCESS){
-                    early_exit = true;
-                    //throw std::runtime_error("Unsuccessful CVode step.");
+                    throw std::runtime_error("Unsuccessful CVode step.");
+                    //early_exit = true;
                 }
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
-                for (int di=0; di<nderiv; ++di){ // Derivatives for interpolation
-                    this->get_dky(tout[iout-1], di+1, work);
-                    work.dump(&yout[ny*(di+(iout*(nderiv+1)))]);
+                // Derivatives for interpolation
+                for (int di=0; di<nderiv; ++di){
+                    if (this->get_n_steps() < nderiv + 1)
+                        // Too few points collected
+                        work.zero_out();
+                    else
+                        this->get_dky(tout[iout], di+1, work);
+                    work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
                 }
-            }
-            for (int di=0; di<nderiv; ++di){
-                this->get_dky(tout[nt-1], di+1, work);
-                work.dump(&yout[ny*(di+((nt-1)*(nderiv+1)))]);
             }
         }
 
         void predefined(const std::vector<realtype> tout, const std::vector<realtype> y0,
-                       realtype * const yout, int nderiv = 0){
+                       realtype * const yout, int nderiv=0){
             this->predefined(tout.size(), y0.size(), &tout[0], &y0[0], yout, nderiv);
         }
 
@@ -484,6 +533,9 @@ namespace cvodes_cxx {
                               const realtype rtol, const int lmm,
                               const realtype * const y0,
                               const realtype t0,
+                              const double dx0=0.0,
+                              const double dx_min=0.0,
+                              const double dx_max=0.0,
                               int direct_mode=0,
                               bool with_jacobian=false,
                               int iterative=0
@@ -499,6 +551,12 @@ namespace cvodes_cxx {
         }else{
             integr.set_tol(rtol, atol);
         }
+        if (dx0 != 0.0)
+            integr.set_init_step(dx0);
+        if (dx_min != 0.0)
+            integr.set_min_step(dx0);
+        if (dx_max != 0.0)
+            integr.set_max_step(dx0);
 
         if (iterative){
             if (direct_mode)
@@ -515,7 +573,7 @@ namespace cvodes_cxx {
             integr.set_preconditioner(prec_setup_cb<OdeSys>,
                                       jac_prec_solve_cb<OdeSys>);
             integr.set_iter_eps_lin(0); // 0 => default.
-#if defined(DEBUG)
+#if !defined(NDEBUG)
             std::cout << "so we set it to iterative alright..." << std::endl;
 #endif
             // integr.set_gram_schmidt_type() // GMRES
@@ -547,9 +605,13 @@ namespace cvodes_cxx {
                     const realtype * const y0,
                     const realtype t0,
                     const realtype tend,
-                    int direct_mode=0,
-                    bool with_jacobian=false,
-                    int iterative=0
+                    const double dx0=0.0,
+                    const double dx_min=0.0,
+                    const double dx_max=0.0,
+                    const int direct_mode=0,
+                    const bool with_jacobian=false,
+                    const int iterative=0,
+                    const int nderiv=0
                     ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -558,8 +620,9 @@ namespace cvodes_cxx {
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
+                                             dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        return integr.adaptive(odesys->ny, t0, tend, y0);
+        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv);
     }
     template <class OdeSys>
     void simple_predefined(OdeSys * odesys,
@@ -569,9 +632,13 @@ namespace cvodes_cxx {
                            const std::size_t nout,
                            const realtype * const tout,
                            realtype * const yout,
-                           int direct_mode=0,
-                           bool with_jacobian=false,
-                           int iterative=0
+                           const double dx0=0.0,
+                           const double dx_min=0.0,
+                           const double dx_max=0.0,
+                           const int direct_mode=0,
+                           const bool with_jacobian=false,
+                           const int iterative=0,
+                           const int nderiv=0
                            ){
         // iterative == 0 => direct (Newton)
         //     direct_mode == 1 => dense
@@ -580,9 +647,10 @@ namespace cvodes_cxx {
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0],
+                                             dx0, dx_min, dx_max,
                                              direct_mode, with_jacobian, iterative);
-        integr.predefined(nout, odesys->ny, tout, y0, yout);
-#if defined(DEBUG)
+        integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv);
+#if !defined(NDEBUG)
         std::cout << "n_steps=" << integr.get_n_steps() << std::endl;
         std::cout << "n_rhs_evals=" << integr.get_n_rhs_evals() << std::endl;
         std::cout << "n_lin_solv_setups=" << integr.get_n_lin_solv_setups() << std::endl;
