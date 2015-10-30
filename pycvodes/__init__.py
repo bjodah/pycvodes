@@ -9,7 +9,7 @@ assert (__version__, requires_jac, steppers)  # silence pyflakes
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                       dx_min=.0, dx_max=.0, nderiv=0,
+                       dx_min=.0, dx_max=.0, nsteps=500, nderiv=0,
                        roots=None, nroots=0, return_on_root=False, sparse=0,
                        check_callable=False, check_indexing=False, **kwargs):
     """
@@ -38,6 +38,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         minimum step (default: 0.0)
     dx_max: float
         maximum step (default: 0.0)
+    nsteps: int
+        maximum number of steps (default: 500)
     nderiv: int
         number of derivatives (default: 0)
     roots: callback (default: None)
@@ -75,13 +77,13 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
     if check_indexing:
         _check_indexing(rhs, jac, x0, y0, lband, uband)
 
-    return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                    dx_min, dx_max, nderiv, roots=roots, nroots=nroots,
+    return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min, dx_max,
+                    nsteps, nderiv, roots=roots, nroots=nroots,
                     sparse=sparse, return_on_root=return_on_root, **kwargs)
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-                         dx_min=.0, dx_max=.0, nderiv=0,
+                         dx_min=.0, dx_max=.0, nsteps=500, nderiv=0,
                          roots=None, nroots=0,
                          check_callable=False, check_indexing=False, **kwargs):
     """
@@ -108,6 +110,8 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         minimum step (default: 0.0)
     dx_max: float
         maximum step (default: 0.0)
+    nsteps: int
+        maximum number of steps (default: 500)
     nderiv: int
         number of derivatives (default: 0)
     roots: callback (default: None)
@@ -137,7 +141,5 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     if check_indexing:
         _check_indexing(rhs, jac, xout[0], y0, lband, uband)
 
-    return predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-                      dx_min, dx_max, nderiv,
-                      roots=roots, nroots=nroots,
-                      **kwargs)
+    return predefined(rhs, jac, y0, xout, dx0, atol, rtol, dx_min, dx_max,
+                      nsteps, nderiv, roots=roots, nroots=nroots, **kwargs)

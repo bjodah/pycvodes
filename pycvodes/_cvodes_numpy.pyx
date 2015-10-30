@@ -25,20 +25,20 @@ cdef class Cvodes:
                  double t0, double tend,
                  double atol, double rtol,
                  int step_type_idx=1,
-                 double dx0=.0, double dx_min=.0, double dx_max=.0,
+                 double dx0=.0, double dx_min=.0, double dx_max=.0, long int mxsteps=0,
                  int nderiv=0, int sparse=0, bool return_on_root=False):
         cdef int iterative = 0
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
         return self.thisptr.adaptive(<PyObject*>y0, t0, tend, atol,
-                                     rtol, step_type_idx, dx0, dx_min, dx_max,
+                                     rtol, step_type_idx, dx0, dx_min, dx_max, mxsteps,
                                      iterative, nderiv, sparse, return_on_root)
 
     def predefined(self, cnp.ndarray[cnp.float64_t, ndim=1] y0,
                    cnp.ndarray[cnp.float64_t, ndim=1] xout,
                    double atol, double rtol,
                    int step_type_idx=8,
-                   double dx0=.0, double dx_min=.0, double dx_max=.0,
+                   double dx0=.0, double dx_min=.0, double dx_max=.0, long int mxsteps=0,
                    int nderiv=0):
         cdef:
             int iterative = 0
@@ -48,8 +48,8 @@ cdef class Cvodes:
             raise ValueError("y0 too short")
         yout[0, :] = y0
         self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*>yout,
-                                atol, rtol, step_type_idx, dx0, dx_min, dx_max, iterative,
-                                nderiv)
+                                atol, rtol, step_type_idx, dx0, dx_min, dx_max,
+                                mxsteps, iterative, nderiv)
         return yout.reshape((xout.size, y0.size)) if nderiv == 0 else yout
 
     def get_xout(self, size_t nsteps):
@@ -84,7 +84,7 @@ steppers = ['adams', 'bdf']
 requires_jac = ('bdf',)
 
 def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-             dx_min=0.0, dx_max=0.0, nderiv=0, method='bdf',
+             dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
              lband=None, uband=None, roots=None, nroots=0, sparse=0, return_on_root=False):
     cdef size_t nsteps
     if method in requires_jac and jac is None:
@@ -95,12 +95,12 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                     nroots)
     nsteps = integr.adaptive(np.array(y0, dtype=np.float64),
                              x0, xend, atol, rtol, steppers.index(method),
-                             dx0, dx_min, dx_max, nderiv, sparse, return_on_root)
+                             dx0, dx_min, dx_max, mxsteps, nderiv, sparse, return_on_root)
     return integr.get_xout(nsteps), integr.get_yout(nsteps, nderiv), integr.get_info()
 
 
 def predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-               dx_min=0.0, dx_max=0.0, nderiv=0, method='bdf',
+               dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
                lband=None, uband=None, roots=None, nroots=0):
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")
@@ -111,5 +111,5 @@ def predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     yout = integr.predefined(np.array(y0, dtype=np.float64),
                              np.array(xout, dtype=np.float64),
                              atol, rtol, steppers.index(method),
-                             dx0, dx_min, dx_max, nderiv)
+                             dx0, dx_min, dx_max, mxsteps, nderiv)
     return yout, integr.get_info()
