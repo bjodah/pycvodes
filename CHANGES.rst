@@ -1,3 +1,10 @@
+v0.2.2
+======
+- Added support for root finding.
+- Allow user to set maximum number of steps (previously only CVode's default of 500 was used).
+- Improved derivative handling (for interpolation).
+- Added option to make output from adaptive more sparse.
+
 v0.2.1
 ======
 - Added support for (first) derivative in output
