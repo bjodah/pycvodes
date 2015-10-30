@@ -111,8 +111,11 @@ namespace cvodes_cxx {
         }
 
 
-        // Step size specification
+        // Step specifications
         void set_init_step(realtype h0){
+#         if !defined(NDEBUG)
+            std::cout << "CVodeSetInitStep(" << h0 << ")\n";
+#         endif
             int status = CVodeSetInitStep(this->mem, h0);
             check_flag(status);
         }
@@ -130,7 +133,10 @@ namespace cvodes_cxx {
             else
                 check_flag(status);
         }
-
+        void set_max_num_steps(long int mxsteps){
+            int status = CVodeSetMaxNumSteps(this->mem, mxsteps);
+            check_flag(status);
+        }
 
         // set_tol
         void set_tol(realtype rtol, realtype atol){
@@ -422,9 +428,14 @@ namespace cvodes_cxx {
             do {
                 idx++;
                 status = this->step(xend, y, &cur_t, Task::ONE_STEP);
+#               if !defined(NDEBUG)
+                  std::cout << "cur_t=" << cur_t << "\n";
+#               endif
                 if (sparse){
                     if (status == CV_TSTOP_RETURN || status == CV_ROOT_RETURN)
                         goto save_point;
+                    if (sparse < 0)
+                        goto skip_point;
                     for (int yidx=0; yidx<ny; ++yidx){
                         if (cv_mem->cv_itol == 2) // CV_SV L360 cvodes.c
                             atol = NV_DATA_S(cv_mem->cv_Vabstol)[yidx];
@@ -438,6 +449,7 @@ namespace cvodes_cxx {
                         if (tolQ > sparse)
                             goto save_point;
                     }
+                skip_point:
                     idx--;
                     continue;
                 }
@@ -605,6 +617,7 @@ namespace cvodes_cxx {
                               const double dx0=0.0,
                               const double dx_min=0.0,
                               const double dx_max=0.0,
+                              const int mxsteps=0,
                               int direct_mode=0,
                               bool with_jacobian=false,
                               int iterative=0
@@ -627,6 +640,8 @@ namespace cvodes_cxx {
             integr.set_min_step(dx0);
         if (dx_max != 0.0)
             integr.set_max_step(dx0);
+        if (mxsteps)
+            integr.set_max_num_steps(mxsteps);
 
         if (iterative){
             if (direct_mode)
@@ -678,6 +693,7 @@ namespace cvodes_cxx {
                     const double dx0=0.0,
                     const double dx_min=0.0,
                     const double dx_max=0.0,
+                    const long int mxsteps=0,
                     const int direct_mode=0,
                     const bool with_jacobian=false,
                     const int iterative=0,
@@ -693,7 +709,7 @@ namespace cvodes_cxx {
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
-                                             dx0, dx_min, dx_max,
+                                             dx0, dx_min, dx_max, mxsteps,
                                              direct_mode, with_jacobian, iterative);
         return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse, return_on_root);
     }
@@ -708,6 +724,7 @@ namespace cvodes_cxx {
                            const double dx0=0.0,
                            const double dx_min=0.0,
                            const double dx_max=0.0,
+                           const long int mxsteps=0,
                            const int direct_mode=0,
                            const bool with_jacobian=false,
                            const int iterative=0,
@@ -721,7 +738,7 @@ namespace cvodes_cxx {
         // iterative == 2 => iterative (BiCGStab)
         // iterative == 3 => iterative (TFQMR)
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0],
-                                             dx0, dx_min, dx_max,
+                                             dx0, dx_min, dx_max, mxsteps,
                                              direct_mode, with_jacobian, iterative);
         integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv, root_indices);
 #if !defined(NDEBUG)

@@ -15,6 +15,6 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
 
         PyCvodes(PyObject*, PyObject*, PyObject*, size_t, int, int, int)
         size_t adaptive(PyObject*, double, double, double, double, int,
-                        double, double, double, int, int, int, bool) except +
+                        double, double, double, long int, int, int, int, bool) except +
         void predefined(PyObject*, PyObject*, PyObject*, double, double, int,
-                        double, double, double, int, int) except +
+                        double, double, double, long int, int, int) except +
