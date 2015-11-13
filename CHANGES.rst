@@ -1,3 +1,7 @@
+v0.2.3
+======
+- Better debugging (preserve back-trace from calling rhs() and jac())
+
 v0.2.2
 ======
 - Added support for root finding.

@@ -79,12 +79,10 @@ namespace cvodes_numpy{
             Py_DECREF(py_yarr);
             nrhs++;
             if (py_result == nullptr){
-                PyErr_SetString(PyExc_RuntimeError, "rhs() failed");
-                throw std::runtime_error("f() failed");
+                throw std::runtime_error("rhs() failed");
             } else if (py_result != Py_None){
                 // py_result is not None
-                PyErr_SetString(PyExc_RuntimeError, "rhs() did not return None");
-                throw std::runtime_error("f() failed");
+                throw std::runtime_error("rhs() failed");
             }
             Py_DECREF(py_result);
         }
@@ -101,12 +99,10 @@ namespace cvodes_numpy{
             Py_DECREF(py_out);
             Py_DECREF(py_yarr);
             if (py_result == nullptr){
-                PyErr_SetString(PyExc_RuntimeError, "roots() failed");
                 throw std::runtime_error("roots() failed");
             } else if (py_result != Py_None){
                 // py_result is not None
-                PyErr_SetString(PyExc_RuntimeError, "roots() did not return None");
-                throw std::runtime_error("roots() failed");
+                throw std::runtime_error("roots() did not return None");
             }
             Py_DECREF(py_result);
         }
@@ -124,12 +120,10 @@ namespace cvodes_numpy{
             Py_DECREF(py_yarr);
             njac++;
             if (py_result == nullptr){
-                PyErr_SetString(PyExc_RuntimeError, "jac() failed");
                 throw std::runtime_error("jac() failed");
             } else if (py_result != Py_None){
                 // py_result is not None
-                PyErr_SetString(PyExc_RuntimeError, "jac() did not return None");
-                throw std::runtime_error("jac() failed");
+                throw std::runtime_error("jac() did not return None");
             }
             Py_DECREF(py_result);
         }
