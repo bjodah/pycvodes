@@ -6,7 +6,7 @@
 import os
 import shutil
 import sys
-from distutils.core import setup
+from setuptools import setup
 from distutils.extension import Extension
 
 
@@ -16,12 +16,12 @@ pkg_name = 'pycvodes'
 ext_modules = []
 include_dirs = []
 LLAPACK = os.environ.get('LLAPACK', 'lapack')
+USE_CYTHON = os.path.exists('pycvodes/_cvodes_numpy.pyx')
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
     include_dirs = [np.get_include(), './include']
-    USE_CYTHON = os.path.exists('pycvodes/_cvodes_numpy.pyx')
     ext = '.pyx' if USE_CYTHON else '.cpp'
     ext_modules = [
         Extension('pycvodes._cvodes_numpy',
@@ -80,6 +80,8 @@ setup_kwargs = dict(
     url='https://github.com/bjodah/' + pkg_name,
     license='BSD',
     packages=[pkg_name] + tests,
+    install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
+    setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     ext_modules=ext_modules,
     include_dirs=include_dirs
 )
