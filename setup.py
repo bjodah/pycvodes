@@ -8,18 +8,19 @@ import shutil
 import sys
 from distutils.core import setup
 from distutils.extension import Extension
-import numpy as np
 
 
 pkg_name = 'pycvodes'
 
 # Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
-
+include_dirs = []
 LLAPACK = os.environ.get('LLAPACK', 'lapack')
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
+    import numpy as np
+    include_dirs = [np.get_include(), './include']
     USE_CYTHON = os.path.exists('pycvodes/_cvodes_numpy.pyx')
     ext = '.pyx' if USE_CYTHON else '.cpp'
     ext_modules = [
@@ -80,7 +81,7 @@ setup_kwargs = dict(
     license='BSD',
     packages=[pkg_name] + tests,
     ext_modules=ext_modules,
-    include_dirs=[np.get_include(), './include']
+    include_dirs=include_dirs
 )
 
 if __name__ == '__main__':
