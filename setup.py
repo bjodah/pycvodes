@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from setuptools import setup
-from distutils.extension import Extension
+from setuptools.extension import Extension
 
 
 pkg_name = 'pycvodes'
