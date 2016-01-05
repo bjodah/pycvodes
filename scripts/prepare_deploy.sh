@@ -15,5 +15,5 @@ EOF
     chmod +x deploy/script_queue/run_benchmark.sh
     cp -r benchmarks/ deploy/
     mkdir -p deploy/gh-pages
-    ./scripts/dir_to_branch.sh doc/_build/html bjodah "$CI_REPO" gh-pages deploy/gh-pages
+    ./scripts/dir_to_branch.sh doc/_build/html bjodah "${CI_REPO##*/}" gh-pages deploy/gh-pages
 fi
