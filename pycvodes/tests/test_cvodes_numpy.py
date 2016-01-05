@@ -93,9 +93,10 @@ def test_integrate_predefined(method, forgiveness, banded):
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
-    assert nfo['nrhs'] > 0
+    assert nfo['nfev'] > 0
+    assert nfo['time_cpu'] > 1e-9
     if method in requires_jac:
-        assert nfo['njac'] > 0
+        assert nfo['njev'] > 0
 
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
@@ -121,9 +122,9 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert np.allclose(yout, yref,
                        rtol=forgiveness*rtol,
                        atol=forgiveness*atol)
-    assert info['nrhs'] > 0
+    assert info['nfev'] > 0
     if method in requires_jac:
-        assert info['njac'] > 0
+        assert info['njev'] > 0
 
 
 def test_derivative_1():

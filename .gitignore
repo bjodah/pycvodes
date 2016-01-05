@@ -10,3 +10,4 @@ MANIFEST
 pycvodes/_cvodes_numpy.cpp
 .coverage
 htmlcov/
+**/.ipynb_checkpoints/

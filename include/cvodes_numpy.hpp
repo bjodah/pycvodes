@@ -2,6 +2,7 @@
 #define CVODES_NUMPY_HPP_MRTG5EIRAJFXZBUE7MHMKQUGYA
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include <chrono>
 
 #include <utility> // std::pair
 #include <vector> // std::vector
@@ -23,6 +24,7 @@ namespace cvodes_numpy{
         PyObject *py_rhs, *py_jac, *py_roots;
         const size_t ny;
         size_t nrhs, njac;
+        double time_cpu;
         const int mlower, mupper, nroots;
         std::vector<double> xout;
         std::vector<double> yout;
@@ -35,6 +37,7 @@ namespace cvodes_numpy{
                         double atol, double rtol, int step_type_idx,
                         double dx0, double dx_min=0.0, double dx_max=0.0, long int mxsteps=0,
                         int iterative=0, int nderiv=0, int sparse=0, bool return_on_root=false){
+            std::clock_t cputime0 = std::clock();
             const bool with_jacobian = py_jac != Py_None;
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
             nrhs = 0; njac = 0;
@@ -45,6 +48,7 @@ namespace cvodes_numpy{
                                                       iterative, nderiv, this->root_indices, sparse, return_on_root);
             this->xout = xy_out.first;
             this->yout = xy_out.second;
+            this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
             return this->xout.size();
         }
 
@@ -53,6 +57,7 @@ namespace cvodes_numpy{
                         int step_type_idx,
                         double dx0, double dx_min=0.0, double dx_max=0.0, long int mxsteps=0,
                         int iterative=0, int nderiv=0) {
+            std::clock_t cputime0 = std::clock();
             auto y0 = (double*)PyArray_GETPTR1(py_y0, 0);
             auto xout = (double*)PyArray_GETPTR1(py_xout, 0);
             auto yout = (double*)PyArray_GETPTR1(py_yout, 0);
@@ -64,6 +69,7 @@ namespace cvodes_numpy{
                                                     step_type_idx, y0, nt, xout, yout, dx0, dx_min, dx_max, mxsteps,
                                                     (this->mlower > -1) ? 2 : 1, with_jacobian,
                                                     iterative, nderiv, this->root_indices);
+            this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
         }
 
         void rhs(double xval, const double * const y, double * const dydx){

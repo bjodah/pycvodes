@@ -1,20 +1,19 @@
-image: bjodah/dockerfile-bjodah-scicomp:14.04c
-git:
-    path: github.com/bjodah/pycvodes
-env:
-  - MY_SERVER=pycvodes@hera.physchem.kth.se
-script:
-  - if [[ "$DRONE_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then export PYCVODES_RELEASE_VERSION=$DRONE_BRANCH; echo ${PYCVODES_RELEASE_VERSION} | tail -c +2 > __conda_version__.txt; fi
-  #- ./scripts/ci_download_and_install_sundials.sh
-  - python3.4 setup.py build_ext -i
-  - python2.7 setup.py build_ext -i
-  - PYTHONPATH=$(pwd) ./scripts/run_tests.sh  --cov pycvodes --cov-report html
-  - python2.7 setup.py sdist
-  - python3.4 setup.py sdist
-  - ./scripts/generate_docs.sh
-  - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-  - ssh "${MY_SERVER}" "mkdir -p ~/public_html/$DRONE_BRANCH" && scp -r doc/ dist/* htmlcov/ ${MY_SERVER}:~/public_html/$DRONE_BRANCH
-  - touch doc/_build/html/.nojekyll
-  - git config --global user.name "drone"
-  - git config --global user.email ${MY_SERVER}
-  - if [[ "$DRONE_BRANCH" == "master" ]]; then ./scripts/github_upload.sh doc/_build/html bjodah pycvodes gh-pages; fi
+build:
+  image: bjodah/bjodahimg:v1.1
+  commands:
+    - ./scripts/ci.sh pyodesys
+    - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    - (cd examples/; ../scripts/render_index.sh *.html)
+    - ./scripts/generate_docs.sh
+    - ./scripts/prepare_deploy.sh
+
+deploy:
+
+  rsync:
+    host: hera.physchem.kth.se
+    port: 22
+    user: pyodesys
+    source: deploy/
+    target: ~
+    recursive: true
+    delete: false

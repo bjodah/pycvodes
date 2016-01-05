@@ -1,6 +1,7 @@
-v0.2.3
+v0.3.0
 ======
 - Better debugging (preserve back-trace from calling rhs() and jac())
+- Changes to info dict: rename 'nrhs' -> 'nfev', 'njac' -> 'njev', added 'cpu_time'
 
 v0.2.2
 ======

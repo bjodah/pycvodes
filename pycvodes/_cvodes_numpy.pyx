@@ -12,6 +12,7 @@ cnp.import_array()  # Numpy C-API initialization
 cdef class Cvodes:
 
     cdef PyCvodes *thisptr
+    cdef bool success
 
     def __cinit__(self, object f, object j, size_t ny, object roots=None,
                   int ml=-1, int mu=-1, int nroots=0):
@@ -30,9 +31,14 @@ cdef class Cvodes:
         cdef int iterative = 0
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
-        return self.thisptr.adaptive(<PyObject*>y0, t0, tend, atol,
-                                     rtol, step_type_idx, dx0, dx_min, dx_max, mxsteps,
-                                     iterative, nderiv, sparse, return_on_root)
+        self.success = True
+        try:
+            return self.thisptr.adaptive(<PyObject*>y0, t0, tend, atol,
+                                         rtol, step_type_idx, dx0, dx_min, dx_max, mxsteps,
+                                         iterative, nderiv, sparse, return_on_root)
+        except:
+            self.success = False
+            raise
 
     def predefined(self, cnp.ndarray[cnp.float64_t, ndim=1] y0,
                    cnp.ndarray[cnp.float64_t, ndim=1] xout,
@@ -47,9 +53,14 @@ cdef class Cvodes:
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
         yout[0, :] = y0
-        self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*>yout,
-                                atol, rtol, step_type_idx, dx0, dx_min, dx_max,
-                                mxsteps, iterative, nderiv)
+        self.success = True
+        try:
+            self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*>yout,
+                                    atol, rtol, step_type_idx, dx0, dx_min, dx_max,
+                                    mxsteps, iterative, nderiv)
+        except:
+            self.success = False
+            raise
         return yout.reshape((xout.size, y0.size)) if nderiv == 0 else yout
 
     def get_xout(self, size_t nsteps):
@@ -74,7 +85,10 @@ cdef class Cvodes:
         return self.thisptr.root_indices
 
     def get_info(self):
-        info = {'nrhs': self.thisptr.nrhs, 'njac': self.thisptr.njac}
+        info = {'nfev': self.thisptr.nrhs,
+                'njev': self.thisptr.njac,
+                'time_cpu': self.thisptr.time_cpu,
+                'success': self.success}
         if self.thisptr.nroots > 0:
             info['root_indices'] = self.get_root_indices()
         return info

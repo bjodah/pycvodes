@@ -8,6 +8,7 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
     cdef cppclass PyCvodes:
         const size_t ny
         size_t nrhs, njac
+        double time_cpu
         const int mlower, mupper, nroots
         vector[double] xout
         vector[double] yout
