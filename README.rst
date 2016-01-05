@@ -84,7 +84,7 @@ The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_d
 
 .. image:: https://raw.githubusercontent.com/bjodah/pycvodes/master/examples/van_der_pol.png
 
-us. For more examples see `examples/ <https://github.com/bjodah/pycvodes/tree/master/examples>`_, and rendered jupyter notebooks here:
+For more examples see `examples/ <https://github.com/bjodah/pycvodes/tree/master/examples>`_, and rendered jupyter notebooks here:
 `<http://hera.physchem.kth.se/~pycvodes/branches/master/examples>`_
 
 
