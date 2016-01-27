@@ -10,6 +10,8 @@ fi
 ./scripts/check_clean_repo_on_master.sh
 echo ${1#v}>__conda_version__.txt
 trap "rm __conda_version__.txt" EXIT SIGINT SIGTERM
-for CPY in {27,34}; do
-    PYTHONNOUSERSITE=1 CONDA_PY=$CPY conda build conda-recipe
-done
+# for CPY in {27,34}; do
+#   CONDA_PY=$CPY conda build conda-recipe
+# done
+CONDA_PY=34 conda build conda-recipe
+CONDA_PY=27 conda build --no-test conda-recipe

@@ -24,6 +24,8 @@ test:
         - pycvodes
     requires:
         - pytest
+    commands:
+        - py.test --pyargs pycvodes
 
 about:
     home: https://github.com/bjodah/pycvodes
