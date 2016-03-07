@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Python binding for cvodes from the sundials library.
+"""
 
 from __future__ import division, absolute_import
 
@@ -7,9 +10,15 @@ from ._util import _check_callable, _check_indexing
 from ._release import __version__
 
 
+def get_include():
+    from pkg_resources import resource_filename, Requirement
+    return resource_filename(Requirement.parse(__name__),
+                             '%s/include' % __name__)
+
+
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                        dx_min=.0, dx_max=.0, nsteps=500, nderiv=0,
-                       roots=None, nroots=0, return_on_root=False, sparse=0,
+                       roots=None, nroots=0, return_on_root=False,
                        check_callable=False, check_indexing=False, **kwargs):
     """
     Integrates a system of ordinary differential equations.
@@ -47,11 +56,6 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         number of root functions in roots
     return_on_root: bool (defaul: False)
         exit early (on first found root)
-    sparse: int (default: 0)
-        when nderiv is sufficiently high, setting this to >0 may reduce length
-        of xout. the logic is if forward polynomial extrapolation from previous
-        point has an error less than ``(atol+rtol*|y|)*sparse``, then that
-        point is skipped.
     check_callable: bool (default: False)
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing: bool (default: False)
@@ -59,6 +63,11 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
     \*\*kwargs:
          'method': str
             One of: 'adams' or 'bdf' (default: 'bdf')
+         'iter_type': str (default: 'default')
+            One of: 'default', 'functional', 'newton'
+         'linear_solver': str (default: 'default')
+            One of: 'default', 'dense', 'banded', 'gmres',
+            'gmres_classic', 'bicgstab', 'tfqmr'
 
     Returns
     -------
@@ -78,7 +87,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
 
     return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min, dx_max,
                     nsteps, nderiv, roots=roots, nroots=nroots,
-                    sparse=sparse, return_on_root=return_on_root, **kwargs)
+                    return_on_root=return_on_root, **kwargs)
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
@@ -124,6 +133,11 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     \*\*kwargs:
          'method': str
             One of: 'adams' or 'bdf' (default: 'bdf')
+         'iter_type': str (default: 'default')
+            One of: 'default', 'functional', 'newton'
+         'linear_solver': str (default: 'default')
+            One of: 'default', 'dense', 'banded', 'gmres',
+            'gmres_classic', 'bicgstab', 'tfqmr'
 
     Returns
     -------
