@@ -589,7 +589,7 @@ namespace cvodes_cxx {
                               const realtype eps_lin=0.0
                               )
     {
-        const int ny = odesys->ny;
+        const int ny = odesys->get_ny();
         Integrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::ADAMS,
                 (iter_type == 1) ? IterType::FUNCTIONAL : IterType::NEWTON};
         integr.set_user_data(static_cast<void *>(odesys));
@@ -693,7 +693,7 @@ namespace cvodes_cxx {
 
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
-        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, return_on_root);
+        return integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
     }
 
     template <class OdeSys>
@@ -736,7 +736,7 @@ namespace cvodes_cxx {
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
-        integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv, root_indices);
+        integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices);
         odesys->last_integration_info.clear();
         odesys->last_integration_info["n_steps"] = integr.get_n_steps();
         odesys->last_integration_info["n_rhs_evals"] = integr.get_n_rhs_evals();
