@@ -653,7 +653,7 @@ namespace cvodes_cxx {
 
     template <class OdeSys>
     std::pair<std::vector<realtype>, std::vector<realtype> >
-    simple_adaptive(OdeSys * odesys,
+    simple_adaptive(OdeSys * const odesys,
                     const std::vector<realtype> atol,
                     const realtype rtol,
                     const int lmm,
@@ -697,7 +697,7 @@ namespace cvodes_cxx {
     }
 
     template <class OdeSys>
-    void simple_predefined(OdeSys * odesys,
+    void simple_predefined(OdeSys * const odesys,
                            const std::vector<realtype> atol,
                            const realtype rtol,
                            const int lmm,
