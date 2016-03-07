@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 from math import exp, pi
+import os
 import numpy as np
 import pytest
 
 from pycvodes import (
-    integrate_adaptive, integrate_predefined, requires_jac
+    integrate_adaptive, integrate_predefined, requires_jac, get_include
 )
+
+
+def test_get_include():
+    assert get_include().endswith('include')
+    assert 'cvodes_cxx.hpp' in os.listdir(get_include())
+
 
 decay_analytic = {
     0: lambda y0, k, t: (
@@ -55,8 +62,8 @@ def _get_f_j(k):
 
 methods = [('adams', 1.8, False),
            ('adams', 1.8, True),
-           ('bdf', 1.8, False),
-           ('bdf', 3.4, True)]
+           ('bdf', 10, False),
+           ('bdf', 9, True)]
 
 
 def bandify(cb, mlower, mupper):
@@ -106,7 +113,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     y0 = [0.7, 0.3, 0.5]
     atol, rtol = 1e-8, 1e-8
     kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
-                  method=method)
+                  method=method, iter_type='newton')
     f, j = _get_f_j(k)
     if not use_jac:
         j = None
@@ -161,7 +168,8 @@ def test_derivative_3():
     def f(t, y, fout):
         fout[0] = y[1]
         fout[1] = -y[0]
-    kwargs = dict(dx0=0.0, atol=1e-13, rtol=1e-13, nderiv=2, method='adams')
+    kwargs = dict(dx0=0.0, atol=1e-13, rtol=1e-13, nderiv=2, method='adams',
+                  iter_type='newton')
     xout, yout, info = integrate_adaptive(f, None, [0, 1], 0, 4*pi, **kwargs)
     assert yout.shape[1:] == (3, 2)
     sinx, cosx = np.sin(xout), np.cos(xout)
@@ -220,25 +228,6 @@ def test_adaptive_nderiv():
     xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
     discrepancy = np.exp(xout) - yout[:, 0].flatten()
     assert np.allclose(discrepancy, 0, atol=1e-3)
-
-
-def test_adaptive_nderiv_sparse():
-    def f(t, y, fout):
-        fout[0] = y[0]
-    kwargs = dict(dx0=1e-4, atol=1e-4, rtol=1e-12, method='adams',
-                  nderiv=4)
-    xout_dense, yout_dense, info_dense = integrate_adaptive(
-        f, None, [1], 0, 2, **kwargs)
-    xout_spars, yout_spars, info_spars = integrate_adaptive(
-        f, None, [1], 0, 2, sparse=3, **kwargs)
-
-    discrepancy_dense = np.exp(xout_dense) - yout_dense[:, 0].flatten()
-    discrepancy_spars = np.exp(xout_spars) - yout_spars[:, 0].flatten()
-    assert np.allclose(discrepancy_dense, 0, atol=1e-3)
-    assert np.allclose(discrepancy_spars, 0, atol=1e-3)
-    assert len(xout_dense) > 1
-    assert len(xout_spars) > 1
-    assert len(xout_dense) > len(xout_spars)
 
 
 def test_return_on_root():
