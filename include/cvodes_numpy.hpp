@@ -35,6 +35,8 @@ namespace cvodes_numpy{
         PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
             py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}
 
+
+        int get_ny() { return this->ny; }
         int get_mlower() { return this->mlower; }
         int get_mupper() { return this->mupper; }
 
