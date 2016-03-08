@@ -30,19 +30,21 @@ int factorial(int n) {
 
 namespace cvodes_cxx {
 
+    template<class T> void ignore( const T& ) { } // ignore compiler warnings about unused parameter
+
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
 
     // Wrapper for Revision 4306 of cvodes.c
 
-    enum class LMM : int {ADAMS=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
+    enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
 
-    enum class Task : int {NORMAL=CV_NORMAL, ONE_STEP=CV_ONE_STEP};
-    enum class IterType : int {FUNCTIONAL=CV_FUNCTIONAL, NEWTON=CV_NEWTON};
+    enum class Task : int {Normal=CV_NORMAL, One_Step=CV_ONE_STEP};
+    enum class IterType : int {Functional=CV_FUNCTIONAL, Newton=CV_NEWTON};
     enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
-    enum class PrecType : int {NONE=PREC_NONE, LEFT=PREC_LEFT,
-            RIGHT=PREC_RIGHT, BOTH=PREC_BOTH};
-    enum class GramSchmidtType : int {CLASSICAL=CLASSICAL_GS, MODIFIED=MODIFIED_GS};
+    enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
+            Right=PREC_RIGHT, Both=PREC_BOTH};
+    enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
 
     void check_flag(int flag) {
         switch (flag){
@@ -55,10 +57,11 @@ namespace cvodes_cxx {
         }
     }
 
-    class Integrator{ // Thin wrapper class of CVode in CVODES
+    class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
     public:
         void *mem {nullptr};
-        Integrator(const LMM lmm, const IterType iter) {
+        std::size_t ny {0};
+        CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
         }
         // init
@@ -70,6 +73,7 @@ namespace cvodes_cxx {
                 throw std::runtime_error("CVodeInit failed (allocation failed).");
             else
                 check_flag(status);
+            this->ny = NV_LENGTH_S(y);
         }
         void init(CVRhsFn cb, realtype t0, SVector &y) {
             this->init(cb, t0, y.n_vec);
@@ -191,13 +195,13 @@ namespace cvodes_cxx {
             int flag;
             switch (solver) {
             case IterLinSolEnum::GMRES:
-                flag = CVSpgmr(this->mem, static_cast<int>(PrecType::LEFT), maxl);
+                flag = CVSpgmr(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             case IterLinSolEnum::BICGSTAB:
-                flag = CVSpbcg(this->mem, static_cast<int>(PrecType::LEFT), maxl);
+                flag = CVSpbcg(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             case IterLinSolEnum::TFQMR:
-                flag = CVSptfqmr(this->mem, static_cast<int>(PrecType::LEFT), maxl);
+                flag = CVSptfqmr(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             }
             switch (flag){
@@ -246,6 +250,17 @@ namespace cvodes_cxx {
         void set_krylov_max_len(int maxl){
             int flag = CVSpilsSetMaxl(this->mem, maxl);
             this->cvspils_check_flag(flag);
+        }
+
+        void get_err_weights(N_Vector ew){
+            check_flag(CVodeGetErrWeights(this->mem, ew));
+        }
+        void get_err_weights(SVector &ew) {
+            this->get_err_weights(ew.n_vec);
+        }
+        void get_err_weights(realtype * ew){
+            SVector ew_(ny, ew);
+            this->get_err_weights(ew_);
         }
 
         // get info
@@ -420,7 +435,7 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
-                status = this->step(xend, y, &cur_t, Task::ONE_STEP);
+                status = this->step(xend, y, &cur_t, Task::One_Step);
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
@@ -468,7 +483,7 @@ namespace cvodes_cxx {
             }
 
             for(int iout=1; (iout < nt); iout++) {
-                status = this->step(tout[iout], y, &cur_t, Task::NORMAL);
+                status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(iout);
@@ -491,7 +506,7 @@ namespace cvodes_cxx {
             }
         }
 
-        ~Integrator(){
+        ~CVodeIntegrator(){
             if (this->mem)
                 CVodeFree(&(this->mem));
         }
@@ -516,6 +531,7 @@ namespace cvodes_cxx {
                      N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                      N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
+        ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0),
                                Jac->ldim);
@@ -527,6 +543,7 @@ namespace cvodes_cxx {
                     N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
+        ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.get_mupper() != mupper)
             throw std::runtime_error("mupper mismatch");
@@ -541,22 +558,30 @@ namespace cvodes_cxx {
     int jac_times_vec_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
                          N_Vector fy, void *user_data, N_Vector tmp){
         // callback of req. signature wrapping OdeSys method.
+        ignore(tmp);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
         return 0;
     }
 
-    template <typename OdeSys>
+    template <typename OdeSys> // Section 4.6.9 Preconditioning in cvs_guide.pdf
     int jac_prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
                           N_Vector z, realtype gamma, realtype delta, int lr,
                           void *user_data, N_Vector tmp){
         // callback of req. signature wrapping OdeSys method.
+        ignore(tmp);  // delta used for iterative methods
+        double * ewt {nullptr};
         auto& odesys = *static_cast<OdeSys*>(user_data);
+        // if (NV_LENGTH_S(tmp) >= odesys.get_ny()) {
+        //     ewt = NV_DATA_S(tmp)
+        // } else {
+        //     throw std::runtime_error("Implement allocating logic.");
+        // }
+        // odesys.integrator.get_err_weights(tmp); // use tmp to hold error weights
         if (lr != 1)
             throw std::runtime_error("Only left preconditioning implemented.");
-        odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
-                                NV_DATA_S(z), gamma);
-        return 0; // Direct solver give no hint on success, hence report success.
+        return odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
+                                      NV_DATA_S(z), gamma, delta, ewt);
     }
 
     template <typename OdeSys>
@@ -564,6 +589,7 @@ namespace cvodes_cxx {
                       booleantype *jcurPtr, realtype gamma, void *user_data,
                       N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
+        ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
         bool compute_jac = (jok == TRUE) ? false : true; // TRUE, FALSE sundials macros
@@ -573,25 +599,26 @@ namespace cvodes_cxx {
     }
 
     template <class OdeSys>
-    Integrator get_integrator(OdeSys * odesys,
-                              const std::vector<realtype> atol,
-                              const realtype rtol, const int lmm,
-                              const realtype * const y0,
-                              const realtype t0,
-                              const realtype dx0=0.0,
-                              const realtype dx_min=0.0,
-                              const realtype dx_max=0.0,
-                              const int mxsteps=0,
-                              const bool with_jacobian=false,
-                              const int iter_type=0,
-                              const int linear_solver=0,
-                              const int maxl=0,
-                              const realtype eps_lin=0.0
-                              )
+    CVodeIntegrator get_integrator(OdeSys * odesys,
+                                   const std::vector<realtype> atol,
+                                   const realtype rtol,
+                                   const int lmm,  // Cython does not supported enum class...
+                                   const realtype * const y0,
+                                   const realtype t0,
+                                   const realtype dx0=0.0,
+                                   const realtype dx_min=0.0,
+                                   const realtype dx_max=0.0,
+                                   const int mxsteps=0,
+                                   const bool with_jacobian=false,
+                                   const int iter_type=0,
+                                   const int linear_solver=0,
+                                   const int maxl=0,
+                                   const realtype eps_lin=0.0
+                                   )
     {
         const int ny = odesys->get_ny();
-        Integrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::ADAMS,
-                (iter_type == 1) ? IterType::FUNCTIONAL : IterType::NEWTON};
+        CVodeIntegrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::Adams,
+                (iter_type == 1) ? IterType::Functional : IterType::Newton};
         integr.set_user_data(static_cast<void *>(odesys));
         integr.init(f_cb<OdeSys>, t0, y0, ny);
         integr.root_init(odesys->nroots, roots_cb<OdeSys>);
@@ -635,19 +662,19 @@ namespace cvodes_cxx {
             if (linear_solver >= 10){
                 if (!with_jacobian)
                     throw std::runtime_error("Iterative method requires an (approximate) jacobian");
-                integr.set_prec_type(PrecType::LEFT);
+                integr.set_prec_type(PrecType::Left);
                 integr.set_iter_eps_lin(eps_lin);
                 integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
                 integr.set_preconditioner(prec_setup_cb<OdeSys>, jac_prec_solve_cb<OdeSys>);
                 if (linear_solver == 10 || linear_solver == 11) // GMRES
-                    integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::MODIFIED : GramSchmidtType::CLASSICAL);
+                    integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
                 else if (linear_solver == 20 or linear_solver == 30) // BiCGStab, TFQMR
                     ;
                 else
                     throw std::runtime_error("Unknown linear_solver.");
             }
         }
-
+        odesys->integrator = &integr;
         return integr;
     }
 

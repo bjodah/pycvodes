@@ -31,6 +31,7 @@ namespace cvodes_numpy{
         std::vector<realtype> yout;
         std::vector<int> root_indices;
         std::unordered_map<std::string, int> last_integration_info;
+        cvodes_cxx::CVodeIntegrator *integrator;
 
         PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
             py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}
@@ -169,19 +170,48 @@ namespace cvodes_numpy{
                            const realtype * const y,
                            const realtype * const fy
                            )
-        { throw std::runtime_error("Not implemented!"); }
+        {
+            cvodes_cxx::ignore(vec);
+            cvodes_cxx::ignore(out);
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            throw std::runtime_error("Not implemented!");
+        }
         void prec_setup(realtype t,
-                const realtype * const __restrict__ y,
-                const realtype * const __restrict__ fy,
-                bool jok, bool& jac_recomputed, realtype gamma)
-        { throw std::runtime_error("Not implemented!"); }
-        void prec_solve_left(const realtype t,
                         const realtype * const __restrict__ y,
                         const realtype * const __restrict__ fy,
-                        const realtype * const __restrict__ r,
-                        realtype * const __restrict__ z,
+                        bool jok,
+                        bool& jac_recomputed,
                         realtype gamma)
-        { throw std::runtime_error("Not implemented!"); }
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(jok);
+            cvodes_cxx::ignore(jac_recomputed);
+            cvodes_cxx::ignore(gamma);
+            throw std::runtime_error("Not implemented!");
+        }
+        int prec_solve_left(const realtype t,
+                             const realtype * const __restrict__ y,
+                             const realtype * const __restrict__ fy,
+                             const realtype * const __restrict__ r,
+                             realtype * const __restrict__ z,
+                             realtype gamma,
+                             realtype delta,
+                             const realtype * const __restrict__ ewt)
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(r);
+            cvodes_cxx::ignore(z);
+            cvodes_cxx::ignore(gamma);
+            cvodes_cxx::ignore(delta);
+            cvodes_cxx::ignore(ewt);
+            throw std::runtime_error("Not implemented!");
+            return -1;
+        }
     };
-
 }
