@@ -674,7 +674,7 @@ namespace cvodes_cxx {
                     throw std::runtime_error("Unknown linear_solver.");
             }
         }
-        odesys->integrator = &integr;
+        odesys->integrator = static_cast<void*>(&integr);
         return integr;
     }
 
@@ -786,4 +786,75 @@ namespace cvodes_cxx {
         }
     }
 
+    struct OdeSysBase {
+        int nroots {0};
+        void * integrator;
+        virtual ~OdeSysBase() {}
+        virtual int get_mlower() { return -1; }
+        virtual int get_mupper() { return -1; }
+        virtual void rhs(double t, const double * const y, double * const f) = 0;
+        virtual void roots(double xval, const double * const y, double * const out) {
+            ignore(xval); ignore(y); ignore(out);
+            throw std::runtime_error("roots not implemented.");
+        }
+        virtual void dense_jac_cmaj(double t, const double * const y, const double * const fy,
+                                    double * const jac, long int ldim){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
+            throw std::runtime_error("dense_jac_cmaj not implemented.");
+        }
+        virtual void banded_padded_jac_cmaj(double t, const double * const y, const double * const fy,
+                                            double * const jac, long int ldim){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
+            throw std::runtime_error("banded_padded_jac_cmaj not implemented.");
+        }
+            virtual void jac_times_vec(const double * const vec,
+                                       double * const out,
+                                       double t,
+                                       const double * const y,
+                                       const double * const fy
+                                       )
+        {
+            cvodes_cxx::ignore(vec);
+            cvodes_cxx::ignore(out);
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            throw std::runtime_error("Not implemented!");
+        }
+        virtual void prec_setup(double t,
+                                const double * const __restrict__ y,
+                                const double * const __restrict__ fy,
+                                bool jok,
+                                bool& jac_recomputed,
+                                double gamma)
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(jok);
+            cvodes_cxx::ignore(jac_recomputed);
+            cvodes_cxx::ignore(gamma);
+            throw std::runtime_error("prec_steup not  implemented.");
+        }
+        virtual int prec_solve_left(const double t,
+                                    const double * const __restrict__ y,
+                                    const double * const __restrict__ fy,
+                                    const double * const __restrict__ r,
+                                    double * const __restrict__ z,
+                                    double gamma,
+                                    double delta,
+                                    const double * const __restrict__ ewt)
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(r);
+            cvodes_cxx::ignore(z);
+            cvodes_cxx::ignore(gamma);
+            cvodes_cxx::ignore(delta);
+            cvodes_cxx::ignore(ewt);
+            throw std::runtime_error("prec_solve_left not implemented.");
+            return -1;
+        }
+    };
 }
