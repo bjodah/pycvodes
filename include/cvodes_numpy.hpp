@@ -31,7 +31,7 @@ namespace cvodes_numpy{
         std::vector<realtype> yout;
         std::vector<int> root_indices;
         std::unordered_map<std::string, int> last_integration_info;
-        cvodes_cxx::CVodeIntegrator *integrator;
+        void *integrator;
 
         PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
             py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}

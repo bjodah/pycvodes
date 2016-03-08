@@ -10,7 +10,7 @@ DEFINES ?=
 
 test: test_cvodes_cxx
 	./$< --abortx 1
-	python -m pytest
+	python ./_test_cvodes_cxx.py
 
 clean:
 	rm catch.hpp
