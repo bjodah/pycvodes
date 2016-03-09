@@ -1,6 +1,4 @@
-#ifndef SUNDIALS_CXX_HPP_3CSK5Z37F5GSNHG2O23JGOSJWA
-#define SUNDIALS_CXX_HPP_3CSK5Z37F5GSNHG2O23JGOSJWA
-
+#pragma once
 #include <cstring> // std::memcpy
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 
@@ -52,5 +50,4 @@ namespace sundials_cxx {
         };
     }
 
-} // namespace sundials_cxx
-#endif /* SUNDIALS_CXX_HPP_3CSK5Z37F5GSNHG2O23JGOSJWA */
+}

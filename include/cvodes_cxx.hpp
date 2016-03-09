@@ -1,6 +1,4 @@
-#ifndef CVODES_CXX_HPP_QN7AB5PXNFYNI4JXC567B2OE4R
-#define CVODES_CXX_HPP_QN7AB5PXNFYNI4JXC567B2OE4R
-
+#pragma once
 // Thin C++11 wrapper around CVODES v2.8.2 (SUNDIALS v2.6.2)
 // far from all functionality is available yet.
 // sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
@@ -21,10 +19,6 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 
-#ifndef NDEBUG
-#include <iostream> // DEBUG
-#endif
-
 // Overflows easily, check your architecture
 int factorial(int n) {
     int res = 1;
@@ -36,18 +30,21 @@ int factorial(int n) {
 
 namespace cvodes_cxx {
 
+    template<class T> void ignore( const T& ) { } // ignore compiler warnings about unused parameter
+
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
 
     // Wrapper for Revision 4306 of cvodes.c
 
-    enum class LMM : int {ADAMS=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
+    enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
 
-    enum class Task : int {NORMAL=CV_NORMAL, ONE_STEP=CV_ONE_STEP};
-    enum class IterType : int {NEWTON=CV_NEWTON, FUNCTIONAL=CV_FUNCTIONAL};
+    enum class Task : int {Normal=CV_NORMAL, One_Step=CV_ONE_STEP};
+    enum class IterType : int {Functional=CV_FUNCTIONAL, Newton=CV_NEWTON};
     enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
-    enum class PrecType : int {NONE=PREC_NONE, LEFT=PREC_LEFT,
-            RIGHT=PREC_RIGHT, BOTH=PREC_BOTH};
+    enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
+            Right=PREC_RIGHT, Both=PREC_BOTH};
+    enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
 
     void check_flag(int flag) {
         switch (flag){
@@ -60,10 +57,11 @@ namespace cvodes_cxx {
         }
     }
 
-    class Integrator{ // Thin wrapper class of CVode in CVODES
+    class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
     public:
         void *mem {nullptr};
-        Integrator(const LMM lmm, const IterType iter) {
+        std::size_t ny {0};
+        CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
         }
         // init
@@ -75,6 +73,7 @@ namespace cvodes_cxx {
                 throw std::runtime_error("CVodeInit failed (allocation failed).");
             else
                 check_flag(status);
+            this->ny = NV_LENGTH_S(y);
         }
         void init(CVRhsFn cb, realtype t0, SVector &y) {
             this->init(cb, t0, y.n_vec);
@@ -113,9 +112,6 @@ namespace cvodes_cxx {
 
         // Step specifications
         void set_init_step(realtype h0){
-#         if !defined(NDEBUG)
-            std::cout << "CVodeSetInitStep(" << h0 << ")\n";
-#         endif
             int status = CVodeSetInitStep(this->mem, h0);
             check_flag(status);
         }
@@ -199,13 +195,13 @@ namespace cvodes_cxx {
             int flag;
             switch (solver) {
             case IterLinSolEnum::GMRES:
-                flag = CVSpgmr(this->mem, (int)PrecType::LEFT, maxl);
+                flag = CVSpgmr(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             case IterLinSolEnum::BICGSTAB:
-                flag = CVSpbcg(this->mem, (int)PrecType::LEFT, maxl);
+                flag = CVSpbcg(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             case IterLinSolEnum::TFQMR:
-                flag = CVSptfqmr(this->mem, (int)PrecType::LEFT, maxl);
+                flag = CVSptfqmr(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
             }
             switch (flag){
@@ -246,6 +242,25 @@ namespace cvodes_cxx {
         void set_prec_type(PrecType pretyp){
             int flag = CVSpilsSetPrecType(this->mem, (int)pretyp);
             this->cvspils_check_flag(flag, true);
+        }
+        void set_gram_schmidt_type(GramSchmidtType gs_type){
+            int flag = CVSpilsSetGSType(this->mem, (int)gs_type);
+            this->cvspils_check_flag(flag, true);
+        }
+        void set_krylov_max_len(int maxl){
+            int flag = CVSpilsSetMaxl(this->mem, maxl);
+            this->cvspils_check_flag(flag);
+        }
+
+        void get_err_weights(N_Vector ew){
+            check_flag(CVodeGetErrWeights(this->mem, ew));
+        }
+        void get_err_weights(SVector &ew) {
+            this->get_err_weights(ew.n_vec);
+        }
+        void get_err_weights(realtype * ew){
+            SVector ew_(ny, ew);
+            this->get_err_weights(ew_);
         }
 
         // get info
@@ -364,9 +379,6 @@ namespace cvodes_cxx {
         }
 
         void get_dky(realtype t, int k, SVector &dky) {
-// #         if !defined(NDEBUG)
-//             std::cout << "get_dky(t, k, ...) = get_dky(" << t << ", " << k << ", ...), nrhs: " << this->get_n_steps() << std::endl;
-// #         endif
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
             case CV_SUCCESS:
@@ -394,9 +406,9 @@ namespace cvodes_cxx {
                 throw std::runtime_error("call_rhs failed.");
         }
 
-        std::pair<std::vector<double>, std::vector<double> >
+        std::pair<std::vector<realtype>, std::vector<realtype> >
         adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv, std::vector<int>& root_indices, int sparse=0,
+                 const realtype * const y0, int nderiv, std::vector<int>& root_indices,
                  bool return_on_root=false){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
@@ -405,10 +417,6 @@ namespace cvodes_cxx {
             int idx = 0;
             SVector y {ny};
             SVector work {ny};
-            // for sparse
-            CVodeMem cv_mem = (CVodeMem) this->mem;
-            double atol = cv_mem->cv_Sabstol;
-            const double rtol = cv_mem->cv_reltol;
             xout.push_back(x0);
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
@@ -427,39 +435,10 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
-                status = this->step(xend, y, &cur_t, Task::ONE_STEP);
-#               if !defined(NDEBUG)
-                  std::cout << "cur_t=" << cur_t << "\n";
-#               endif
-                if (sparse){
-                    if (status == CV_TSTOP_RETURN || status == CV_ROOT_RETURN)
-                        goto save_point;
-                    if (sparse < 0)
-                        goto skip_point;
-                    for (int yidx=0; yidx<ny; ++yidx){
-                        if (cv_mem->cv_itol == 2) // CV_SV L360 cvodes.c
-                            atol = NV_DATA_S(cv_mem->cv_Vabstol)[yidx];
-                        double approx = 0.0;
-                        for (int di=0; di<nderiv+1; ++di)
-                            approx += yout[(nderiv+1)*(idx-1)]/factorial(di)*pow(cur_t-xout[idx-1], di);
-                        double tolQ = std::abs(approx - y[0])/(atol + rtol*y[0]);
-#             if !defined(NDEBUG)
-                        std::cout << " " << yidx << " "<< approx - y[0] << " " << tolQ << " " << sparse << std::endl;
-#             endif
-                        if (tolQ > sparse)
-                            goto save_point;
-                    }
-                skip_point:
-                    idx--;
-                    continue;
-                }
-            save_point:
+                status = this->step(xend, y, &cur_t, Task::One_Step);
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
-#             if !defined(NDEBUG)
-                        std::cout << "Root found!: " << idx << std::endl;
-#             endif
                     }else{
                         throw std::runtime_error("Unsuccessful CVode step.");
                     }
@@ -480,7 +459,7 @@ namespace cvodes_cxx {
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
-            return std::pair<std::vector<double>, std::vector<double>>(xout, yout);
+            return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 
         void predefined(int nt, int ny, const realtype * const tout, const realtype * const y0,
@@ -504,7 +483,7 @@ namespace cvodes_cxx {
             }
 
             for(int iout=1; (iout < nt); iout++) {
-                status = this->step(tout[iout], y, &cur_t, Task::NORMAL);
+                status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(iout);
@@ -527,7 +506,7 @@ namespace cvodes_cxx {
             }
         }
 
-        ~Integrator(){
+        ~CVodeIntegrator(){
             if (this->mem)
                 CVodeFree(&(this->mem));
         }
@@ -535,15 +514,15 @@ namespace cvodes_cxx {
 
     template<class OdeSys>
     int f_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
-        OdeSys * odesys = (OdeSys*)user_data;
-        odesys->rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
         return 0;
     }
 
     template<class OdeSys>
     int roots_cb(realtype t, N_Vector y, realtype *gout, void *user_data){
-        OdeSys * odesys = (OdeSys*)user_data;
-        odesys->roots(t, NV_DATA_S(y), gout);
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        odesys.roots(t, NV_DATA_S(y), gout);
         return 0;
     }
 
@@ -552,8 +531,9 @@ namespace cvodes_cxx {
                      N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                      N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
-        OdeSys * odesys = (OdeSys*)user_data;
-        odesys->dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0),
+        ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0),
                                Jac->ldim);
         return 0;
     }
@@ -563,12 +543,13 @@ namespace cvodes_cxx {
                     N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
-        OdeSys * odesys = (OdeSys*)user_data;
-        if (odesys->mupper != mupper)
+        ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        if (odesys.get_mupper() != mupper)
             throw std::runtime_error("mupper mismatch");
-        if (odesys->mlower != mlower)
+        if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
-        odesys->banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data, Jac->ldim);
+        odesys.banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data, Jac->ldim);
         return 0;
     }
 
@@ -577,22 +558,30 @@ namespace cvodes_cxx {
     int jac_times_vec_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
                          N_Vector fy, void *user_data, N_Vector tmp){
         // callback of req. signature wrapping OdeSys method.
-        OdeSys * odesys = (OdeSys*)user_data;
-        odesys->jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
+        ignore(tmp);
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
         return 0;
     }
 
-    template <typename OdeSys>
+    template <typename OdeSys> // Section 4.6.9 Preconditioning in cvs_guide.pdf
     int jac_prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
                           N_Vector z, realtype gamma, realtype delta, int lr,
                           void *user_data, N_Vector tmp){
         // callback of req. signature wrapping OdeSys method.
-        OdeSys * odesys = (OdeSys*)user_data;
+        ignore(tmp);  // delta used for iterative methods
+        double * ewt {nullptr};
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        // if (NV_LENGTH_S(tmp) >= odesys.get_ny()) {
+        //     ewt = NV_DATA_S(tmp)
+        // } else {
+        //     throw std::runtime_error("Implement allocating logic.");
+        // }
+        // odesys.integrator.get_err_weights(tmp); // use tmp to hold error weights
         if (lr != 1)
             throw std::runtime_error("Only left preconditioning implemented.");
-        odesys->prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
-                                NV_DATA_S(z), gamma);
-        return 0; // Direct solver give no hint on success, hence report success.
+        return odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
+                                      NV_DATA_S(z), gamma, delta, ewt);
     }
 
     template <typename OdeSys>
@@ -600,33 +589,37 @@ namespace cvodes_cxx {
                       booleantype *jcurPtr, realtype gamma, void *user_data,
                       N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
-        OdeSys * odesys = (OdeSys*)user_data;
+        ignore(tmp1); ignore(tmp2); ignore(tmp3);
+        auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
         bool compute_jac = (jok == TRUE) ? false : true; // TRUE, FALSE sundials macros
-        odesys->prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), compute_jac, jac_recomputed, gamma);
+        odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), compute_jac, jac_recomputed, gamma);
         (*jcurPtr) = (jac_recomputed) ? TRUE : FALSE;
         return 0;
     }
 
     template <class OdeSys>
-    Integrator get_integrator(OdeSys * odesys,
-                              const std::vector<realtype> atol,
-                              const realtype rtol, const int lmm,
-                              const realtype * const y0,
-                              const realtype t0,
-                              const double dx0=0.0,
-                              const double dx_min=0.0,
-                              const double dx_max=0.0,
-                              const int mxsteps=0,
-                              int direct_mode=0,
-                              bool with_jacobian=false,
-                              int iterative=0
-                              )
+    CVodeIntegrator get_integrator(OdeSys * odesys,
+                                   const std::vector<realtype> atol,
+                                   const realtype rtol,
+                                   const int lmm,  // Cython does not supported enum class...
+                                   const realtype * const y0,
+                                   const realtype t0,
+                                   const realtype dx0=0.0,
+                                   const realtype dx_min=0.0,
+                                   const realtype dx_max=0.0,
+                                   const int mxsteps=0,
+                                   const bool with_jacobian=false,
+                                   const int iter_type=0,
+                                   const int linear_solver=0,
+                                   const int maxl=0,
+                                   const realtype eps_lin=0.0
+                                   )
     {
-        const int ny = odesys->ny;
-        Integrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::ADAMS,
-                (iterative) ? IterType::FUNCTIONAL : IterType::NEWTON};
-        integr.set_user_data((void *)odesys);
+        const int ny = odesys->get_ny();
+        CVodeIntegrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::Adams,
+                (iter_type == 1) ? IterType::Functional : IterType::Newton};
+        integr.set_user_data(static_cast<void *>(odesys));
         integr.init(f_cb<OdeSys>, t0, y0, ny);
         integr.root_init(odesys->nroots, roots_cb<OdeSys>);
         if (atol.size() == 1){
@@ -634,8 +627,7 @@ namespace cvodes_cxx {
         }else{
             integr.set_tol(rtol, atol);
         }
-        if (dx0 != 0.0)
-            integr.set_init_step(dx0);
+        integr.set_init_step(dx0);
         if (dx_min != 0.0)
             integr.set_min_step(dx0);
         if (dx_max != 0.0)
@@ -643,126 +635,226 @@ namespace cvodes_cxx {
         if (mxsteps)
             integr.set_max_num_steps(mxsteps);
 
-        if (iterative){
-            if (direct_mode)
-                throw std::runtime_error("Cannot use both direct and interative solver!");
-            switch (iterative) {
+
+        if (iter_type == 2){
+            // Newton iteration --> we need a linear solver:
+            switch(linear_solver){
             case 1:
-                integr.set_linear_solver_to_iterative(IterLinSolEnum::GMRES); break;
+                integr.set_linear_solver_to_dense(ny);
+                if (with_jacobian)
+                    integr.set_dense_jac_fn(jac_dense_cb<OdeSys >);
+                break;
             case 2:
-                integr.set_linear_solver_to_iterative(IterLinSolEnum::BICGSTAB); break;
-            case 3:
-                integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR); break;
+                integr.set_linear_solver_to_banded(ny, odesys->get_mupper(), odesys->get_mlower());
+                if (with_jacobian)
+                    integr.set_band_jac_fn(jac_band_cb<OdeSys >);
+                break;
+            case 10:
+            case 11:
+                integr.set_linear_solver_to_iterative(IterLinSolEnum::GMRES, maxl); break;
+            case 20:
+                integr.set_linear_solver_to_iterative(IterLinSolEnum::BICGSTAB, maxl); break;
+            case 30:
+                integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR, maxl); break;
+            default:
+                throw std::runtime_error("Invalid linear_solver");
             }
-            integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
-            integr.set_preconditioner(prec_setup_cb<OdeSys>,
-                                      jac_prec_solve_cb<OdeSys>);
-            integr.set_iter_eps_lin(0); // 0 => default.
-#if !defined(NDEBUG)
-            std::cout << "so we set it to iterative alright..." << std::endl;
-#endif
-            // integr.set_gram_schmidt_type() // GMRES
-            // integr.set_krylov_max_len()  // BiCGStab, TFQMR
-        } else {
-            switch (direct_mode) {
-            case 0:
-                throw std::runtime_error("Must use either direct or interative solver!");
-            case 1:
-                integr.set_linear_solver_to_dense(odesys->ny);
-                if (with_jacobian)
-                    integr.set_dense_jac_fn(jac_dense_cb<OdeSys>);
-                break;
-            case 2:
-                integr.set_linear_solver_to_banded(ny, odesys->mupper, odesys->mlower);
-                if (with_jacobian)
-                    integr.set_band_jac_fn(jac_band_cb<OdeSys>);
-                break;
+            if (linear_solver >= 10){
+                if (!with_jacobian)
+                    throw std::runtime_error("Iterative method requires an (approximate) jacobian");
+                integr.set_prec_type(PrecType::Left);
+                integr.set_iter_eps_lin(eps_lin);
+                integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
+                integr.set_preconditioner(prec_setup_cb<OdeSys>, jac_prec_solve_cb<OdeSys>);
+                if (linear_solver == 10 || linear_solver == 11) // GMRES
+                    integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
+                else if (linear_solver == 20 or linear_solver == 30) // BiCGStab, TFQMR
+                    ;
+                else
+                    throw std::runtime_error("Unknown linear_solver.");
             }
         }
+        odesys->integrator = static_cast<void*>(&integr);
         return integr;
     }
 
     template <class OdeSys>
-    std::pair<std::vector<double>, std::vector<double> >
-    simple_adaptive(OdeSys * odesys,
+    std::pair<std::vector<realtype>, std::vector<realtype> >
+    simple_adaptive(OdeSys * const odesys,
                     const std::vector<realtype> atol,
-                    const realtype rtol, const int lmm,
+                    const realtype rtol,
+                    const int lmm,
                     const realtype * const y0,
                     const realtype t0,
                     const realtype tend,
-                    const double dx0=0.0,
-                    const double dx_min=0.0,
-                    const double dx_max=0.0,
+                    std::vector<int>& root_indices,
+                    const realtype dx0=0.0,
+                    const realtype dx_min=0.0,
+                    const realtype dx_max=0.0,
                     const long int mxsteps=0,
-                    const int direct_mode=0,
                     const bool with_jacobian=false,
-                    const int iterative=0,
+                    int iter_type=0,
+                    int linear_solver=0,
+                    const int maxl=0,
+                    const realtype eps_lin=0.0,
                     const int nderiv=0,
-                    std::vector<int>& root_indices=std::vector<int>(),
-                    int sparse=0,
                     bool return_on_root=false
                     ){
-        // iterative == 0 => direct (Newton)
-        //     direct_mode == 1 => dense
-        //     direct_mode == 2 => banded
-        // iterative == 1 => iterative (GMRES)
-        // iterative == 2 => iterative (BiCGStab)
-        // iterative == 3 => iterative (TFQMR)
-        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0,
-                                             dx0, dx_min, dx_max, mxsteps,
-                                             direct_mode, with_jacobian, iterative);
-        return integr.adaptive(odesys->ny, t0, tend, y0, nderiv, root_indices, sparse, return_on_root);
+        // iter_type == 0 => 1 if lmm == CV_ADAMS else 2
+        // iter_type == 1 => Functional (ignore linear_solver)
+        // iter_type == 2 => Newton
+
+        // linear_solver ==  0 => 1 if get_mlower() == -1 else 2
+        // linear_solver ==  1 => Direct (dense LU-factorization)
+        // linear_solver ==  2 => Direct (banded LU-factorization)
+        // linear_solver == 10 => Iterative, GMRES, Modified Gram-Schmidt
+        // linear_solver == 11 => Iterative, GMRES, Classical Gram-Schmidt
+        // linear_solver == 20 => Iterative, Bi-CGStab (maxl => maximum dimension of Krylov subspace)
+        // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
+        if (iter_type == 0)
+            iter_type = (lmm == CV_ADAMS) ? 1 : 2;
+        if (iter_type != 1 and iter_type != 2)
+            throw std::runtime_error("Invalid iter_type");
+        if (linear_solver == 0)
+            linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
+                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin);
+        return integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
     }
+
     template <class OdeSys>
-    void simple_predefined(OdeSys * odesys,
+    void simple_predefined(OdeSys * const odesys,
                            const std::vector<realtype> atol,
-                           const realtype rtol, const int lmm,
+                           const realtype rtol,
+                           const int lmm,
                            const realtype * const y0,
                            const std::size_t nout,
                            const realtype * const tout,
                            realtype * const yout,
-                           const double dx0=0.0,
-                           const double dx_min=0.0,
-                           const double dx_max=0.0,
+                           std::vector<int>& root_indices,
+                           const realtype dx0=0.0,
+                           const realtype dx_min=0.0,
+                           const realtype dx_max=0.0,
                            const long int mxsteps=0,
-                           const int direct_mode=0,
                            const bool with_jacobian=false,
-                           const int iterative=0,
-                           const int nderiv=0,
-                           std::vector<int>& root_indices=std::vector<int>()
+                           int iter_type=0,
+                           int linear_solver=0,
+                           const int maxl=0,
+                           const realtype eps_lin=0.0,
+                           const int nderiv=0
                            ){
-        // iterative == 0 => direct (Newton)
-        //     direct_mode == 1 => dense
-        //     direct_mode == 2 => banded
-        // iterative == 1 => iterative (GMRES)
-        // iterative == 2 => iterative (BiCGStab)
-        // iterative == 3 => iterative (TFQMR)
-        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0],
-                                             dx0, dx_min, dx_max, mxsteps,
-                                             direct_mode, with_jacobian, iterative);
-        integr.predefined(nout, odesys->ny, tout, y0, yout, nderiv, root_indices);
-#if !defined(NDEBUG)
-        std::cout << "n_steps=" << integr.get_n_steps() << std::endl;
-        std::cout << "n_rhs_evals=" << integr.get_n_rhs_evals() << std::endl;
-        std::cout << "n_lin_solv_setups=" << integr.get_n_lin_solv_setups() << std::endl;
-        std::cout << "n_err_test_fails=" << integr.get_n_err_test_fails() << std::endl;
-        std::cout << "n_nonlin_solv_iters=" << integr.get_n_nonlin_solv_iters() << std::endl;
-        std::cout << "n_nonlin_solv_conv_fails=" << integr.get_n_nonlin_solv_conv_fails() << std::endl;
+        // iter_type == 0 => 1 if lmm == CV_ADAMS else 2
+        // iter_type == 1 => Functional (ignore linear_solver)
+        // iter_type == 2 => Newton
 
-        if (iterative) {
-            std::cout << "n_lin_iters=" << integr.get_n_lin_iters() << std::endl;
-            std::cout << "n_prec_evals=" << integr.get_n_prec_evals() << std::endl;
-            std::cout << "n_prec_solves=" << integr.get_n_prec_solves() << std::endl;
-            std::cout << "n_conv_fails=" << integr.get_n_conv_fails() << std::endl;
-            std::cout << "n_jac_times_evals=" << integr.get_n_jac_times_evals() << std::endl;
-            std::cout << "n_iter_rhs=" << integr.get_n_iter_rhs() << std::endl;
-        } else {
-            std::cout << "n_dls_jac_evals=" << integr.get_n_dls_jac_evals() << std::endl;
-            std::cout << "n_dls_rhs_evals=" << integr.get_n_dls_rhs_evals() << std::endl;
+        // linear_solver ==  0 => 1 if get_mlower() == -1 else 2
+        // linear_solver ==  1 => Direct (dense LU-factorization)
+        // linear_solver ==  2 => Direct (banded LU-factorization)
+        // linear_solver == 10 => Iterative, GMRES, Modified Gram-Schmidt
+        // linear_solver == 11 => Iterative, GMRES, Classical Gram-Schmidt
+        // linear_solver == 20 => Iterative, Bi-CGStab (maxl => maximum dimension of Krylov subspace)
+        // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
+        if (iter_type == 0)
+            iter_type = (lmm == CV_ADAMS) ? 1 : 2;
+        if (iter_type != 1 and iter_type != 2)
+            throw std::runtime_error("Invalid iter_type");
+        if (linear_solver == 0)
+            linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
+                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin);
+        integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices);
+        odesys->last_integration_info.clear();
+        odesys->last_integration_info["n_steps"] = integr.get_n_steps();
+        odesys->last_integration_info["n_rhs_evals"] = integr.get_n_rhs_evals();
+        odesys->last_integration_info["n_lin_solv_setups"] = integr.get_n_lin_solv_setups();
+        odesys->last_integration_info["n_err_test_fails"] = integr.get_n_err_test_fails();
+        odesys->last_integration_info["n_nonlin_solv_iters"] = integr.get_n_nonlin_solv_iters();
+        odesys->last_integration_info["n_nonlin_solv_conv_fails"] = integr.get_n_nonlin_solv_conv_fails();
+        if (iter_type == 2){
+            if (linear_solver >= 10) {  // iterative linear solver
+                odesys->last_integration_info["krylov_n_lin_iters"] = integr.get_n_lin_iters();
+                odesys->last_integration_info["krylov_n_prec_evals"] = integr.get_n_prec_evals();
+                odesys->last_integration_info["krylov_n_prec_solves"] = integr.get_n_prec_solves();
+                odesys->last_integration_info["krylov_n_conv_fails"] = integr.get_n_conv_fails();
+                odesys->last_integration_info["krylov_n_jac_times_evals"] = integr.get_n_jac_times_evals();
+                odesys->last_integration_info["krylov_n_iter_rhs"] = integr.get_n_iter_rhs();
+            } else { // direct linear solver
+                odesys->last_integration_info["dense_n_dls_jac_evals"] = integr.get_n_dls_jac_evals();
+                odesys->last_integration_info["dense_n_dls_rhs_evals"] = integr.get_n_dls_rhs_evals();
+            }
         }
-        std::cout.flush();
-#endif
     }
 
-} // namespace cvodes_cxx
-#endif /* CVODES_CXX_HPP_QN7AB5PXNFYNI4JXC567B2OE4R */
+    struct OdeSysBase {
+        int nroots {0};
+        void * integrator;
+        virtual ~OdeSysBase() {}
+        virtual int get_mlower() { return -1; }
+        virtual int get_mupper() { return -1; }
+        virtual void rhs(double t, const double * const y, double * const f) = 0;
+        virtual void roots(double xval, const double * const y, double * const out) {
+            ignore(xval); ignore(y); ignore(out);
+            throw std::runtime_error("roots not implemented.");
+        }
+        virtual void dense_jac_cmaj(double t, const double * const y, const double * const fy,
+                                    double * const jac, long int ldim){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
+            throw std::runtime_error("dense_jac_cmaj not implemented.");
+        }
+        virtual void banded_padded_jac_cmaj(double t, const double * const y, const double * const fy,
+                                            double * const jac, long int ldim){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
+            throw std::runtime_error("banded_padded_jac_cmaj not implemented.");
+        }
+            virtual void jac_times_vec(const double * const vec,
+                                       double * const out,
+                                       double t,
+                                       const double * const y,
+                                       const double * const fy
+                                       )
+        {
+            cvodes_cxx::ignore(vec);
+            cvodes_cxx::ignore(out);
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            throw std::runtime_error("Not implemented!");
+        }
+        virtual void prec_setup(double t,
+                                const double * const __restrict__ y,
+                                const double * const __restrict__ fy,
+                                bool jok,
+                                bool& jac_recomputed,
+                                double gamma)
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(jok);
+            cvodes_cxx::ignore(jac_recomputed);
+            cvodes_cxx::ignore(gamma);
+            throw std::runtime_error("prec_steup not  implemented.");
+        }
+        virtual int prec_solve_left(const double t,
+                                    const double * const __restrict__ y,
+                                    const double * const __restrict__ fy,
+                                    const double * const __restrict__ r,
+                                    double * const __restrict__ z,
+                                    double gamma,
+                                    double delta,
+                                    const double * const __restrict__ ewt)
+        {
+            cvodes_cxx::ignore(t);
+            cvodes_cxx::ignore(y);
+            cvodes_cxx::ignore(fy);
+            cvodes_cxx::ignore(r);
+            cvodes_cxx::ignore(z);
+            cvodes_cxx::ignore(gamma);
+            cvodes_cxx::ignore(delta);
+            cvodes_cxx::ignore(ewt);
+            throw std::runtime_error("prec_solve_left not implemented.");
+            return -1;
+        }
+    };
+}

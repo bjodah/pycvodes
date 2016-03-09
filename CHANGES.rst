@@ -1,3 +1,10 @@
+v0.4.0
+======
+- kwarg 'iterative' changed to 'iter_type' and 'linear_solver'
+- sparse option dropped
+- more flexible C++ interface
+- pycvodes.get_include() useful for other projects linking against sundials (cvodes)
+
 v0.3.0
 ======
 - Better debugging (preserve back-trace from calling rhs() and jac())
