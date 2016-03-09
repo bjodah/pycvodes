@@ -8,6 +8,8 @@ if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
     exit 1
 fi
+find . -type f -iname "*.pyc" -o -iname "*.o" -o -iname "*.so" -exec rm {} +
+find . -type d -name "__pycache__" -exec rmdir {} +
 ./scripts/check_clean_repo_on_master.sh
 cd $(dirname $0)/..
 # PKG will be name of the directory one level up containing "__init__.py" 
