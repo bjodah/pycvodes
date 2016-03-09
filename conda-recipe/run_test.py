@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from block_diag_ilu import get_include
+from pycvodes import get_include
 header_fname = 'cvodes_cxx.hpp'
 assert header_fname in os.listdir(get_include())
 path = os.path.join(get_include(), header_fname)
