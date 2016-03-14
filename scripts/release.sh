@@ -17,7 +17,9 @@ PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xarg
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ./scripts/run_tests.sh
 env ${PKG_UPPER}_RELEASE_VERSION=$1 python setup.py sdist
-PATH=$2:$PATH ./scripts/build_conda_recipe.sh $1 27 34
+for CONDA_PY in 27 34 35; do
+    PATH=$2:$PATH CONDA_NPY=110 ./scripts/build_conda_recipe.sh $1
+done
 
 # All went well, add a tag and push it.
 git tag -a $1 -m $1
@@ -27,16 +29,18 @@ VERSION=${1#v}
 twine upload dist/${PKG}-$VERSION.tar.gz
 MD5=$(md5sum dist/${PKG}-$VERSION.tar.gz | cut -f1 -d' ')
 
-if [[ -d dist/conda-recipe-${1#v} ]]; then
-    rm -r dist/conda-recipe-${1#v}
+if [[ -d dist/conda-recipe-$VERSION ]]; then
+    rm -r dist/conda-recipe-$VERSION
 fi
-cp -r conda-recipe/ dist/conda-recipe-${1#v}
-sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n    url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n    md5: $MD5/" dist/conda-recipe-${1#v}/meta.yaml
+cp -r conda-recipe/ dist/conda-recipe-$VERSION
+sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n  url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n  md5: $MD5/" -e '/cython/d' dist/conda-recipe-$VERSION/meta.yaml
 
-# Specific for this project:
+# Specific for this project (alternatively use a Docker image for this):
 SERVER=hera
-scp -r dist/conda-recipe-${1#v}/ $PKG@$SERVER:~/public_html/conda-recipes/
+scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
 scp dist/${PKG}-$VERSION.tar.gz $PKG@$SERVER:~/public_html/releases/
-ssh $PKG@$SERVER "source /etc/profile; CONDA_PY=27 conda-build ~/public_html/conda-recipes/conda-recipe-${1#v}/"
-ssh $PKG@$SERVER "source /etc/profile; CONDA_PY=34 conda-build ~/public_html/conda-recipes/conda-recipe-${1#v}/"
+for CONDA_PY in 27 34 35; do
+    # This will test the the source distribution uploaded to PyPI:
+    ssh $PKG@$SERVER "source /etc/profile; CONDA_PY=$CONDA_PY CONDA_NPY=110 conda-build ~/public_html/conda-recipes/conda-recipe-$VERSION/"
+done
 
