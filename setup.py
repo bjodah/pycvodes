@@ -44,9 +44,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 
 PYCVODES_RELEASE_VERSION = os.environ.get('PYCVODES_RELEASE_VERSION', '')
 
-# http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-CONDA_BUILD = os.environ.get('CONDA_BUILD', '0') == '1'
-if CONDA_BUILD:
+if os.environ.get('CONDA_BUILD', '0') == '1':
+    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
     try:
         PYCVODES_RELEASE_VERSION = 'v' + open(
             '__conda_version__.txt', 'rt').readline().rstrip()
@@ -55,8 +54,9 @@ if CONDA_BUILD:
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 
-if (len(PYCVODES_RELEASE_VERSION) > 1 and
-   PYCVODES_RELEASE_VERSION[0] == 'v'):
+if len(PYCVODES_RELEASE_VERSION) > 1:
+    if PYCVODES_RELEASE_VERSION[0] != 'v':
+        raise ValueError("PYCVODES_RELEASE_VERSION does not start with 'v'")
     TAGGED_RELEASE = True
     __version__ = PYCVODES_RELEASE_VERSION[1:]
 else:
@@ -81,6 +81,7 @@ with open(_path_under_setup(pkg_name, '__init__.py'), 'rt') as f:
 assert 10 < len(short_description) < 255
 long_description = open(_path_under_setup('README.rst')).read()
 assert len(long_description) > 100
+
 setup_kwargs = dict(
     name=pkg_name,
     version=__version__,

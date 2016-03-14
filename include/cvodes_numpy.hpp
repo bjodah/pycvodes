@@ -25,7 +25,7 @@ namespace cvodes_numpy{
         PyObject *py_rhs, *py_jac, *py_roots;
         const size_t ny;
         size_t nfev, njev;
-        double time_cpu;
+        double time_cpu, time_wall;
         const int mlower, mupper, nroots;
         std::vector<realtype> xout;
         std::vector<realtype> yout;
@@ -47,6 +47,7 @@ namespace cvodes_numpy{
                         int iter_type=0, int linear_solver=0, int maxl=5, realtype eps_lin=0.0, int nderiv=0,
                         bool return_on_root=false){
             std::clock_t cputime0 = std::clock();
+            auto t_start = std::chrono::high_resolution_clock::now();
             const bool with_jacobian = py_jac != Py_None;
             auto y0 = (realtype*)PyArray_GETPTR1(py_y0, 0);
             nfev = 0; njev = 0;
@@ -57,6 +58,7 @@ namespace cvodes_numpy{
             this->xout = xy_out.first;
             this->yout = xy_out.second;
             this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
+            this->time_wall = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count();
             return this->xout.size();
         }
 
@@ -66,6 +68,7 @@ namespace cvodes_numpy{
                         realtype dx0, realtype dx_min=0.0, realtype dx_max=0.0, long int mxsteps=0,
                         int iter_type=0, int linear_solver=0, int maxl=5, realtype eps_lin=0.0, int nderiv=0) {
             std::clock_t cputime0 = std::clock();
+            auto t_start = std::chrono::high_resolution_clock::now();
             auto y0 = (realtype*)PyArray_GETPTR1(py_y0, 0);
             auto xout = (realtype*)PyArray_GETPTR1(py_xout, 0);
             auto yout = (realtype*)PyArray_GETPTR1(py_yout, 0);
@@ -78,6 +81,7 @@ namespace cvodes_numpy{
                                                     dx_max, mxsteps, with_jacobian, iter_type, linear_solver, maxl,
                                                     eps_lin, nderiv);
             this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
+            this->time_wall = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count();
         }
 
         void rhs(realtype xval, const realtype * const y, realtype * const dydx){

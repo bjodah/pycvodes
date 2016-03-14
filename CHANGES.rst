@@ -1,3 +1,7 @@
+v0.4.1 (unreleased)
+===================
+- Added 'time_wall' output from integration.
+
 v0.4.0
 ======
 - kwarg 'iterative' changed to 'iter_type' and 'linear_solver'
