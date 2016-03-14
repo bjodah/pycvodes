@@ -98,6 +98,7 @@ cdef class Cvodes:
         info = {'nfev': self.thisptr.nfev,
                 'njev': self.thisptr.njev,
                 'time_cpu': self.thisptr.time_cpu,
+                'time_wall': self.thisptr.time_wall,
                 'success': self.success}
         if self.thisptr.nroots > 0:
             info['root_indices'] = self.get_root_indices()

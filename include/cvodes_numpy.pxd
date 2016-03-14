@@ -10,7 +10,7 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
     cdef cppclass PyCvodes:
         const size_t ny
         size_t nfev, njev
-        double time_cpu
+        double time_cpu, time_wall
         const int mlower, mupper, nroots
         vector[double] xout
         vector[double] yout
