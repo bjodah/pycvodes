@@ -94,6 +94,19 @@ cdef class Cvodes:
     def get_root_indices(self):
         return self.thisptr.root_indices
 
+    def get_roots_output(self):
+        cdef:
+            int i, j
+            int ny_plus_1 = self.thisptr.ny + 1
+        if self.thisptr.roots_output.size() % ny_plus_1 != 0:
+            raise ValueError("roots_output of incompatible dimension.")
+        shape = (self.thisptr.roots_output.size() / ny_plus_1, ny_plus_1)
+        cdef cnp.ndarray[cnp.float64_t, ndim=2, mode='c'] arr = np.empty(shape)
+        for i in range(self.thisptr.roots_output.size() / ny_plus_1):
+            for j in range(ny_plus_1):
+                arr[i, j] = self.thisptr.roots_output[i*ny_plus_1 + j]
+        return arr[:, 0], arr[:, 1:]
+
     def get_info(self):
         info = {'nfev': self.thisptr.nfev,
                 'njev': self.thisptr.njev,
@@ -102,6 +115,7 @@ cdef class Cvodes:
                 'success': self.success}
         if self.thisptr.nroots > 0:
             info['root_indices'] = self.get_root_indices()
+            info['roots_output'] = self.get_roots_output()
         info.update(self.last_integration_info)
         return info
 

@@ -243,3 +243,22 @@ def test_return_on_root():
     assert len(info['root_indices']) == 1
     assert abs(xout[-1] - 1) < 1e-11
     assert abs(yout[-1, 0] - exp(1)) < 1e-11
+
+
+def test_predefined_roots_output():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12,
+                  method='adams', roots=roots, nroots=1)
+
+    yout, info = integrate_predefined(f, None, [1], [0, 2], **kwargs)
+    assert len(info['root_indices']) == 1
+    roots_x, roots_y = info['roots_output']
+    assert roots_x.shape == (1,)
+    assert roots_y.shape == (1, 1)
+    assert abs(roots_x[-1] - 1) < 1e-11
+    assert abs(roots_y[-1, 0] - exp(1)) < 1e-11
