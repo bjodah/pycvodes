@@ -1,6 +1,7 @@
-v0.4.1 (unreleased)
-===================
+v0.4.1
+======
 - Added 'time_wall' output from integration.
+- Added 'roots_output' to info dict of predefined
 
 v0.4.0
 ======

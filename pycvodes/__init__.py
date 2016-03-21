@@ -76,6 +76,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         yout: 2-dimensional array of the dependent variables (axis 1) for
             values corresponding to xout (axis 0)
         info: dictionary with information about the integration
+
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
@@ -123,7 +124,8 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     nderiv: int
         number of derivatives (default: 0)
     roots: callback (default: None)
-        with signature roots(x, yarr[:ny], out[:nroots]) -> None
+        With signature ``roots(x, yarr[:ny], out[:nroots]) -> None``,
+        see info['root_indices'], note that xout is unaffected.
     nroots: int (default: 0)
         number of root functions in roots
     check_callable: bool (default: False)
@@ -145,6 +147,7 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         result: 2-dimensional array of the dependent variables (axis 1) for
             values corresponding to xout (axis 0)
         info: dictionary with information about the integration
+
     """
     # Sanity checks to reduce risk of having a segfault:
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)

@@ -30,6 +30,7 @@ namespace cvodes_numpy{
         std::vector<realtype> xout;
         std::vector<realtype> yout;
         std::vector<int> root_indices;
+        std::vector<double> roots_output;
         std::unordered_map<std::string, int> last_integration_info;
         void *integrator;
 
@@ -76,8 +77,10 @@ namespace cvodes_numpy{
             const bool with_jacobian = py_jac != Py_None;
             nfev = 0; njev = 0;
             this->root_indices.clear();
+            this->roots_output.clear();
             cvodes_cxx::simple_predefined<PyCvodes>(this, std::vector<realtype>(1, atol), rtol,
-                                                    step_type_idx, y0, nt, xout, yout, this->root_indices, dx0, dx_min,
+                                                    step_type_idx, y0, nt, xout, yout, this->root_indices,
+                                                    this->roots_output, dx0, dx_min,
                                                     dx_max, mxsteps, with_jacobian, iter_type, linear_solver, maxl,
                                                     eps_lin, nderiv);
             this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
