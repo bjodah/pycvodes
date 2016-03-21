@@ -19,7 +19,7 @@ pycvodes
 `Python <http://www.python.org>`_ binding to the
 `Ordinary Differential Equation <https://en.wikipedia.org/wiki/Ordinary_differential_equation>`_
 integration routines from `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ in the
-`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pyvodes`` allows a user to numerically integrate
+`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pcyvodes`` allows a user to numerically integrate
 (systems of) differential equations. Note that routines for sensitivity analysis is not yet exposed in this binding (which makes
 the functionality essentially the same as cvode). 
 
