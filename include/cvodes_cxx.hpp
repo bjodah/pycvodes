@@ -463,7 +463,7 @@ namespace cvodes_cxx {
         }
 
         void predefined(int nt, int ny, const realtype * const tout, const realtype * const y0,
-                        realtype * const yout, int nderiv, std::vector<int>& root_indices){
+                        realtype * const yout, int nderiv, std::vector<int>& root_indices, std::vector<realtype>& root_out){
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -486,6 +486,9 @@ namespace cvodes_cxx {
                 status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
+                        root_out.push_back(cur_t);
+                        for (int i=0; i<ny; ++i)
+                            root_out.push_back(y[i]);
                         root_indices.push_back(iout);
                         iout--;
                         continue;
@@ -733,6 +736,7 @@ namespace cvodes_cxx {
                            const realtype * const tout,
                            realtype * const yout,
                            std::vector<int>& root_indices,
+                           std::vector<double>& root_out,
                            const realtype dx0=0.0,
                            const realtype dx_min=0.0,
                            const realtype dx_max=0.0,
@@ -763,7 +767,7 @@ namespace cvodes_cxx {
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
-        integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices);
+        integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices, root_out);
         odesys->last_integration_info.clear();
         odesys->last_integration_info["n_steps"] = integr.get_n_steps();
         odesys->last_integration_info["n_rhs_evals"] = integr.get_n_rhs_evals();

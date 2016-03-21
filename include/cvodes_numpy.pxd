@@ -15,6 +15,7 @@ cdef extern from "cvodes_numpy.hpp" namespace "cvodes_numpy":
         vector[double] xout
         vector[double] yout
         vector[int] root_indices
+        vector[int] roots_output
         unordered_map[string, int] last_integration_info
 
         PyCvodes(PyObject*, PyObject*, PyObject*, size_t, int, int, int)
