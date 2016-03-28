@@ -9,8 +9,8 @@ fi
 
 python2.7 setup.py sdist
 for PYTHON in python2.7 python3.4; do
-    (cd dist/; $PYTHON -m pip install $1-$($PYTHON ../setup.py --version).tar.gz)
-    (cd /; $PYTHON -m pytest --pyargs $1)
+    (cd dist/; $PYTHON -m pip install $PKG_NAME-$($PYTHON ../setup.py --version).tar.gz)
+    (cd /; $PYTHON -m pytest --pyargs $PKG_NAME)
 done
 
 PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
