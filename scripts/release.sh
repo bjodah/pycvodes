@@ -9,6 +9,10 @@ if [[ $1 != v* ]]; then
     exit 1
 fi
 VERSION=${1#v}
+find . -type f -iname "*.pyc" -exec rm {} +
+find . -type f -iname "*.o" -exec rm {} +
+find . -type f -iname "*.so" -exec rm {} +
+find . -type d -name "__pycache__" -exec rmdir {} +
 ./scripts/check_clean_repo_on_master.sh
 cd $(dirname $0)/..
 # PKG will be name of the directory one level up containing "__init__.py" 
@@ -29,7 +33,7 @@ git push --tags
 twine upload dist/${PKG}-$VERSION.tar.gz
 MD5=$(md5sum dist/${PKG}-$VERSION.tar.gz | cut -f1 -d' ')
 cp -r conda-recipe/ dist/conda-recipe-$VERSION
-sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n    url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n    md5: $MD5/" dist/conda-recipe-$VERSION/meta.yaml
+sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n  url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n  md5: $MD5/" dist/conda-recipe-$VERSION/meta.yaml
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py upload_sphinx
 
 # Specific for this project:

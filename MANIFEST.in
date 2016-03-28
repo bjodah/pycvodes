@@ -1,6 +1,5 @@
-recursive-include include *.hpp
+recursive-include include *.hpp *.pxd
 include AUTHORS
 include CHANGES.rst
 include LICENSE
 include README.rst
-include requirements.txt

@@ -15,41 +15,48 @@ pkg_name = 'pycvodes'
 # Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
 include_dirs = []
-LLAPACK = os.environ.get('LLAPACK', 'lapack')
-USE_CYTHON = os.path.exists('pycvodes/_cvodes_numpy.pyx')
+
+
+def _path_under_setup(*args):
+    return os.path.join(os.path.dirname(__file__), *args)
+
+
+USE_CYTHON = os.path.exists(_path_under_setup('pycvodes', '_cvodes_numpy.pyx'))
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    include_dirs = [np.get_include(), './include']
+    LLAPACK = os.environ.get('LLAPACK', 'lapack')
+    include_dirs = [np.get_include(), _path_under_setup('include')]
     ext = '.pyx' if USE_CYTHON else '.cpp'
-    ext_modules = [
-        Extension('pycvodes._cvodes_numpy',
-                  ['pycvodes/_cvodes_numpy'+ext],
-                  language='c++', extra_compile_args=['-std=c++11'],
-                  libraries=['sundials_cvodes', LLAPACK,
-                             'sundials_nvecserial'])
-    ]
+    sources = ['pycvodes/_cvodes_numpy'+ext]
+    ext_modules = [Extension('pycvodes._cvodes_numpy', sources)]
     if USE_CYTHON:
         from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=['./include'],
-                                gdb_debug=True)
+        ext_modules = cythonize(ext_modules, include_path=['./include'])
+    ext_modules[0].language = 'c++'
+    ext_modules[0].extra_compile_args = ['-std=c++11']
+    ext_modules[0].include_dirs = [_path_under_setup('include')]
+    ext_modules[0].libraries += ['sundials_cvodes',
+                                 os.environ.get('LLAPACK', 'lapack'),
+                                 'sundials_nvecserial']
+
 
 PYCVODES_RELEASE_VERSION = os.environ.get('PYCVODES_RELEASE_VERSION', '')
 
-# http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-CONDA_BUILD = os.environ.get('CONDA_BUILD', '0') == '1'
-if CONDA_BUILD:
+if os.environ.get('CONDA_BUILD', '0') == '1':
+    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
     try:
         PYCVODES_RELEASE_VERSION = 'v' + open(
             '__conda_version__.txt', 'rt').readline().rstrip()
     except IOError:
         pass
 
-release_py_path = os.path.join(pkg_name, '_release.py')
+release_py_path = _path_under_setup(pkg_name, '_release.py')
 
-if (len(PYCVODES_RELEASE_VERSION) > 1 and
-   PYCVODES_RELEASE_VERSION[0] == 'v'):
+if len(PYCVODES_RELEASE_VERSION) > 1:
+    if PYCVODES_RELEASE_VERSION[0] != 'v':
+        raise ValueError("PYCVODES_RELEASE_VERSION does not start with 'v'")
     TAGGED_RELEASE = True
     __version__ = PYCVODES_RELEASE_VERSION[1:]
 else:
@@ -69,17 +76,24 @@ tests = [
     'pycvodes.tests',
 ]
 
-descr = 'Python binding for cvodes from the sundials library.'
+with open(_path_under_setup(pkg_name, '__init__.py'), 'rt') as f:
+    short_description = f.read().split('"""')[1].split('\n')[1]
+assert 10 < len(short_description) < 255
+long_description = open(_path_under_setup('README.rst')).read()
+assert len(long_description) > 100
+
 setup_kwargs = dict(
     name=pkg_name,
     version=__version__,
-    description=descr,
+    description=short_description,
+    long_description=long_description,
     classifiers=classifiers,
     author='Björn Dahlgren',
     author_email='bjodah@DELETEMEgmail.com',
     url='https://github.com/bjodah/' + pkg_name,
     license='BSD',
     packages=[pkg_name] + tests,
+    package_data={pkg_name: ['include/*.hpp']},
     install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     ext_modules=ext_modules,

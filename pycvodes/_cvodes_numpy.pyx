@@ -1,4 +1,5 @@
 # -*- coding: utf-8; mode: cython -*-
+# distutils: language = c++
 
 from cpython.object cimport PyObject
 from libcpp cimport bool
@@ -8,6 +9,12 @@ import numpy as np
 from cvodes_numpy cimport PyCvodes
 
 cnp.import_array()  # Numpy C-API initialization
+
+steppers = {'adams': 1, 'bdf': 2}  # grep "define CV_ADAMS" cvodes.h
+requires_jac = ('bdf',)
+iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
+linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
+
 
 cdef class Cvodes:
 
@@ -25,17 +32,19 @@ cdef class Cvodes:
     def adaptive(self, cnp.ndarray[cnp.float64_t, ndim=1] y0,
                  double t0, double tend,
                  double atol, double rtol,
-                 int step_type_idx=1,
+                 int iter_type, int linear_solver, int step_type_idx=1,
                  double dx0=.0, double dx_min=.0, double dx_max=.0, long int mxsteps=0,
-                 int nderiv=0, int sparse=0, bool return_on_root=False):
-        cdef int iterative = 0
+                 int nderiv=0, bool return_on_root=False):
+        cdef:
+            int maxl = 0
+            double epslin = 0.0
         if y0.size < self.thisptr.ny:
             raise ValueError("y0 too short")
         self.success = True
         try:
-            return self.thisptr.adaptive(<PyObject*>y0, t0, tend, atol,
-                                         rtol, step_type_idx, dx0, dx_min, dx_max, mxsteps,
-                                         iterative, nderiv, sparse, return_on_root)
+            return self.thisptr.adaptive(
+                <PyObject*>y0, t0, tend, atol, rtol, step_type_idx, dx0, dx_min, dx_max, mxsteps,
+                iter_type, linear_solver, maxl, epslin, nderiv, return_on_root)
         except:
             self.success = False
             raise
@@ -43,11 +52,12 @@ cdef class Cvodes:
     def predefined(self, cnp.ndarray[cnp.float64_t, ndim=1] y0,
                    cnp.ndarray[cnp.float64_t, ndim=1] xout,
                    double atol, double rtol,
-                   int step_type_idx=8,
+                   int iter_type, int linear_solver, int step_type_idx=8,
                    double dx0=.0, double dx_min=.0, double dx_max=.0, long int mxsteps=0,
                    int nderiv=0):
         cdef:
-            int iterative = 0
+            int maxl = 0
+            double epslin = 0.0
             cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, y0.size),
                                                                dtype=np.float64)
         if y0.size < self.thisptr.ny:
@@ -55,9 +65,9 @@ cdef class Cvodes:
         yout[0, :] = y0
         self.success = True
         try:
-            self.thisptr.predefined(<PyObject*>y0, <PyObject*>xout, <PyObject*>yout,
-                                    atol, rtol, step_type_idx, dx0, dx_min, dx_max,
-                                    mxsteps, iterative, nderiv)
+            self.thisptr.predefined(
+                <PyObject*>y0, <PyObject*>xout, <PyObject*>yout, atol, rtol, step_type_idx, dx0, dx_min, dx_max,
+                mxsteps, iter_type, linear_solver, maxl, epslin, nderiv)
         except:
             self.success = False
             raise
@@ -84,22 +94,39 @@ cdef class Cvodes:
     def get_root_indices(self):
         return self.thisptr.root_indices
 
+    def get_roots_output(self):
+        cdef:
+            int i, j
+            int ny_plus_1 = self.thisptr.ny + 1
+        if self.thisptr.roots_output.size() % ny_plus_1 != 0:
+            raise ValueError("roots_output of incompatible dimension.")
+        shape = (self.thisptr.roots_output.size() / ny_plus_1, ny_plus_1)
+        cdef cnp.ndarray[cnp.float64_t, ndim=2, mode='c'] arr = np.empty(shape)
+        for i in range(self.thisptr.roots_output.size() / ny_plus_1):
+            for j in range(ny_plus_1):
+                arr[i, j] = self.thisptr.roots_output[i*ny_plus_1 + j]
+        return arr[:, 0], arr[:, 1:]
+
     def get_info(self):
-        info = {'nfev': self.thisptr.nrhs,
-                'njev': self.thisptr.njac,
+        info = {'nfev': self.thisptr.nfev,
+                'njev': self.thisptr.njev,
                 'time_cpu': self.thisptr.time_cpu,
+                'time_wall': self.thisptr.time_wall,
                 'success': self.success}
         if self.thisptr.nroots > 0:
             info['root_indices'] = self.get_root_indices()
+            info['roots_output'] = self.get_roots_output()
+        info.update(self.last_integration_info)
         return info
 
+    property last_integration_info:
+        def __get__(self):
+            return self.thisptr.last_integration_info
 
-steppers = ['adams', 'bdf']
-requires_jac = ('bdf',)
 
-def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-             dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
-             lband=None, uband=None, roots=None, nroots=0, sparse=0, return_on_root=False):
+def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
+             iter_type='default', linear_solver='default', lband=None, uband=None, roots=None, nroots=0,
+             return_on_root=False):
     cdef size_t nsteps
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")
@@ -107,23 +134,21 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                     -1 if lband is None else lband,
                     -1 if uband is None else uband,
                     nroots)
-    nsteps = integr.adaptive(np.array(y0, dtype=np.float64),
-                             x0, xend, atol, rtol, steppers.index(method),
-                             dx0, dx_min, dx_max, mxsteps, nderiv, sparse, return_on_root)
+    nsteps = integr.adaptive(np.array(y0, dtype=np.float64), x0, xend, atol, rtol,
+                             iter_types.get(iter_type, 0), linear_solvers.get(linear_solver, 0), steppers[method],
+                             dx0, dx_min, dx_max, mxsteps, nderiv, return_on_root)
     return integr.get_xout(nsteps), integr.get_yout(nsteps, nderiv), integr.get_info()
 
 
-def predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-               dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
-               lband=None, uband=None, roots=None, nroots=0):
+def predefined(rhs, jac, y0, xout, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
+               iter_type='default', linear_solver='default', lband=None, uband=None, roots=None, nroots=0):
     if method in requires_jac and jac is None:
         raise ValueError("Method requires explicit jacobian callback")
     integr = Cvodes(rhs, jac, len(y0), roots,
                     -1 if lband is None else lband,
                     -1 if uband is None else uband,
                     nroots)
-    yout = integr.predefined(np.array(y0, dtype=np.float64),
-                             np.array(xout, dtype=np.float64),
-                             atol, rtol, steppers.index(method),
+    yout = integr.predefined(np.array(y0, dtype=np.float64), np.array(xout, dtype=np.float64), atol, rtol,
+                             iter_types.get(iter_type, 0), linear_solvers.get(linear_solver, 0), steppers[method],
                              dx0, dx_min, dx_max, mxsteps, nderiv)
     return yout, integr.get_info()

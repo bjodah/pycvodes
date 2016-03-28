@@ -1,6 +1,7 @@
 **/*.so
 **/__pycache__
 **/*.pyc
+**/*.pyxbldc
 build/
 dist/
 cython_debug/
@@ -12,3 +13,5 @@ pycvodes/_cvodes_numpy.cpp
 htmlcov/
 **/.ipynb_checkpoints/
 **.egg-info/
+tests/catch.hpp
+tests/test_cvodes_cxx
