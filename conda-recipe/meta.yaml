@@ -20,13 +20,13 @@ requirements:
    - sundials
 
 test:
-    imports:
-        - pycvodes
-    # requires:
-    #     - pytest
-    # commands:
-    #     - py.test --pyargs pycvodes  # https://github.com/conda/conda/issues/2075, https://github.com/pytest-dev/pytest/issues/1445
+  imports:
+    - pycvodes
+# requires:
+#     - pytest
+# commands:
+#     - py.test --pyargs pycvodes  # https://github.com/conda/conda/issues/2075, https://github.com/pytest-dev/pytest/issues/1445
 
 about:
-    home: https://github.com/bjodah/pycvodes
-    license: BSD
+  home: https://github.com/bjodah/pycvodes
+  license: BSD
