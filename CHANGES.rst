@@ -1,3 +1,7 @@
+v0.4.2
+======
+- More robust setup.py
+
 v0.4.1
 ======
 - Added 'time_wall' output from integration.
