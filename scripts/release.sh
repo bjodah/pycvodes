@@ -1,7 +1,7 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/release.sh v1.2.3 ~/anaconda2/bin
+#    $ ./scripts/release.sh v1.2.3 ~/anaconda2/bin myserver.example.com
 #
 
 if [[ $1 != v* ]]; then
@@ -9,6 +9,8 @@ if [[ $1 != v* ]]; then
     exit 1
 fi
 VERSION=${1#v}
+CONDA_PATH=$2
+SERVER=$3
 find . -type f -iname "*.pyc" -exec rm {} +
 find . -type f -iname "*.o" -exec rm {} +
 find . -type f -iname "*.so" -exec rm {} +
@@ -23,23 +25,30 @@ PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py sdist
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh
 for CONDA_PY in 2.7 3.4 3.5; do
-    PATH=$2:$PATH ./scripts/build_conda_recipe.sh v$VERSION --python $CONDA_PY --numpy 1.10
+    for CONDA_NPY in 1.11; do
+        PATH=$CONDA_PATH:$PATH ./scripts/build_conda_recipe.sh v$VERSION --python $CONDA_PY --numpy $CONDA_NPY
+    done
 done
 
 # All went well, add a tag and push it.
 git tag -a v$VERSION -m v$VERSION
 git push
 git push --tags
+env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py upload_sphinx
 twine upload dist/${PKG}-$VERSION.tar.gz
 MD5=$(md5sum dist/${PKG}-$VERSION.tar.gz | cut -f1 -d' ')
 cp -r conda-recipe/ dist/conda-recipe-$VERSION
-sed -i -E -e "s/version:(.+)/version: $VERSION/" -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n  url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n  md5: $MD5/" dist/conda-recipe-$VERSION/meta.yaml
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py upload_sphinx
+sed -i -E \
+    -e "s/version:(.+)/version: $VERSION/" \
+    -e "s/path:(.+)/fn: $PKG-$VERSION.tar.gz\n  url: https:\/\/pypi.python.org\/packages\/source\/${PKG:0:1}\/$PKG\/$PKG-$VERSION.tar.gz#md5=$MD5\n  md5: $MD5/" \
+    -e "/cython/d" \
+    dist/conda-recipe-$VERSION/meta.yaml
 
 # Specific for this project:
-SERVER=hera
 scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
 scp dist/${PKG}-$VERSION.tar.gz $PKG@$SERVER:~/public_html/releases/
 for CONDA_PY in 2.7 3.4 3.5; do
-    ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY --numpy 1.10 ~/public_html/conda-recipes/conda-recipe-$VERSION/"
+    for CONDA_NPY in 1.11; do
+        ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY --numpy $CONDA_NPY ~/public_html/conda-recipes/conda-recipe-$VERSION/"
+    done
 done
