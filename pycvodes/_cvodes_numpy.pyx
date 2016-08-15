@@ -135,7 +135,7 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mx
                     -1 if uband is None else uband,
                     nroots)
     nsteps = integr.adaptive(np.array(y0, dtype=np.float64), x0, xend, atol, rtol,
-                             iter_types.get(iter_type, 0), linear_solvers.get(linear_solver, 0), steppers[method],
+                             iter_types.get(iter_type, 0), linear_solvers[linear_solver], steppers[method],
                              dx0, dx_min, dx_max, mxsteps, nderiv, return_on_root)
     return integr.get_xout(nsteps), integr.get_yout(nsteps, nderiv), integr.get_info()
 
@@ -149,6 +149,6 @@ def predefined(rhs, jac, y0, xout, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mxst
                     -1 if uband is None else uband,
                     nroots)
     yout = integr.predefined(np.array(y0, dtype=np.float64), np.array(xout, dtype=np.float64), atol, rtol,
-                             iter_types.get(iter_type, 0), linear_solvers.get(linear_solver, 0), steppers[method],
+                             iter_types.get(iter_type, 0), linear_solvers[linear_solver], steppers[method],
                              dx0, dx_min, dx_max, mxsteps, nderiv)
     return yout, integr.get_info()
