@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "cvodes_cxx.hpp"
 
 int rhs_cb(double t, N_Vector y, N_Vector f, void * user_data){
@@ -10,8 +11,8 @@ struct Decay : public cvodes_cxx::OdeSysBase {
     double m_k;
 
     Decay(double k) : m_k(k) {}
-    int get_ny() { return 1; }
-    void rhs(double t, const double * const y, double * const f) override {
+    int get_ny() const override { return 1; }
+    void rhs(double t, const double * const __restrict__ y, double * const __restrict__ f) override {
         cvodes_cxx::ignore(t);
         f[0] = -y[0];
     }

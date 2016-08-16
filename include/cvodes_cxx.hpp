@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <unordered_map> // std::unordered_map
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -215,7 +216,7 @@ namespace cvodes_cxx {
                 throw std::runtime_error("Memory allocation request failed.");
             }
         }
-        void cvspils_check_flag(int flag, bool check_ill_input=false) {
+        void cvspils_check_flag(int flag, bool check_ill_input=false) const {
             switch (flag){
             case CVSPILS_SUCCESS:
                 break;
@@ -252,19 +253,19 @@ namespace cvodes_cxx {
             this->cvspils_check_flag(flag);
         }
 
-        void get_err_weights(N_Vector ew){
+        void get_err_weights(N_Vector ew) const {
             check_flag(CVodeGetErrWeights(this->mem, ew));
         }
-        void get_err_weights(SVector &ew) {
+        void get_err_weights(SVector &ew) const {
             this->get_err_weights(ew.n_vec);
         }
-        void get_err_weights(realtype * ew){
+        void get_err_weights(realtype * ew) const {
             SVector ew_(ny, ew);
             this->get_err_weights(ew_);
         }
 
         // get info
-        long int get_n_lin_iters(){
+        long int get_n_lin_iters() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumLinIters(this->mem, &res);
@@ -272,7 +273,7 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_prec_evals(){
+        long int get_n_prec_evals() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumPrecEvals(this->mem, &res);
@@ -280,7 +281,7 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_prec_solves(){
+        long int get_n_prec_solves() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumPrecSolves(this->mem, &res);
@@ -288,7 +289,7 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_conv_fails(){
+        long int get_n_conv_fails() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumConvFails(this->mem, &res);
@@ -296,7 +297,7 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_jac_times_evals(){
+        long int get_n_jac_times_evals() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumJtimesEvals(this->mem, &res);
@@ -304,7 +305,7 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_iter_rhs(){
+        long int get_n_iter_rhs() const {
             long int res=0;
             int flag;
             flag = CVSpilsGetNumRhsEvals(this->mem, &res);
@@ -312,49 +313,49 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_steps(){
+        long int get_n_steps() const {
             long int res=0;
             int flag = CVodeGetNumSteps(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        long int get_n_rhs_evals(){
+        long int get_n_rhs_evals() const {
             long int res=0;
             int flag = CVodeGetNumRhsEvals(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        long int get_n_lin_solv_setups(){
+        long int get_n_lin_solv_setups() const {
             long int res=0;
             int flag = CVodeGetNumLinSolvSetups(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        long int get_n_err_test_fails(){
+        long int get_n_err_test_fails() const {
             long int res=0;
             int flag = CVodeGetNumErrTestFails(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        long int get_n_nonlin_solv_iters(){
+        long int get_n_nonlin_solv_iters() const {
             long int res=0;
             int flag = CVodeGetNumNonlinSolvIters(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        long int get_n_nonlin_solv_conv_fails(){
+        long int get_n_nonlin_solv_conv_fails() const {
             long int res=0;
             int flag = CVodeGetNumNonlinSolvConvFails(this->mem, &res);
             check_flag(flag);
             return res;
         }
 
-        void cvdls_check_flag(int flag) {
+        void cvdls_check_flag(int flag) const {
             switch (flag){
             case CVDLS_SUCCESS:
                 break;
@@ -364,21 +365,21 @@ namespace cvodes_cxx {
                 throw std::runtime_error("CVDLS linear solver has not been initialized)");
             }
         }
-        long int get_n_dls_jac_evals(){
+        long int get_n_dls_jac_evals() const {
             long int res=0;
             int flag = CVDlsGetNumJacEvals(this->mem, &res);
             cvdls_check_flag(flag);
             return res;
         }
 
-        long int get_n_dls_rhs_evals(){
+        long int get_n_dls_rhs_evals() const {
             long int res=0;
             int flag = CVDlsGetNumRhsEvals(this->mem, &res);
             cvdls_check_flag(flag);
             return res;
         }
 
-        void get_dky(realtype t, int k, SVector &dky) {
+        void get_dky(realtype t, int k, SVector &dky) const {
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
             case CV_SUCCESS:
@@ -677,8 +678,30 @@ namespace cvodes_cxx {
                     throw std::runtime_error("Unknown linear_solver.");
             }
         }
-        odesys->integrator = static_cast<void*>(&integr);
         return integr;
+    }
+
+    void set_integration_info(std::unordered_map<std::string, int>& info, const CVodeIntegrator& integrator,
+                              int iter_type, int linear_solver){
+        info["n_steps"] = integrator.get_n_steps();
+        info["n_rhs_evals"] = integrator.get_n_rhs_evals();
+        info["n_lin_solv_setups"] = integrator.get_n_lin_solv_setups();
+        info["n_err_test_fails"] = integrator.get_n_err_test_fails();
+        info["n_nonlin_solv_iters"] = integrator.get_n_nonlin_solv_iters();
+        info["n_nonlin_solv_conv_fails"] = integrator.get_n_nonlin_solv_conv_fails();
+        if (iter_type == 2){
+            if (linear_solver >= 10) {  // iterative linear solver
+                info["krylov_n_lin_iters"] = integrator.get_n_lin_iters();
+                info["krylov_n_prec_evals"] = integrator.get_n_prec_evals();
+                info["krylov_n_prec_solves"] = integrator.get_n_prec_solves();
+                info["krylov_n_conv_fails"] = integrator.get_n_conv_fails();
+                info["krylov_n_jac_times_evals"] = integrator.get_n_jac_times_evals();
+                info["krylov_n_iter_rhs"] = integrator.get_n_iter_rhs();
+            } else { // direct linear solver
+                info["dense_n_dls_jac_evals"] = integrator.get_n_dls_jac_evals();
+                info["dense_n_dls_rhs_evals"] = integrator.get_n_dls_rhs_evals();
+            }
+        }
     }
 
     template <class OdeSys>
@@ -723,7 +746,11 @@ namespace cvodes_cxx {
 
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
-        return integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
+        odesys->integrator = static_cast<void*>(&integr);
+        auto result = integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
+        odesys->last_integration_info.clear();
+        set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
+        return result;
     }
 
     template <class OdeSys>
@@ -767,55 +794,46 @@ namespace cvodes_cxx {
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
+        odesys->integrator = static_cast<void*>(&integr);
         integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices, root_out);
         odesys->last_integration_info.clear();
-        odesys->last_integration_info["n_steps"] = integr.get_n_steps();
-        odesys->last_integration_info["n_rhs_evals"] = integr.get_n_rhs_evals();
-        odesys->last_integration_info["n_lin_solv_setups"] = integr.get_n_lin_solv_setups();
-        odesys->last_integration_info["n_err_test_fails"] = integr.get_n_err_test_fails();
-        odesys->last_integration_info["n_nonlin_solv_iters"] = integr.get_n_nonlin_solv_iters();
-        odesys->last_integration_info["n_nonlin_solv_conv_fails"] = integr.get_n_nonlin_solv_conv_fails();
-        if (iter_type == 2){
-            if (linear_solver >= 10) {  // iterative linear solver
-                odesys->last_integration_info["krylov_n_lin_iters"] = integr.get_n_lin_iters();
-                odesys->last_integration_info["krylov_n_prec_evals"] = integr.get_n_prec_evals();
-                odesys->last_integration_info["krylov_n_prec_solves"] = integr.get_n_prec_solves();
-                odesys->last_integration_info["krylov_n_conv_fails"] = integr.get_n_conv_fails();
-                odesys->last_integration_info["krylov_n_jac_times_evals"] = integr.get_n_jac_times_evals();
-                odesys->last_integration_info["krylov_n_iter_rhs"] = integr.get_n_iter_rhs();
-            } else { // direct linear solver
-                odesys->last_integration_info["dense_n_dls_jac_evals"] = integr.get_n_dls_jac_evals();
-                odesys->last_integration_info["dense_n_dls_rhs_evals"] = integr.get_n_dls_rhs_evals();
-            }
-        }
+        set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
     }
 
     struct OdeSysBase {
         int nroots {0};
-        void * integrator;
+        void * integrator = nullptr;
+        std::unordered_map<std::string, int> last_integration_info;
         virtual ~OdeSysBase() {}
-        virtual int get_mlower() { return -1; }
-        virtual int get_mupper() { return -1; }
+        virtual int get_ny() const = 0;
+        virtual int get_mlower() const { return -1; }
+        virtual int get_mupper() const { return -1; }
         virtual void rhs(double t, const double * const y, double * const f) = 0;
         virtual void roots(double xval, const double * const y, double * const out) {
             ignore(xval); ignore(y); ignore(out);
             throw std::runtime_error("roots not implemented.");
         }
-        virtual void dense_jac_cmaj(double t, const double * const y, const double * const fy,
-                                    double * const jac, long int ldim){
+        virtual void dense_jac_cmaj(double t,
+                                    const double * const __restrict__ y,
+                                    const double * const __restrict__ fy,
+                                    double * const __restrict__ jac,
+                                    long int ldim){
             ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
             throw std::runtime_error("dense_jac_cmaj not implemented.");
         }
-        virtual void banded_padded_jac_cmaj(double t, const double * const y, const double * const fy,
-                                            double * const jac, long int ldim){
+        virtual void banded_padded_jac_cmaj(double t,
+                                            const double * const __restrict__ y,
+                                            const double * const __restrict__ fy,
+                                            double * const __restrict__ jac,
+                                            long int ldim){
             ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
             throw std::runtime_error("banded_padded_jac_cmaj not implemented.");
         }
-            virtual void jac_times_vec(const double * const vec,
-                                       double * const out,
+            virtual void jac_times_vec(const double * const __restrict__ vec,
+                                       double * const __restrict__ out,
                                        double t,
-                                       const double * const y,
-                                       const double * const fy
+                                       const double * const __restrict__ y,
+                                       const double * const __restrict__ fy
                                        )
         {
             cvodes_cxx::ignore(vec);
