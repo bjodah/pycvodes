@@ -9,7 +9,6 @@ int rhs_cb(double t, N_Vector y, N_Vector f, void * user_data){
 
 struct Decay : public cvodes_cxx::OdeSysBase {
     double m_k;
-    std::unordered_map<std::string, int> last_integration_info;
 
     Decay(double k) : m_k(k) {}
     int get_ny() const override { return 1; }

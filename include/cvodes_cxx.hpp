@@ -678,7 +678,6 @@ namespace cvodes_cxx {
                     throw std::runtime_error("Unknown linear_solver.");
             }
         }
-        odesys->integrator = static_cast<void*>(&integr);
         return integr;
     }
 
@@ -747,6 +746,7 @@ namespace cvodes_cxx {
 
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
+        odesys->integrator = static_cast<void*>(&integr);
         auto result = integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
         odesys->last_integration_info.clear();
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
@@ -794,6 +794,7 @@ namespace cvodes_cxx {
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
+        odesys->integrator = static_cast<void*>(&integr);
         integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices, root_out);
         odesys->last_integration_info.clear();
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
@@ -801,7 +802,8 @@ namespace cvodes_cxx {
 
     struct OdeSysBase {
         int nroots {0};
-        void * integrator;
+        void * integrator = nullptr;
+        std::unordered_map<std::string, int> last_integration_info;
         virtual ~OdeSysBase() {}
         virtual int get_ny() const = 0;
         virtual int get_mlower() const { return -1; }
