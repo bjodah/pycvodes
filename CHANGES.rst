@@ -1,3 +1,7 @@
+v0.4.3
+======
+- Better const correctness and other improvements in C++ wrapper
+
 v0.4.2
 ======
 - More robust setup.py
