@@ -134,6 +134,11 @@ def test_integrate_adaptive(method, forgiveness, banded):
     if method in requires_jac:
         assert info['njev'] > 0
 
+    with pytest.raises(RuntimeError) as excinfo:
+        integrate_adaptive(f, j, y0, nsteps=7, **kwargs)
+    assert 'maximum' in str(excinfo.value).lower()
+    assert '7' in str(excinfo.value).lower()
+
 
 def test_derivative_1():
     def f(t, y, fout):
