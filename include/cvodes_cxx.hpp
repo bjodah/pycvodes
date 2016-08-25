@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include <unordered_map> // std::unordered_map
+#include <sstream>
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -20,13 +21,28 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 
-// Overflows easily, check your architecture
-int factorial(int n) {
-    int res = 1;
-    while (n > 1) {
-        res *= n--;
-    }
-    return res;
+namespace {
+    class StreamFmt
+    {
+        std::stringstream m_s;
+    public:
+        StreamFmt() {}
+        ~StreamFmt() {}
+
+        template <typename T>
+        StreamFmt& operator << (const T& v) {
+            this->m_s << v;
+            return *this;
+        }
+
+        std::string str() const {
+            return this->m_s.str();
+        }
+        operator std::string() const {
+            return this->m_s.str();
+        }
+
+    };
 }
 
 namespace cvodes_cxx {
@@ -204,6 +220,8 @@ namespace cvodes_cxx {
             case IterLinSolEnum::TFQMR:
                 flag = CVSptfqmr(this->mem, static_cast<int>(PrecType::Left), maxl);
                 break;
+            default:
+                throw std::runtime_error("unknown solver kind.");
             }
             switch (flag){
             case CVSPILS_SUCCESS:
@@ -410,7 +428,7 @@ namespace cvodes_cxx {
         std::pair<std::vector<realtype>, std::vector<realtype> >
         adaptive(long int ny, const realtype x0, const realtype xend,
                  const realtype * const y0, int nderiv, std::vector<int>& root_indices,
-                 bool return_on_root=false){
+                 bool return_on_root=false, long int mxsteps=0){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -418,6 +436,7 @@ namespace cvodes_cxx {
             int idx = 0;
             SVector y {ny};
             SVector work {ny};
+            if (mxsteps == 0) { mxsteps = 500; } // cvodes default
             xout.push_back(x0);
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
@@ -436,6 +455,8 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
+                if (idx > 0 and idx > mxsteps)
+                    throw std::runtime_error(StreamFmt() << "Maximum number of steps reached: " << mxsteps);
                 status = this->step(xend, y, &cur_t, Task::One_Step);
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN){
@@ -612,7 +633,7 @@ namespace cvodes_cxx {
                                    const realtype dx0=0.0,
                                    const realtype dx_min=0.0,
                                    const realtype dx_max=0.0,
-                                   const int mxsteps=0,
+                                   const long int mxsteps=0,
                                    const bool with_jacobian=false,
                                    const int iter_type=0,
                                    const int linear_solver=0,
@@ -747,7 +768,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
         odesys->integrator = static_cast<void*>(&integr);
-        auto result = integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root);
+        auto result = integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root, mxsteps);
         odesys->last_integration_info.clear();
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
         return result;
