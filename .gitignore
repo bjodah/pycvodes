@@ -15,3 +15,4 @@ htmlcov/
 **.egg-info/
 tests/catch.hpp
 tests/test_cvodes_cxx
+tests/test_sundials_cxx

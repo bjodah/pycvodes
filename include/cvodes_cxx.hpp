@@ -270,7 +270,21 @@ namespace cvodes_cxx {
             int flag = CVSpilsSetMaxl(this->mem, maxl);
             this->cvspils_check_flag(flag);
         }
-
+        int get_current_order() {
+            int qcur;
+            CVodeGetCurrentOrder(this->mem, &qcur);
+            return qcur;
+        }
+        realtype get_current_step() {
+            realtype hcur;
+            CVodeGetCurrentStep(this->mem, &hcur);
+            return hcur;
+        }
+        realtype get_current_time() {
+            realtype tcur;
+            CVodeGetCurrentTime(this->mem, &tcur);
+            return tcur;
+        }
         void get_err_weights(N_Vector ew) const {
             check_flag(CVodeGetErrWeights(this->mem, ew));
         }
@@ -424,7 +438,11 @@ namespace cvodes_cxx {
             if (status)
                 throw std::runtime_error("call_rhs failed.");
         }
-
+        void unsuccessful_step_(int flag){
+            throw std::runtime_error(StreamFmt() << std::scientific << "Unsuccessful step (t="
+                                     << get_current_time() << ", h=" << get_current_step() << "): " <<
+                                     CVodeGetReturnFlagName(flag));
+        }
         std::pair<std::vector<realtype>, std::vector<realtype> >
         adaptive(long int ny, const realtype x0, const realtype xend,
                  const realtype * const y0, int nderiv, std::vector<int>& root_indices,
@@ -456,13 +474,14 @@ namespace cvodes_cxx {
             do {
                 idx++;
                 if (idx > 0 and idx > mxsteps)
-                    throw std::runtime_error(StreamFmt() << "Maximum number of steps reached: " << mxsteps);
+                    throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
+                                             << cur_t <<"): " << mxsteps);
                 status = this->step(xend, y, &cur_t, Task::One_Step);
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
                     }else{
-                        throw std::runtime_error("Unsuccessful CVode step.");
+                        unsuccessful_step_(status);
                     }
                 }
                 xout.push_back(cur_t);
@@ -515,7 +534,7 @@ namespace cvodes_cxx {
                         iout--;
                         continue;
                     }else{
-                        throw std::runtime_error("Unsuccessful CVode step.");
+                        unsuccessful_step_(status);
                     }
                 }
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
