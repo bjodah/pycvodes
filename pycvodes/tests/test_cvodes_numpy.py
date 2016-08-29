@@ -135,6 +135,12 @@ def test_integrate_adaptive(method, forgiveness, banded):
         assert info['njev'] > 0
 
     with pytest.raises(RuntimeError) as excinfo:
+        kw = kwargs.copy()
+        kw['atol'], kw['rtol'] = 1e-36, 1e-36
+        integrate_adaptive(f, j, y0, **kw)
+    assert 'acc' in str(excinfo.value).lower()
+
+    with pytest.raises(RuntimeError) as excinfo:
         integrate_adaptive(f, j, y0, nsteps=7, **kwargs)
     assert 'maximum' in str(excinfo.value).lower()
     assert '7' in str(excinfo.value).lower()
@@ -152,6 +158,11 @@ def test_derivative_1():
         [[exp(2)], [exp(2)]],
     ])
     assert np.allclose(yout, ref)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        integrate_predefined(f, None, [1], [0, 1, 2], nsteps=7, **kwargs)
+    assert 'too_much_work' in str(excinfo.value).lower()
+    assert '7' in str(excinfo.value).lower()
 
 
 def test_derivative_2():

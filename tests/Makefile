@@ -8,15 +8,16 @@ DEFINES ?=
 
 .PHONY: test clean
 
-test: test_cvodes_cxx
-	./$< --abortx 1
+test: test_cvodes_cxx test_sundials_cxx
+	./test_cvodes_cxx --abortx 1
+	./test_sundials_cxx --abortx 1
 	python ./_test_cvodes_cxx.py
 
 clean:
 	rm catch.hpp
 	rm test_cvodes_cxx
 
-test_cvodes_cxx: test_cvodes_cxx.cpp ../include/cvodes_cxx.hpp catch.hpp
+test_%: test_%.cpp ../include/cvodes_cxx.hpp catch.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS)
 
 catch.hpp: catch.hpp.bz2
