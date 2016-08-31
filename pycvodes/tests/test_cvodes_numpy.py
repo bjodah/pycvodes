@@ -168,6 +168,9 @@ def test_derivative_1():
     assert 'too_much_work' in str(excinfo.value).lower()
     assert '7' in str(excinfo.value).lower()
 
+    with pytest.raises(MemoryError):
+        integrate_predefined(f, None, np.zeros(1024*1024*1024), [0, 1, 2], **kwargs)
+
 
 def test_derivative_2():
     def f(t, y, fout):
@@ -213,6 +216,10 @@ def test_roots_adaptive():
     xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
     assert len(info['root_indices']) == 1
     assert np.min(np.abs(xout - 1)) < 1e-11
+
+    with pytest.raises(MemoryError):
+        integrate_adaptive(f, None, np.zeros(1024*1024*1024), 0, 2, **kwargs)
+
 
 
 def test_roots_predefined():
@@ -282,3 +289,5 @@ def test_predefined_roots_output():
     assert roots_y.shape == (1, 1)
     assert abs(roots_x[-1] - 1) < 1e-11
     assert abs(roots_y[-1, 0] - exp(1)) < 1e-11
+
+    

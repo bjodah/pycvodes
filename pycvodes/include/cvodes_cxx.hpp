@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <new> // bad_alloc
 #include <utility>
 #include <vector>
 #include <unordered_map> // std::unordered_map
@@ -87,7 +88,7 @@ namespace cvodes_cxx {
             if (status == CV_ILL_INPUT)
                 throw std::runtime_error("CVodeInit failed (CV_ILL_INPUT).");
             else if (status == CV_MEM_FAIL)
-                throw std::runtime_error("CVodeInit failed (allocation failed).");
+                throw std::bad_alloc(); // "CVodeInit failed (allocation failed).";
             else
                 check_flag(status);
             this->ny = NV_LENGTH_S(y);
@@ -121,7 +122,7 @@ namespace cvodes_cxx {
             if (status == CV_ILL_INPUT)
                 throw std::runtime_error("CVodeRootInit failed (CV_ILL_INPUT).");
             else if (status == CV_MEM_FAIL)
-                throw std::runtime_error("CVodeRootInit failed (allocation failed).");
+                throw std::bad_alloc(); // "CVodeRootInit failed (allocation failed)."
             else
                 check_flag(status);
         }
@@ -231,7 +232,7 @@ namespace cvodes_cxx {
             case CVSPILS_ILL_INPUT:
                 throw std::runtime_error("PREC_LEFT invalid.");
             case CVSPILS_MEM_FAIL:
-                throw std::runtime_error("Memory allocation request failed.");
+                throw std::bad_alloc(); // "Memory allocation for sparse iterative solver request failed."
             }
         }
         void cvspils_check_flag(int flag, bool check_ill_input=false) const {
