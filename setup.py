@@ -15,7 +15,6 @@ pkg_name = 'pycvodes'
 
 # Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
-include_dirs = []
 
 
 def _path_under_setup(*args):
@@ -23,21 +22,21 @@ def _path_under_setup(*args):
 
 
 USE_CYTHON = os.path.exists(_path_under_setup('pycvodes', '_cvodes_numpy.pyx'))
+package_include = os.path.join(pkg_name, 'include')
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
     LLAPACK = os.environ.get('LLAPACK', 'lapack')
-    include_dirs = [np.get_include(), _path_under_setup('include')]
     ext = '.pyx' if USE_CYTHON else '.cpp'
     sources = ['pycvodes/_cvodes_numpy'+ext]
     ext_modules = [Extension('pycvodes._cvodes_numpy', sources)]
     if USE_CYTHON:
         from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=['./include'])
+        ext_modules = cythonize(ext_modules, include_path=[package_include])
     ext_modules[0].language = 'c++'
     ext_modules[0].extra_compile_args = ['-std=c++11']
-    ext_modules[0].include_dirs = [_path_under_setup('include')]
+    ext_modules[0].include_dirs = [np.get_include(), package_include]
     ext_modules[0].libraries += ['sundials_cvodes',
                                  os.environ.get('LLAPACK', 'lapack'),
                                  'sundials_nvecserial']
@@ -96,11 +95,11 @@ setup_kwargs = dict(
     url='https://github.com/bjodah/' + pkg_name,
     license='BSD',
     packages=[pkg_name] + tests,
-    package_data={pkg_name: ['include/*.*']},
+    include_package_data=True,
     install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
-    ext_modules=ext_modules,
-    include_dirs=include_dirs
+    extras_require={'docs': ['Sphinx', 'sphinx_rtd_theme']},
+    ext_modules=ext_modules
 )
 
 if __name__ == '__main__':
