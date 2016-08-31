@@ -83,28 +83,32 @@ def test_integrate_predefined(method, forgiveness, banded):
     y0 = [0.7, 0.3, 0.5]
     f, j = _get_f_j(k)
     kwargs = {'method': method}
-    if not use_jac:
-        j = None
-    else:
+    if use_jac:
         if banded:
-            j = bandify(j, 1, 0)
+            jac_callbacks = [bandify(j, 1, 0), None]
             kwargs['lband'] = 1
             kwargs['uband'] = 0
-    xout = np.linspace(0, 3, 31)
-    dx0 = 1e-10
-    atol, rtol = 1e-8, 1e-8
-    # Run twice to catch possible side-effects:
-    yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
-    yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
-    yref = decay_get_Cref(k, y0, xout)
-    assert np.allclose(yout, yref,
-                       rtol=forgiveness*rtol,
-                       atol=forgiveness*atol)
-    assert nfo['nfev'] > 0
-    assert nfo['time_cpu'] > 1e-9
-    assert nfo['time_wall'] > 1e-9
-    if method in requires_jac:
-        assert nfo['njev'] > 0
+        else:
+            jac_callbacks = [j, None]
+    else:
+        jac_callbacks = [None]
+
+    for j in jac_callbacks:
+        xout = np.linspace(0, 3, 31)
+        dx0 = 1e-10
+        atol, rtol = 1e-8, 1e-8
+        # Run twice to catch possible side-effects:
+        yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, dx0, 1e-8, 1e-8, **kwargs)
+        yref = decay_get_Cref(k, y0, xout)
+        assert np.allclose(yout, yref,
+                           rtol=forgiveness*rtol,
+                           atol=forgiveness*atol)
+        assert nfo['nfev'] > 0
+        assert nfo['time_cpu'] > 1e-9
+        assert nfo['time_wall'] > 1e-9
+        if method in requires_jac and j is not None:
+            assert nfo['njev'] > 0
 
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)

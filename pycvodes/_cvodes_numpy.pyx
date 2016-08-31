@@ -1,6 +1,7 @@
 # -*- coding: utf-8; mode: cython -*-
 # distutils: language = c++
 
+import warnings
 from cpython.object cimport PyObject
 from libcpp cimport bool
 cimport numpy as cnp
@@ -129,7 +130,7 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mx
              return_on_root=False):
     cdef size_t nsteps
     if method in requires_jac and jac is None:
-        raise ValueError("Method requires explicit jacobian callback")
+        warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     integr = Cvodes(rhs, jac, len(y0), roots,
                     -1 if lband is None else lband,
                     -1 if uband is None else uband,
@@ -143,7 +144,7 @@ def adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mx
 def predefined(rhs, jac, y0, xout, dx0, atol, rtol, dx_min=0.0, dx_max=0.0, mxsteps=0, nderiv=0, method='bdf',
                iter_type='default', linear_solver='default', lband=None, uband=None, roots=None, nroots=0):
     if method in requires_jac and jac is None:
-        raise ValueError("Method requires explicit jacobian callback")
+        warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     integr = Cvodes(rhs, jac, len(y0), roots,
                     -1 if lband is None else lband,
                     -1 if uband is None else uband,
