@@ -2,7 +2,6 @@
 """
 Python binding for cvodes from the sundials library.
 """
-
 from __future__ import division, absolute_import
 
 from ._cvodes_numpy import adaptive, predefined, requires_jac, steppers
