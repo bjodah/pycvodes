@@ -22,6 +22,9 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 
+#include "anyode.hpp"
+
+
 namespace {
     class StreamFmt
     {
@@ -557,18 +560,33 @@ namespace cvodes_cxx {
         }
     };
 
+    int handle_status_(AnyODE::Status status){
+        switch (status){
+        case AnyODE::Status::success:
+            return 0;
+        case AnyODE::Status::recoverable_error:
+            return 1;
+        case AnyODE::Status::unrecoverable_error:
+            return -1;
+        default:
+            throw std::runtime_error("impossible (this is for silencing -Wreturn-type)");
+        }
+    }
+
     template<class OdeSys>
-    int f_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
+    int rhs_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
-        return 0;
+        AnyODE::Status status = odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
+        return handle_status_(status);
     }
 
     template<class OdeSys>
     int roots_cb(realtype t, N_Vector y, realtype *gout, void *user_data){
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        odesys.roots(t, NV_DATA_S(y), gout);
-        return 0;
+        AnyODE::Status status = odesys.roots(t, NV_DATA_S(y), gout);
+        if (status == AnyODE::Status::recoverable_error)
+            throw std::runtime_error("There are only unrecoverable errors for roots().");
+        return handle_status_(status);
     }
 
     template <class OdeSys>
@@ -578,9 +596,8 @@ namespace cvodes_cxx {
         // callback of req. signature wrapping OdeSys method.
         ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0),
-                               Jac->ldim);
-        return 0;
+        AnyODE::Status status = odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0), Jac->ldim);
+        return handle_status_(status);
     }
 
     template <typename OdeSys>
@@ -593,8 +610,8 @@ namespace cvodes_cxx {
             throw std::runtime_error("mupper mismatch");
         if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
-        odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
-        return 0;
+        AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
+        return handle_status_(status);
     }
 
 
@@ -604,8 +621,10 @@ namespace cvodes_cxx {
         // callback of req. signature wrapping OdeSys method.
         ignore(tmp);
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
-        return 0;
+        AnyODE::Status status = odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
+        if (status == AnyODE::Status::recoverable_error)
+            throw std::runtime_error("There are only unrecoverable errors for JacTimesVec().");
+        return handle_status_(status);
     }
 
     template <typename OdeSys> // Section 4.6.9 Preconditioning in cvs_guide.pdf
@@ -624,8 +643,9 @@ namespace cvodes_cxx {
         // odesys.integrator.get_err_weights(tmp); // use tmp to hold error weights
         if (lr != 1)
             throw std::runtime_error("Only left preconditioning implemented.");
-        return odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
-                                      NV_DATA_S(z), gamma, delta, ewt);
+        AnyODE::Status status =  odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
+                                                        NV_DATA_S(z), gamma, delta, ewt);
+        return handle_status_(status);
     }
 
     template <typename OdeSys>
@@ -637,9 +657,9 @@ namespace cvodes_cxx {
         auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
         bool compute_jac = (jok == TRUE) ? false : true; // TRUE, FALSE sundials macros
-        odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), compute_jac, jac_recomputed, gamma);
+        AnyODE::Status status = odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), compute_jac, jac_recomputed, gamma);
         (*jcurPtr) = (jac_recomputed) ? TRUE : FALSE;
-        return 0;
+        return handle_status_(status);
     }
 
     template <class OdeSys>
@@ -664,7 +684,7 @@ namespace cvodes_cxx {
         CVodeIntegrator integr {(lmm == CV_BDF) ? LMM::BDF : LMM::Adams,
                 (iter_type == 1) ? IterType::Functional : IterType::Newton};
         integr.set_user_data(static_cast<void *>(odesys));
-        integr.init(f_cb<OdeSys>, t0, y0, ny);
+        integr.init(rhs_cb<OdeSys>, t0, y0, ny);
         integr.root_init(odesys->nroots, roots_cb<OdeSys>);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
@@ -840,83 +860,4 @@ namespace cvodes_cxx {
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
     }
 
-    struct OdeSysBase {
-        int nroots {0};
-        void * integrator = nullptr;
-        std::unordered_map<std::string, int> last_integration_info;
-        virtual ~OdeSysBase() {}
-        virtual int get_ny() const = 0;
-        virtual int get_mlower() const { return -1; }
-        virtual int get_mupper() const { return -1; }
-        virtual void rhs(double t, const double * const y, double * const f) = 0;
-        virtual void roots(double xval, const double * const y, double * const out) {
-            ignore(xval); ignore(y); ignore(out);
-            throw std::runtime_error("roots not implemented.");
-        }
-        virtual void dense_jac_cmaj(double t,
-                                    const double * const __restrict__ y,
-                                    const double * const __restrict__ fy,
-                                    double * const __restrict__ jac,
-                                    long int ldim){
-            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
-            throw std::runtime_error("dense_jac_cmaj not implemented.");
-        }
-        virtual void banded_jac_cmaj(double t,
-                                     const double * const __restrict__ y,
-                                     const double * const __restrict__ fy,
-                                     double * const __restrict__ jac,
-                                     long int ldim){
-            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
-            throw std::runtime_error("banded_jac_cmaj not implemented.");
-        }
-            virtual void jac_times_vec(const double * const __restrict__ vec,
-                                       double * const __restrict__ out,
-                                       double t,
-                                       const double * const __restrict__ y,
-                                       const double * const __restrict__ fy
-                                       )
-        {
-            cvodes_cxx::ignore(vec);
-            cvodes_cxx::ignore(out);
-            cvodes_cxx::ignore(t);
-            cvodes_cxx::ignore(y);
-            cvodes_cxx::ignore(fy);
-            throw std::runtime_error("Not implemented!");
-        }
-        virtual void prec_setup(double t,
-                                const double * const __restrict__ y,
-                                const double * const __restrict__ fy,
-                                bool jok,
-                                bool& jac_recomputed,
-                                double gamma)
-        {
-            cvodes_cxx::ignore(t);
-            cvodes_cxx::ignore(y);
-            cvodes_cxx::ignore(fy);
-            cvodes_cxx::ignore(jok);
-            cvodes_cxx::ignore(jac_recomputed);
-            cvodes_cxx::ignore(gamma);
-            throw std::runtime_error("prec_steup not  implemented.");
-        }
-        virtual int prec_solve_left(const double t,
-                                    const double * const __restrict__ y,
-                                    const double * const __restrict__ fy,
-                                    const double * const __restrict__ r,
-                                    double * const __restrict__ z,
-                                    double gamma,
-                                    double delta,
-                                    const double * const __restrict__ ewt)
-        {
-            cvodes_cxx::ignore(t);
-            cvodes_cxx::ignore(y);
-            cvodes_cxx::ignore(fy);
-            cvodes_cxx::ignore(r);
-            cvodes_cxx::ignore(z);
-            cvodes_cxx::ignore(gamma);
-            cvodes_cxx::ignore(delta);
-            cvodes_cxx::ignore(ewt);
-            throw std::runtime_error("prec_solve_left not implemented.");
-            return -1;
-        }
-    };
 }

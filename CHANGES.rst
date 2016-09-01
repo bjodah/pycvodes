@@ -1,6 +1,8 @@
 v0.5.0
 ======
-- C++ wrapper API:  banded_padded_jac_cmaj -> banded_jac_cmaj
+- C++ wrapper API:
+    - banded_padded_jac_cmaj -> banded_jac_cmaj
+    - allow callbacks to indicate recoverable errors.
 
 v0.4.4
 ======
