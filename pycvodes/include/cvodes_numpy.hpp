@@ -166,7 +166,7 @@ namespace cvodes_numpy{
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
             PyObject * py_jmat = PyArray_New(
                 &PyArray_Type, 2, Jdims, type_tag, strides,
-                static_cast<void *>(const_cast<realtype *>(jac + this->mupper)), sizeof(realtype),
+                static_cast<void *>(const_cast<realtype *>(jac + this->mlower)), sizeof(realtype),
                 NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
             call_py_jac(t, y, fy, py_jmat);
             Py_DECREF(py_jmat);

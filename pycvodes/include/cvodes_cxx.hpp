@@ -588,6 +588,9 @@ namespace cvodes_cxx {
                     N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         // callback of req. signature wrapping OdeSys method.
+        if ((Jac->smu < std::min(mlower + mupper, N - 1)){
+            throw std::runtime_error("unpadded!");
+        }
         ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.get_mupper() != mupper)
