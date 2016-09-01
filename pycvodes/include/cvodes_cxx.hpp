@@ -587,17 +587,13 @@ namespace cvodes_cxx {
     int jac_band_cb(long int N, long int mupper, long int mlower, realtype t,
                     N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
-        // callback of req. signature wrapping OdeSys method.
-        if ((Jac->smu < std::min(mlower + mupper, N - 1)){
-            throw std::runtime_error("unpadded!");
-        }
         ignore(N); ignore(tmp1); ignore(tmp2); ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.get_mupper() != mupper)
             throw std::runtime_error("mupper mismatch");
         if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
-        odesys.banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data, Jac->ldim);
+        odesys.banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
         return 0;
     }
 

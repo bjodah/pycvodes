@@ -63,7 +63,7 @@ def _get_f_j(k):
 methods = [('adams', 1.8, False),
            ('adams', 1.8, True),
            ('bdf', 10, False),
-           ('bdf', 9, True)]
+           ('bdf', 10, True)]
 
 
 def bandify(cb, mlower, mupper):
