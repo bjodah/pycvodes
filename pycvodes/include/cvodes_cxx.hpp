@@ -593,7 +593,7 @@ namespace cvodes_cxx {
             throw std::runtime_error("mupper mismatch");
         if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
-        odesys.banded_padded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
+        odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
         return 0;
     }
 
@@ -861,13 +861,13 @@ namespace cvodes_cxx {
             ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
             throw std::runtime_error("dense_jac_cmaj not implemented.");
         }
-        virtual void banded_padded_jac_cmaj(double t,
-                                            const double * const __restrict__ y,
-                                            const double * const __restrict__ fy,
-                                            double * const __restrict__ jac,
-                                            long int ldim){
+        virtual void banded_jac_cmaj(double t,
+                                     const double * const __restrict__ y,
+                                     const double * const __restrict__ fy,
+                                     double * const __restrict__ jac,
+                                     long int ldim){
             ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
-            throw std::runtime_error("banded_padded_jac_cmaj not implemented.");
+            throw std::runtime_error("banded_jac_cmaj not implemented.");
         }
             virtual void jac_times_vec(const double * const __restrict__ vec,
                                        double * const __restrict__ out,

@@ -159,7 +159,7 @@ namespace cvodes_numpy{
             call_py_jac(t, y, fy, py_jmat);
             Py_DECREF(py_jmat);
         }
-        void banded_padded_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
+        void banded_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
                                     realtype * const jac, long int ldim){
             npy_intp Jdims[2] { 1 + this->mlower + this->mupper, static_cast<npy_intp>(this->ny) };
             npy_intp strides[2] { sizeof(realtype), static_cast<npy_intp>(ldim*sizeof(realtype)) };

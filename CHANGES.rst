@@ -1,3 +1,11 @@
+v0.5.0
+======
+- C++ wrapper API:  banded_padded_jac_cmaj -> banded_jac_cmaj
+
+v0.4.4
+======
+- Better sdist
+
 v0.4.3
 ======
 - Better const correctness and other improvements in C++ wrapper
