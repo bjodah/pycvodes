@@ -282,3 +282,26 @@ def test_predefined_roots_output():
     assert roots_y.shape == (1, 1)
     assert abs(roots_x[-1] - 1) < 1e-11
     assert abs(roots_y[-1, 0] - exp(1)) < 1e-11
+
+
+def test_rhs_unrecoverable_error():
+    def f(t, y, fout):
+        fout[0] = y[0]
+        return -1
+    kwargs = dict(dx0=0.0, atol=1e-8, rtol=1e-8, method='adams')
+    with pytest.raises(RuntimeError):
+        yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
+
+
+def test_rhs_recoverable_error():
+    global idx
+    idx = -1
+
+    def f(t, y, fout):
+        global idx
+        fout[0] = y[0]
+        idx = idx + 1
+        return 1 if 0 < idx < 3 else 0
+
+    kwargs = dict(dx0=0.0, atol=1e-8, rtol=1e-8, method='adams')
+    yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
