@@ -6,14 +6,15 @@ namespace AnyODE {
     enum class Status : int {success = 0, recoverable_error = 1, unrecoverable_error = -1};
 
     struct OdeSysBase {
-        int nroots {0};
         void * integrator = nullptr;
         std::unordered_map<std::string, int> last_integration_info;
-        OdeSysBase(int nroots=0) : nroots(nroots) {}
+
         virtual ~OdeSysBase() {}
         virtual int get_ny() const = 0;
         virtual int get_mlower() const { return -1; } // -1 denotes "not banded"
         virtual int get_mupper() const { return -1; } // -1 denotes "not banded"
+        virtual int get_nroots() const { return 0; } // Do not look for roots by default;
+
         virtual Status rhs(double t, const double * const y, double * const f) = 0;
         virtual Status roots(double xval, const double * const y, double * const out) {
             ignore(xval); ignore(y); ignore(out);

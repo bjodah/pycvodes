@@ -26,19 +26,20 @@ namespace cvodes_numpy{
         const size_t ny;
         size_t nfev, njev;
         double time_cpu, time_wall;
-        const int mlower, mupper;
+        const int mlower, mupper, nroots;
         std::vector<realtype> xout;
         std::vector<realtype> yout;
         std::vector<int> root_indices;
         std::vector<double> roots_output;
 
         PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
-            AnyODE::OdeSysBase(nroots), py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu) {}
+            py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots),
+            ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}
 
-
-        virtual int get_ny() const { return this->ny; }
-        virtual int get_mlower() const { return this->mlower; }
-        virtual int get_mupper() const { return this->mupper; }
+        int get_ny() const override { return this->ny; }
+        int get_mlower() const override { return this->mlower; }
+        int get_mupper() const override { return this->mupper; }
+        int get_nroots() const override { return this->nroots; }
 
         size_t adaptive(PyObject *py_y0, realtype x0, realtype xend,
                         realtype atol, realtype rtol, int step_type_idx,
@@ -116,7 +117,7 @@ namespace cvodes_numpy{
         }
         virtual AnyODE::Status roots(realtype xval, const realtype * const y, realtype * const out){
             npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
-            npy_intp rdims[1] { static_cast<npy_intp>(this->nroots) };
+            npy_intp rdims[1] { static_cast<npy_intp>(this->get_nroots()) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
             PyObject * py_yarr = PyArray_SimpleNewFromData(
                 1, ydims, type_tag, static_cast<void*>(const_cast<realtype*>(y)));

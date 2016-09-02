@@ -685,7 +685,7 @@ namespace cvodes_cxx {
                 (iter_type == 1) ? IterType::Functional : IterType::Newton};
         integr.set_user_data(static_cast<void *>(odesys));
         integr.init(rhs_cb<OdeSys>, t0, y0, ny);
-        integr.root_init(odesys->nroots, roots_cb<OdeSys>);
+        integr.root_init(odesys->get_nroots(), roots_cb<OdeSys>);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
         }else{
