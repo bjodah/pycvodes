@@ -55,6 +55,6 @@ if __name__ == '__main__':
         import argh
         argh.dispatch_command(integrate_ivp)
     except ImportError:
-        import warning
-        warning.warn("Ignoring parameters, install argh to fix.")
+        import warnings
+        warnings.warn("Ignoring parameters, install argh to fix.")
         integrate_ivp()

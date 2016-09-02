@@ -8,6 +8,7 @@
 #include <unordered_map> // std::unordered_map
 #include <string> // std::string
 
+#include "anyode.hpp"
 #include "cvodes_cxx.hpp"
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 
@@ -20,27 +21,24 @@ namespace cvodes_numpy{
     // int roots(double x, const double y[], double * const out, void * params);
 
 
-    class PyCvodes {
-    public:
+    struct PyCvodes : public AnyODE::OdeSysBase {
         PyObject *py_rhs, *py_jac, *py_roots;
         const size_t ny;
         size_t nfev, njev;
         double time_cpu, time_wall;
-        const int mlower, mupper, nroots;
+        const int mlower, mupper;
         std::vector<realtype> xout;
         std::vector<realtype> yout;
         std::vector<int> root_indices;
         std::vector<double> roots_output;
-        std::unordered_map<std::string, int> last_integration_info;
-        void *integrator;
 
         PyCvodes(PyObject * py_rhs, PyObject * py_jac, PyObject * py_roots, size_t ny, int ml=-1, int mu=-1, int nroots=0) :
-            py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu), nroots(nroots) {}
+            AnyODE::OdeSysBase(nroots), py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots), ny(ny), mlower(ml), mupper(mu) {}
 
 
-        int get_ny() { return this->ny; }
-        int get_mlower() { return this->mlower; }
-        int get_mupper() { return this->mupper; }
+        virtual int get_ny() const { return this->ny; }
+        virtual int get_mlower() const { return this->mlower; }
+        virtual int get_mupper() const { return this->mupper; }
 
         size_t adaptive(PyObject *py_y0, realtype x0, realtype xend,
                         realtype atol, realtype rtol, int step_type_idx,
@@ -86,8 +84,24 @@ namespace cvodes_numpy{
             this->time_cpu = (std::clock() - cputime0) / (double)CLOCKS_PER_SEC;
             this->time_wall = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count();
         }
-
-        void rhs(realtype xval, const realtype * const y, realtype * const dydx){
+        AnyODE::Status handle_status_(PyObject * py_result, const std::string what_arg){
+            if (py_result == nullptr){
+                throw std::runtime_error(what_arg + " failed");
+            } else if (py_result == Py_None){
+                Py_DECREF(py_result);
+                return AnyODE::Status::success;
+            }
+            long result = PyInt_AsLong(py_result);
+            Py_DECREF(py_result);
+            if ((PyErr_Occurred() and result == -1) or result == static_cast<long int>(AnyODE::Status::unrecoverable_error))
+                return AnyODE::Status::unrecoverable_error;
+            else if (result == static_cast<long int>(AnyODE::Status::recoverable_error))
+                return AnyODE::Status::recoverable_error;
+            else if (result == static_cast<long int>(AnyODE::Status::success))
+                return AnyODE::Status::success;
+            throw std::runtime_error(what_arg + " did not return None, -1, 0 or 1");
+        }
+        virtual AnyODE::Status rhs(realtype xval, const realtype * const y, realtype * const dydx){
             npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
             PyObject * py_yarr = PyArray_SimpleNewFromData(1, dims, type_tag, static_cast<void*>(const_cast<realtype*>(y)));
@@ -98,15 +112,9 @@ namespace cvodes_numpy{
             Py_DECREF(py_dydx);
             Py_DECREF(py_yarr);
             nfev++;
-            if (py_result == nullptr){
-                throw std::runtime_error("rhs() failed");
-            } else if (py_result != Py_None){
-                // py_result is not None
-                throw std::runtime_error("rhs() failed");
-            }
-            Py_DECREF(py_result);
+            return handle_status_(py_result, "rhs");
         }
-        void roots(realtype xval, const realtype * const y, realtype * const out){
+        virtual AnyODE::Status roots(realtype xval, const realtype * const y, realtype * const out){
             npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
             npy_intp rdims[1] { static_cast<npy_intp>(this->nroots) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
@@ -119,15 +127,9 @@ namespace cvodes_numpy{
             Py_DECREF(py_arglist);
             Py_DECREF(py_out);
             Py_DECREF(py_yarr);
-            if (py_result == nullptr){
-                throw std::runtime_error("roots() failed");
-            } else if (py_result != Py_None){
-                // py_result is not None
-                throw std::runtime_error("roots() did not return None");
-            }
-            Py_DECREF(py_result);
+            return handle_status_(py_result, "roots");
         }
-        void call_py_jac(realtype t, const realtype * const y, const realtype * const fy,
+        AnyODE::Status call_py_jac(realtype t, const realtype * const y, const realtype * const fy,
                          PyObject * py_jmat){
             npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
@@ -139,16 +141,10 @@ namespace cvodes_numpy{
             Py_DECREF(py_fy);
             Py_DECREF(py_yarr);
             njev++;
-            if (py_result == nullptr){
-                throw std::runtime_error("jac() failed");
-            } else if (py_result != Py_None){
-                // py_result is not None
-                throw std::runtime_error("jac() did not return None");
-            }
-            Py_DECREF(py_result);
+            return handle_status_(py_result, "jac");
         }
-        void dense_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
-                            realtype * const jac, long int ldim){
+        virtual AnyODE::Status dense_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
+                                      realtype * const jac, long int ldim){
             npy_intp Jdims[2] { static_cast<npy_intp>(this->ny), static_cast<npy_intp>(this->ny) };
             npy_intp strides[2] { sizeof(realtype), static_cast<npy_intp>(ldim*sizeof(realtype)) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
@@ -156,27 +152,29 @@ namespace cvodes_numpy{
                 &PyArray_Type, 2, Jdims, type_tag, strides,
                 static_cast<void *>(const_cast<realtype *>(jac)), sizeof(realtype),
                 NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
-            call_py_jac(t, y, fy, py_jmat);
+            AnyODE::Status status = call_py_jac(t, y, fy, py_jmat);
             Py_DECREF(py_jmat);
+            return status;
         }
-        void banded_padded_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
+        virtual AnyODE::Status banded_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
                                     realtype * const jac, long int ldim){
             npy_intp Jdims[2] { 1 + this->mlower + this->mupper, static_cast<npy_intp>(this->ny) };
             npy_intp strides[2] { sizeof(realtype), static_cast<npy_intp>(ldim*sizeof(realtype)) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
             PyObject * py_jmat = PyArray_New(
                 &PyArray_Type, 2, Jdims, type_tag, strides,
-                static_cast<void *>(const_cast<realtype *>(jac + this->mupper)), sizeof(realtype),
+                static_cast<void *>(const_cast<realtype *>(jac)), sizeof(realtype),
                 NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
-            call_py_jac(t, y, fy, py_jmat);
+            AnyODE::Status status = call_py_jac(t, y, fy, py_jmat);
             Py_DECREF(py_jmat);
+            return status;
         }
-        void jac_times_vec(const realtype * const vec,
-                           realtype * const out,
-                           realtype t,
-                           const realtype * const y,
-                           const realtype * const fy
-                           )
+        virtual AnyODE::Status jac_times_vec(const realtype * const vec,
+                                             realtype * const out,
+                                             realtype t,
+                                             const realtype * const y,
+                                             const realtype * const fy
+                                             )
         {
             cvodes_cxx::ignore(vec);
             cvodes_cxx::ignore(out);
@@ -185,12 +183,12 @@ namespace cvodes_numpy{
             cvodes_cxx::ignore(fy);
             throw std::runtime_error("Not implemented!");
         }
-        void prec_setup(realtype t,
-                        const realtype * const __restrict__ y,
-                        const realtype * const __restrict__ fy,
-                        bool jok,
-                        bool& jac_recomputed,
-                        realtype gamma)
+        virtual AnyODE::Status prec_setup(realtype t,
+                                          const realtype * const __restrict__ y,
+                                          const realtype * const __restrict__ fy,
+                                          bool jok,
+                                          bool& jac_recomputed,
+                                          realtype gamma)
         {
             cvodes_cxx::ignore(t);
             cvodes_cxx::ignore(y);
@@ -200,14 +198,14 @@ namespace cvodes_numpy{
             cvodes_cxx::ignore(gamma);
             throw std::runtime_error("Not implemented!");
         }
-        int prec_solve_left(const realtype t,
-                             const realtype * const __restrict__ y,
-                             const realtype * const __restrict__ fy,
-                             const realtype * const __restrict__ r,
-                             realtype * const __restrict__ z,
-                             realtype gamma,
-                             realtype delta,
-                             const realtype * const __restrict__ ewt)
+        virtual AnyODE::Status prec_solve_left(const realtype t,
+                                               const realtype * const __restrict__ y,
+                                               const realtype * const __restrict__ fy,
+                                               const realtype * const __restrict__ r,
+                                               realtype * const __restrict__ z,
+                                               realtype gamma,
+                                               realtype delta,
+                                               const realtype * const __restrict__ ewt)
         {
             cvodes_cxx::ignore(t);
             cvodes_cxx::ignore(y);
@@ -218,7 +216,6 @@ namespace cvodes_numpy{
             cvodes_cxx::ignore(delta);
             cvodes_cxx::ignore(ewt);
             throw std::runtime_error("Not implemented!");
-            return -1;
         }
     };
 }
