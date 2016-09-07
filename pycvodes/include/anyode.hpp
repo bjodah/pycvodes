@@ -29,10 +29,10 @@ namespace AnyODE {
             return Status::unrecoverable_error;
         }
         virtual Status banded_jac_cmaj(double t,
-                                    const double * const __restrict__ y,
-                                    const double * const __restrict__ fy,
-                                    double * const __restrict__ jac,
-                                    long int ldim){
+                                       const double * const __restrict__ y,
+                                       const double * const __restrict__ fy,
+                                       double * const __restrict__ jac,
+                                       long int ldim){
             ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
             throw std::runtime_error("banded_jac_cmaj not implemented.");
             return Status::unrecoverable_error;
@@ -67,13 +67,13 @@ namespace AnyODE {
             return Status::unrecoverable_error;
         }
         virtual Status prec_solve_left(const double t,
-                                    const double * const __restrict__ y,
-                                    const double * const __restrict__ fy,
-                                    const double * const __restrict__ r,
-                                    double * const __restrict__ z,
-                                    double gamma,
-                                    double delta,
-                                    const double * const __restrict__ ewt)
+                                       const double * const __restrict__ y,
+                                       const double * const __restrict__ fy,
+                                       const double * const __restrict__ r,
+                                       double * const __restrict__ z,
+                                       double gamma,
+                                       double delta,
+                                       const double * const __restrict__ ewt)
         {
             ignore(t);
             ignore(y);

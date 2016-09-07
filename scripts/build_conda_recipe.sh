@@ -12,9 +12,7 @@ fi
 echo ${1#v}>__conda_version__.txt
 cleanup() {
     rm __conda_version__.txt
-    exit
 }
-trap cleanup INT TERM
+trap cleanup INT TERM EXIT
 
 conda build ${@:2} ./conda-recipe/
-cleanup
