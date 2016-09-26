@@ -22,7 +22,7 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 
-#include "anyode.hpp"
+#include "anyode/anyode.hpp"
 
 
 namespace {
@@ -81,9 +81,15 @@ namespace cvodes_cxx {
     class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
     public:
         void *mem {nullptr};
-        std::size_t ny {0};
+        long int ny {0};  // cvodes uses a signed data type for this...
         CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
+            if (!this->mem)
+                throw std::bad_alloc(); // "CVodeCreate failed (allocation failed)."
+        }
+        ~CVodeIntegrator(){
+            if (this->mem)
+                CVodeFree(&(this->mem));
         }
         // init
         void init(CVRhsFn cb, realtype t0, N_Vector y) {
@@ -153,6 +159,9 @@ namespace cvodes_cxx {
         void set_max_num_steps(long int mxsteps){
             int status = CVodeSetMaxNumSteps(this->mem, mxsteps);
             check_flag(status);
+        }
+        long int get_max_num_steps(){
+            return static_cast<CVodeMem>(this->mem)->cv_mxstep;
         }
 
         // set_tol
@@ -448,9 +457,12 @@ namespace cvodes_cxx {
                                      CVodeGetReturnFlagName(flag));
         }
         std::pair<std::vector<realtype>, std::vector<realtype> >
-        adaptive(long int ny, const realtype x0, const realtype xend,
-                 const realtype * const y0, int nderiv, std::vector<int>& root_indices,
-                 bool return_on_root=false, long int mxsteps=0){
+        adaptive(const realtype x0,
+                 const realtype xend,
+                 const realtype * const y0,
+                 const unsigned nderiv,
+                 std::vector<int>& root_indices,
+                 bool return_on_root=false){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -458,7 +470,8 @@ namespace cvodes_cxx {
             int idx = 0;
             SVector y {ny};
             SVector work {ny};
-            if (mxsteps == 0) { mxsteps = 500; } // cvodes default
+            long int mxsteps = get_max_num_steps();
+            if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
             xout.push_back(x0);
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
@@ -470,7 +483,7 @@ namespace cvodes_cxx {
                 for (int i=0; i<ny; ++i)
                     yout.push_back(work[i]);
             }
-            for (int di=1; di<nderiv; ++di){
+            for (unsigned di=1; di<nderiv; ++di){
                 for (int i=0; i<ny; ++i)  // higher order too expensive
                     yout.push_back(0);
             }
@@ -492,7 +505,7 @@ namespace cvodes_cxx {
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 // Derivatives for interpolation
-                for (int di=0; di<nderiv; ++di){
+                for (unsigned di=0; di<nderiv; ++di){
                     if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
@@ -507,8 +520,13 @@ namespace cvodes_cxx {
             return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 
-        void predefined(int nt, int ny, const realtype * const tout, const realtype * const y0,
-                        realtype * const yout, int nderiv, std::vector<int>& root_indices, std::vector<realtype>& root_out){
+        void predefined(const long int nt,  // sundials does not use unsigned types here...
+                        const realtype * const tout,
+                        const realtype * const y0,
+                        realtype * const yout,
+                        const unsigned nderiv,
+                        std::vector<int>& root_indices,
+                        std::vector<realtype>& root_out){
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -522,7 +540,7 @@ namespace cvodes_cxx {
                 this->call_rhs(tout[0], y, work);
                 work.dump(&yout[ny]);
             }
-            for (int di=1; di<nderiv; ++di){
+            for (unsigned di=1; di<nderiv; ++di){
                 for (int i=0; i<ny; ++i)  // too expensive
                     yout[ny*(di+1) + i] = 0;
             }
@@ -543,7 +561,7 @@ namespace cvodes_cxx {
                 }
                 y.dump(&yout[ny*(iout*(nderiv+1))]);
                 // Derivatives for interpolation
-                for (int di=0; di<nderiv; ++di){
+                for (unsigned di=0; di<nderiv; ++di){
                     if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
@@ -554,10 +572,6 @@ namespace cvodes_cxx {
             }
         }
 
-        ~CVodeIntegrator(){
-            if (this->mem)
-                CVodeFree(&(this->mem));
-        }
     };
 
     int handle_status_(AnyODE::Status status){
@@ -693,9 +707,9 @@ namespace cvodes_cxx {
         }
         integr.set_init_step(dx0);
         if (dx_min != 0.0)
-            integr.set_min_step(dx0);
+            integr.set_min_step(dx_min);
         if (dx_max != 0.0)
-            integr.set_max_step(dx0);
+            integr.set_max_step(dx_max);
         if (mxsteps)
             integr.set_max_num_steps(mxsteps);
 
@@ -783,7 +797,7 @@ namespace cvodes_cxx {
                     int linear_solver=0,
                     const int maxl=0,
                     const realtype eps_lin=0.0,
-                    const int nderiv=0,
+                    const unsigned nderiv=0,
                     bool return_on_root=false
                     ){
         // iter_type == 0 => 1 if lmm == CV_ADAMS else 2
@@ -807,7 +821,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
         odesys->integrator = static_cast<void*>(&integr);
-        auto result = integr.adaptive(odesys->get_ny(), t0, tend, y0, nderiv, root_indices, return_on_root, mxsteps);
+        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root);
         odesys->last_integration_info.clear();
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
         return result;
@@ -833,7 +847,7 @@ namespace cvodes_cxx {
                            int linear_solver=0,
                            const int maxl=0,
                            const realtype eps_lin=0.0,
-                           const int nderiv=0
+                           const unsigned nderiv=0
                            ){
         // iter_type == 0 => 1 if lmm == CV_ADAMS else 2
         // iter_type == 1 => Functional (ignore linear_solver)
@@ -855,7 +869,7 @@ namespace cvodes_cxx {
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], dx0, dx_min, dx_max, mxsteps,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
         odesys->integrator = static_cast<void*>(&integr);
-        integr.predefined(nout, odesys->get_ny(), tout, y0, yout, nderiv, root_indices, root_out);
+        integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out);
         odesys->last_integration_info.clear();
         set_integration_info(odesys->last_integration_info, integr, iter_type, linear_solver);
     }

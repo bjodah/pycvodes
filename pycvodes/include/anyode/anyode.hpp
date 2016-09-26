@@ -1,4 +1,15 @@
-#pragma once
+#ifdef ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37
+
+#if ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 != 2
+#error "Multiple anyode.hpp files included with version mismatch"
+#endif
+
+#else
+#define ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 2
+
+
+#include <string>
+#include <unordered_map>
 
 namespace AnyODE {
     template<class T> void ignore( const T& ) { } // ignore compiler warnings about unused parameter
@@ -21,11 +32,21 @@ namespace AnyODE {
             return Status::unrecoverable_error;
         }
         virtual Status dense_jac_cmaj(double t,
-                                    const double * const __restrict__ y,
-                                    const double * const __restrict__ fy,
-                                    double * const __restrict__ jac,
-                                    long int ldim){
-            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim);
+                                      const double * const __restrict__ y,
+                                      const double * const __restrict__ fy,
+                                      double * const __restrict__ jac,
+                                      long int ldim,
+                                      double * const __restrict__ dfdt=nullptr){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim); ignore(dfdt);
+            return Status::unrecoverable_error;
+        }
+        virtual Status dense_jac_rmaj(double t,
+                                      const double * const __restrict__ y,
+                                      const double * const __restrict__ fy,
+                                      double * const __restrict__ jac,
+                                      long int ldim,
+                                      double * const __restrict__ dfdt=nullptr){
+            ignore(t); ignore(y); ignore(fy); ignore(jac); ignore(ldim); ignore(dfdt);
             return Status::unrecoverable_error;
         }
         virtual Status banded_jac_cmaj(double t,
@@ -87,3 +108,4 @@ namespace AnyODE {
         }
     };
 }
+#endif /* ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 */

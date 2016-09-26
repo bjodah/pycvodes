@@ -1,6 +1,6 @@
 //#include <unordered_map>
 #include "cvodes_cxx.hpp"
-#include "anyode"
+#include "anyode/anyode.hpp"
 
 int rhs_cb(double t, N_Vector y, N_Vector f, void * user_data){
     cvodes_cxx::ignore(t); cvodes_cxx::ignore(user_data);
@@ -13,8 +13,9 @@ struct Decay : public AnyODE::OdeSysBase {
 
     Decay(double k) : m_k(k) {}
     int get_ny() const override { return 1; }
-    void rhs(double t, const double * const __restrict__ y, double * const __restrict__ f) override {
+    AnyODE::Status rhs(double t, const double * const __restrict__ y, double * const __restrict__ f) override {
         cvodes_cxx::ignore(t);
         f[0] = -y[0];
+        return AnyODE::Status::success;
     }
 };

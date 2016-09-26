@@ -1,3 +1,7 @@
+unreleased
+==========
+- Bug-fix in get_integrator, dx_min and dx_max were ignored.
+
 v0.5.0
 ======
 - C++ wrapper API:

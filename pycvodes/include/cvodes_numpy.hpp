@@ -8,7 +8,7 @@
 #include <unordered_map> // std::unordered_map
 #include <string> // std::string
 
-#include "anyode.hpp"
+#include "anyode/anyode.hpp"
 #include "cvodes_cxx.hpp"
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 
@@ -145,7 +145,7 @@ namespace cvodes_numpy{
             return handle_status_(py_result, "jac");
         }
         virtual AnyODE::Status dense_jac_cmaj(realtype t, const realtype * const y, const realtype * const fy,
-                                      realtype * const jac, long int ldim){
+                                              realtype * const jac, long int ldim){
             npy_intp Jdims[2] { static_cast<npy_intp>(this->ny), static_cast<npy_intp>(this->ny) };
             npy_intp strides[2] { sizeof(realtype), static_cast<npy_intp>(ldim*sizeof(realtype)) };
             const auto type_tag = (sizeof(realtype) == 8) ? NPY_DOUBLE : NPY_LONGDOUBLE;
