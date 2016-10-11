@@ -1,3 +1,4 @@
+graft external
 recursive-include */include *.hpp *.pxd
 include AUTHORS
 include CHANGES.rst

@@ -1,0 +1,13 @@
+import os
+
+def make_ext(modname, pyxfilename):
+    from Cython.Build import cythonize
+    ext = cythonize([pyxfilename], include_path=['../include'])[0]
+    ext.libraries = [
+        'sundials_cvodes',
+        os.environ.get('LLAPACK', 'lapack'),
+        'sundials_nvecserial',
+        'm'
+    ]
+    ext.include_dirs=['../include']
+    return ext

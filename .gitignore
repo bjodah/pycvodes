@@ -8,11 +8,12 @@ cython_debug/
 .cache/
 doc/
 MANIFEST
-pycvodes/_cvodes_numpy.cpp
+pycvodes/_cvodes.cpp
 .coverage
 htmlcov/
 **/.ipynb_checkpoints/
 **.egg-info/
 tests/catch.hpp
+tests/test_cvodes_anyode
 tests/test_cvodes_cxx
 tests/test_sundials_cxx

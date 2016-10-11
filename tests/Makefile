@@ -8,10 +8,11 @@ DEFINES ?=
 
 .PHONY: test clean
 
-test: test_cvodes_cxx test_sundials_cxx
+test: test_cvodes_anyode test_cvodes_cxx test_sundials_cxx
+	./test_cvodes_anyode --abortx 1
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
-	python ./_test_cvodes_cxx.py
+	python ./_test_cvodes_anyode.py
 
 clean:
 	rm catch.hpp

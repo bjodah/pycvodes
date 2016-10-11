@@ -1,5 +1,10 @@
+# -*- coding: utf-8; mode: cython -*-
+# distutils: language = c++
+# distutils: extra_compile_args = ['-std=c++11']
+
 from libcpp.vector cimport vector
-from cvodes_cxx cimport simple_adaptive
+from cvodes_cxx cimport Adams
+from cvodes_anyode cimport simple_adaptive
 
 
 cdef extern from "testing_utils.hpp":
@@ -19,5 +24,4 @@ cdef class PyDecay:
     def adaptive(self, double y0, double t):
         cdef:
             vector[int] root_indices
-            int ADAMS = 1  # grep "define CV_ADAMS" cvodes.h
-        return simple_adaptive[Decay](self.thisptr, [1e-10], 1e-10, ADAMS, &y0, 0.0, t, root_indices)
+        return simple_adaptive[Decay](self.thisptr, [1e-10], 1e-10, Adams, &y0, 0.0, t, root_indices)

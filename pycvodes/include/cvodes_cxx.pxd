@@ -1,14 +1,25 @@
-# -*- mode: cython -*-
-# -*- coding: utf-8 -*-
-from libcpp cimport bool
-from libcpp.vector cimport vector
-from libcpp.utility cimport pair
+# -*- coding: utf-8; mode: cython -*-
+
+from libcpp.string cimport string
+
 
 cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx":
-    cdef void simple_predefined[U](
-        U * const, vector[double], double, int, const double * const, size_t, const double * const, double * const,
-        vector[int]&, vector[double]&, double, double, double, long int, bool, int, int, int, double, unsigned) except +
+    cdef cppclass LMM:
+        pass  # LMM is an enum class
 
-    cdef pair[vector[double], vector[double]] simple_adaptive[U](
-        U * const, vector[double], double, int, const double * const, double, const double tend, vector[int]&, double,
-        double, double, long int, bool, int, int, int, double, unsigned, bool) except +
+    cdef cppclass IterType:
+        pass  # IterType is an enum class
+
+    cdef cppclass CVodeIntegrator:
+        CVodeIntegrator(LMM, IterType)
+
+    cdef LMM lmm_from_name(string) except +
+    cdef IterType iter_type_from_name(string) except +
+
+cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx::LMM":
+    cdef LMM Adams
+    cdef LMM BDF
+
+cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx::IterType":
+    cdef IterType Functional
+    cdef IterType Newton
