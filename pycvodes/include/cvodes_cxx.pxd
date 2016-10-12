@@ -13,8 +13,8 @@ cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx":
     cdef cppclass CVodeIntegrator:
         CVodeIntegrator(LMM, IterType)
 
-    cdef LMM lmm_from_name(string) except +
-    cdef IterType iter_type_from_name(string) except +
+    cdef LMM lmm_from_name(string) nogil except +
+    cdef IterType iter_type_from_name(string) nogil except +
 
 cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx::LMM":
     cdef LMM Adams
