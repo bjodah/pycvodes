@@ -293,5 +293,4 @@ namespace cvodes_anyode {
         cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
                                          iter_type, linear_solver);
     }
-
 }
