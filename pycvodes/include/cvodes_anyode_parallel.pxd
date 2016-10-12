@@ -13,8 +13,8 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         double,
         LMM,
         const double * const,
-        double,
-        const double,
+        const double *,
+        const double *,
         long int,
         double,
         double,
@@ -22,10 +22,6 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         bool,
         IterType,
         int,
-        int,
-        double,
-        unsigned,
-        bool
     ) nogil except +
 
     cdef vector[pair[vector[int], vector[double]]] multi_predefined[U](
@@ -44,7 +40,4 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         bool,
         IterType,
         int,
-        int,
-        double,
-        unsigned
     ) nogil except +

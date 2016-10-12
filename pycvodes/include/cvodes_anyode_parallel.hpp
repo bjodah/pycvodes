@@ -73,9 +73,6 @@ namespace cvodes_anyode_parallel {
 
         auto roots = std::vector<std::pair<std::vector<int>, std::vector<double>>>(nsys);
 
-        std::vector<int>& root_indices;
-        std::vector<double>& root_out;
-
         #pragma omp parallel for
         for (int idx=0; idx<nsys; ++idx){
             simple_predefined<OdeSys>(odesys[idx], atol, rtol, lmm, y0 + idx*ny,
