@@ -18,3 +18,4 @@ tests/test_cvodes_anyode
 tests/test_cvodes_cxx
 tests/test_sundials_cxx
 tests/test_cvodes_anyode_parallel
+tests/_cvodes_anyode.cpp
