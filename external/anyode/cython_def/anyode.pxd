@@ -4,4 +4,4 @@ from cpython.ref cimport PyObject
 
 cdef extern from "anyode/anyode.hpp" namespace "AnyODE":
      cdef cppclass OdeSysBase:
-         pass
+         int nfev, njev

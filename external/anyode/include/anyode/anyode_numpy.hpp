@@ -10,7 +10,6 @@ namespace AnyODE {
         int ny;
         PyObject *py_rhs, *py_jac, *py_roots, *py_kwargs;
         int mlower, mupper, nroots;
-        unsigned nfev=0, njev=0;
         PyOdeSys(int ny, PyObject * py_rhs, PyObject * py_jac=nullptr, PyObject * py_roots=nullptr,
                  PyObject * py_kwargs=nullptr, int mlower=-1, int mupper=-1, int nroots=0) :
             ny(ny), py_rhs(py_rhs), py_jac(py_jac), py_roots(py_roots),
@@ -72,7 +71,7 @@ namespace AnyODE {
             Py_DECREF(py_arglist);
             Py_DECREF(py_dydt);
             Py_DECREF(py_yarr);
-            nfev++;
+            this->nfev++;
             return handle_status_(py_result, "rhs");
         }
         virtual AnyODE::Status roots(double t, const double * const y, double * const out){
@@ -114,7 +113,7 @@ namespace AnyODE {
             Py_DECREF(py_fy);
             Py_DECREF(py_dfdt);
             Py_DECREF(py_yarr);
-            njev++;
+            this->njev++;
             return handle_status_(py_result, "jac");
         }
         virtual AnyODE::Status dense_jac_cmaj(double t, const double * const y, const double * const fy,

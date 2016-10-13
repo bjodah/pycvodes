@@ -1,8 +1,8 @@
 #pragma once
 
 #include <chrono>
-#include "cvodes_cxx.hpp"
 #include "anyode/anyode.hpp"
+#include "cvodes_cxx.hpp"
 
 namespace cvodes_anyode {
 
@@ -238,6 +238,8 @@ namespace cvodes_anyode {
         odesys->last_integration_info.clear();
         cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
                                          iter_type, linear_solver);
+        odesys->last_integration_info["nfev"] = odesys->nfev;
+        odesys->last_integration_info["njev"] = odesys->njev;
         return result;
     }
 
@@ -292,5 +294,7 @@ namespace cvodes_anyode {
         odesys->last_integration_info.clear();
         cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
                                          iter_type, linear_solver);
+        odesys->last_integration_info["nfev"] = odesys->nfev;
+        odesys->last_integration_info["njev"] = odesys->njev;
     }
 }

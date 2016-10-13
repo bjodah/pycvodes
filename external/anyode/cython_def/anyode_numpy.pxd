@@ -12,5 +12,5 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
          int mlower, mupper, nroots
          unordered_map[string, int] last_integration_info
          unordered_map[string, double] last_integration_info_dbl
-         unsigned nfev, njev
+         int nfev, njev
          void * integrator
