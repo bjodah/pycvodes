@@ -21,7 +21,7 @@ def _path_under_setup(*args):
     return os.path.join(os.path.dirname(__file__), *args)
 
 
-USE_CYTHON = os.path.exists(_path_under_setup('pycvodes', '_cvodes_numpy.pyx'))
+USE_CYTHON = os.path.exists(_path_under_setup(pkg_name, '_cvodes.pyx'))
 package_include = os.path.join(pkg_name, 'include')
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
@@ -29,43 +29,48 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     import numpy as np
     LLAPACK = os.environ.get('LLAPACK', 'lapack')
     ext = '.pyx' if USE_CYTHON else '.cpp'
-    sources = ['pycvodes/_cvodes_numpy'+ext]
-    ext_modules = [Extension('pycvodes._cvodes_numpy', sources)]
+    sources = [os.path.join(pkg_name, '_cvodes'+ext)]
+    ext_modules = [Extension('%s._cvodes' % pkg_name, sources)]
     if USE_CYTHON:
         from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=[package_include])
+        ext_modules = cythonize(ext_modules, include_path=[
+            package_include,
+            os.path.join('external', 'anyode', 'cython_def')
+        ])
     ext_modules[0].language = 'c++'
     ext_modules[0].extra_compile_args = ['-std=c++11']
-    ext_modules[0].include_dirs = [np.get_include(), package_include]
+    ext_modules[0].include_dirs = [np.get_include(), package_include,
+                                   os.path.join('external', 'anyode', 'include')]
     ext_modules[0].libraries += ['sundials_cvodes',
                                  os.environ.get('LLAPACK', 'lapack'),
                                  'sundials_nvecserial']
 
 
-PYCVODES_RELEASE_VERSION = os.environ.get('PYCVODES_RELEASE_VERSION', '')
+_version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
+RELEASE_VERSION = os.environ.get(_version_env_var, '')
 
 if os.environ.get('CONDA_BUILD', '0') == '1':
     # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
     try:
-        PYCVODES_RELEASE_VERSION = 'v' + open(
+        RELEASE_VERSION = 'v' + open(
             '__conda_version__.txt', 'rt').readline().rstrip()
     except IOError:
         pass
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 
-if len(PYCVODES_RELEASE_VERSION) > 1:
-    if PYCVODES_RELEASE_VERSION[0] != 'v':
-        raise ValueError("PYCVODES_RELEASE_VERSION does not start with 'v'")
+if len(RELEASE_VERSION) > 1:
+    if RELEASE_VERSION[0] != 'v':
+        raise ValueError("$%s does not start with 'v'" % _version_env_var)
     TAGGED_RELEASE = True
-    __version__ = PYCVODES_RELEASE_VERSION[1:]
+    __version__ = RELEASE_VERSION[1:]
 else:
     TAGGED_RELEASE = False
     # read __version__ attribute from _release.py:
     exec(open(release_py_path).read())
 
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     'License :: OSI Approved :: BSD License',
     'Operating System :: OS Independent',
     'Topic :: Scientific/Engineering',
@@ -73,7 +78,7 @@ classifiers = [
 ]
 
 tests = [
-    'pycvodes.tests',
+    '%s.tests' % pkg_name,
 ]
 
 with io.open(_path_under_setup(pkg_name, '__init__.py'), 'rt',

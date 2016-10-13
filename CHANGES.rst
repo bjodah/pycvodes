@@ -1,3 +1,8 @@
+v0.6.0
+======
+- Bug-fix in get_integrator, dx_min and dx_max were ignored.
+- Refactored to use AnyODE base class (share code with pyodeint & pygslodeiv2)
+
 v0.5.0
 ======
 - C++ wrapper API:

@@ -4,7 +4,9 @@ Python binding for cvodes from the sundials library.
 """
 from __future__ import division, absolute_import
 
-from ._cvodes_numpy import adaptive, predefined, requires_jac, steppers
+import numpy as np
+
+from ._cvodes import adaptive, predefined, requires_jac, steppers
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
 
@@ -16,7 +18,7 @@ def get_include():
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
-                       dx_min=.0, dx_max=.0, nsteps=500, nderiv=0,
+                       dx_min=.0, dx_max=.0, nsteps=500, method=None, nderiv=0,
                        roots=None, nroots=0, return_on_root=False,
                        check_callable=False, check_indexing=False, **kwargs):
     """ Integrates a system of ordinary differential equations.
@@ -50,6 +52,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         Maximum step (default: 0.0).
     nsteps : int
         Maximum number of steps (default: 500).
+    method : str
+        One of: 'adams' or 'bdf' (default: 'bdf')
     nderiv : int
         Number of derivatives (default: 0).
     roots : callback
@@ -69,8 +73,6 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         'uband': int
             Number of upper bands.
             Indexing: ``banded[row_i - col_i + uband, col_i]``.
-        'method': str
-            One of: 'adams' or 'bdf' (default: 'bdf')
         'iter_type': str (default: 'default')
             One of: 'default', 'functional', 'newton'
         'linear_solver': str (default: 'default')
@@ -94,15 +96,16 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
     if check_indexing:
         _check_indexing(rhs, jac, x0, y0, lband, uband)
 
-    return adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol, dx_min, dx_max,
-                    nsteps, nderiv, roots=roots, nroots=nroots,
+    return adaptive(rhs, jac, np.ascontiguousarray(y0, dtype=np.float64), x0, xend,
+                    atol, rtol, method or ('adams' if jac is None else 'bdf'),
+                    nsteps, dx0, dx_min, dx_max, nderiv=nderiv, roots=roots, nroots=nroots,
                     return_on_root=return_on_root, **kwargs)
 
 
 def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
-                         dx_min=.0, dx_max=.0, nsteps=500, nderiv=0,
-                         roots=None, nroots=0,
-                         check_callable=False, check_indexing=False, **kwargs):
+                         dx_min=.0, dx_max=.0, nsteps=500, method=None,
+                         nderiv=0, roots=None, nroots=0, check_callable=False,
+                         check_indexing=False, **kwargs):
     """ Integrates a system of ordinary differential equations.
 
     Solves the initial value problem (IVP) defined by the user supplied
@@ -132,6 +135,8 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         Maximum step (default: 0.0).
     nsteps : int
         Maximum number of steps (default: 500).
+    method : str
+        One of: 'adams' or 'bdf' (default: 'bdf').
     nderiv : int
         Number of derivatives (default: 0).
     roots : callback (default: None)
@@ -150,8 +155,6 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         'uband': int
             Number of upper bands.
             Indexing: ``banded[row_i - col_i + uband, col_i]``.
-        'method': str
-            One of: 'adams' or 'bdf' (default: 'bdf').
         'iter_type': str (default: 'default')
             One of: 'default', 'functional', 'newton'.
         'linear_solver': str (default: 'default')
@@ -174,5 +177,10 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
     if check_indexing:
         _check_indexing(rhs, jac, xout[0], y0, lband, uband)
 
-    return predefined(rhs, jac, y0, xout, dx0, atol, rtol, dx_min, dx_max,
-                      nsteps, nderiv, roots=roots, nroots=nroots, **kwargs)
+    return predefined(
+        rhs, jac,
+        np.ascontiguousarray(y0, dtype=np.float64),
+        np.ascontiguousarray(xout, dtype=np.float64),
+        atol, rtol, method or ('adams' if jac is None else 'bdf'),
+        nsteps, dx0, dx_min, dx_max, nderiv=nderiv, roots=roots,
+        nroots=nroots, **kwargs)
