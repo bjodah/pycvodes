@@ -1,5 +1,6 @@
 #pragma once
 
+#include "anyode/anyode_parallel.hpp"
 #include "cvodes_anyode.hpp"
 
 namespace cvodes_anyode_parallel {
@@ -36,14 +37,20 @@ namespace cvodes_anyode_parallel {
         const int nsys = odesys.size();
         auto results = std::vector<std::pair<sa_t, std::vector<int>>>(nsys);
 
+        anyode_parallel::ThreadException te;
         #pragma omp parallel for
         for (int idx=0; idx<nsys; ++idx){
-            results[idx].first = simple_adaptive<OdeSys>(
-                odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
-                results[idx].second, mxsteps, dx0, dx_min, dx_max, with_jacobian,
-                iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root);
-
+            std::pair<sa_t, std::vector<int>> local_result;
+            te.run([&]{
+                local_result.first = simple_adaptive<OdeSys>(
+                    odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
+                    local_result.second, mxsteps, dx0, dx_min, dx_max, with_jacobian,
+                    iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root);
+            });
+            results[idx] = local_result;
         }
+        te.rethrow();
+
         return results;
     }
 
@@ -73,14 +80,19 @@ namespace cvodes_anyode_parallel {
 
         auto roots = std::vector<std::pair<std::vector<int>, std::vector<double>>>(nsys);
 
+        anyode_parallel::ThreadException te;
         #pragma omp parallel for
         for (int idx=0; idx<nsys; ++idx){
-            simple_predefined<OdeSys>(odesys[idx], atol, rtol, lmm, y0 + idx*ny,
-                                      nout, tout + idx*nout, yout + idx*ny*nout*(nderiv+1),
-                                      roots[idx].first, roots[idx].second,
-                                      mxsteps, dx0, dx_min, dx_max, with_jacobian,
-                                      iter_type, linear_solver, maxl, eps_lin, nderiv);
+            te.run([&]{
+               simple_predefined<OdeSys>(odesys[idx], atol, rtol, lmm, y0 + idx*ny,
+                                         nout, tout + idx*nout, yout + idx*ny*nout*(nderiv+1),
+                                         roots[idx].first, roots[idx].second,
+                                         mxsteps, dx0, dx_min, dx_max, with_jacobian,
+                                         iter_type, linear_solver, maxl, eps_lin, nderiv);
+            });
         }
+        te.rethrow();
+
         return roots;
     }
 

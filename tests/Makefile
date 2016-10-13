@@ -2,7 +2,7 @@ CXX ?= g++
 LIBS ?=-lsundials_cvodes -llapack -lsundials_nvecserial
 CXXFLAGS ?= -std=c++11 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)
-INCLUDE ?= -I../include
+INCLUDE ?= -I../include -I../external/anyode/include
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
