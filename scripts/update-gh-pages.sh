@@ -7,7 +7,8 @@
 
 tag=${1:-master}
 remote=${2:-origin}
-
+hold="dist build"
+ori_branch=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 tmpdir=$(mktemp -d)
 cleanup() {
     rm -r $tmpdir
@@ -15,6 +16,7 @@ cleanup() {
 trap cleanup INT TERM
 
 cp -r doc/_build/html/ $tmpdir
+mv $hold $tmpdir
 if [[ -d .gh-pages-skeleton ]]; then
     cp -r .gh-pages-skeleton $tmpdir
 fi
@@ -65,5 +67,8 @@ if [[ $preexisting == 1 ]]; then
 else
     git push --set-upstream $remote gh-pages
 fi
-
+git checkout $ori_branch
+for f in $hold; do
+    mv $tmpdir/$f .
+done
 cleanup
