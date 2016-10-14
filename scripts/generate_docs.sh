@@ -6,7 +6,7 @@
 #
 # Usage if doc/ is actually published in master branch on github:
 #
-#    $ ./scripts/generate_docs.sh my_github_username my_github_repo master
+#    $ ./scripts/generate_docs.sh GITHUB_USERNAME GITHUB_REPO master
 #
 NARGS=$#
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
@@ -41,4 +41,7 @@ EOF
 fi
 echo "numpydoc_class_members_toctree = False" >>doc/conf.py
 ABS_REPO_PATH=$(unset CDPATH && cd "$(dirname "$0")/.." && echo $PWD)
-( cd doc; PYTHONPATH=$ABS_REPO_PATH make html )
+if [[ ! -d doc/_build/html ]]; then
+    mkdir doc/_build/html
+fi
+( cd doc; PYTHONPATH=$ABS_REPO_PATH make html >_build/html/build.log )

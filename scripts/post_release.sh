@@ -24,7 +24,7 @@ sed -i -E \
     -e "/cython/d" \
     dist/conda-recipe-$VERSION/meta.yaml
 
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py upload_sphinx
+./scripts/update-gh-pages.sh v$VERSION
 
 # Specific for this project:
 scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
