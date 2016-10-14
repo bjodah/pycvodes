@@ -13,7 +13,8 @@ pycvodes
 .. image:: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov/coverage.svg
    :target: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov
    :alt: coverage
-
+.. image:: https://zenodo.org/badge/43224425.svg
+   :target: https://zenodo.org/badge/latestdoi/43224425
 
 `pycvodes <https://github.com/bjodah/pycvodes>`_ provides a
 `Python <http://www.python.org>`_ binding to the

@@ -1,4 +1,4 @@
-{% set name = "pycvdoes" %}
+{% set name = "pycvodes" %}
 {% set version = "0.6.0.git" %}
 {% set variant = "openblas" %}
 
@@ -38,9 +38,11 @@ test:
 #     - py.test --pyargs pycvodes  # https://github.com/conda/conda/issues/2075, https://github.com/pytest-dev/pytest/issues/1445
 
 about:
-  home: https://github.com/bjodah/pycvodes
+  home: https://github.com/bjodah/{{ name }}
   license: BSD 2-Clause
+  license_file: LICENSE
   summary: 'Python wrapper around cvodes (from the sundials library)'
+  doc_url: https://bjodah.github.io/{{ name }}
 
 
 extra:
