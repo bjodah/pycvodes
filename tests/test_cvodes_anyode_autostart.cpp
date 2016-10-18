@@ -206,7 +206,23 @@ TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
     double t0=0, tend=60;
     OdeSys odesys(&p[0]);
     std::vector<int> root_indices;
-    auto tout_yout = cvodes_anyode::simple_adaptive(&odesys, {1e-8}, 1e-8, cvodes_cxx::LMM::BDF, &y0[0], t0, tend, root_indices);
+
+    const long int mxsteps=0;
+    const realtype dx0=0.0;
+    const realtype dx_min=0.0;
+    const realtype dx_max=0.0;
+    const bool with_jacobian=false;
+    cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
+    int linear_solver=0;
+    const int maxl=0;
+    const realtype eps_lin=0.0;
+    const unsigned nderiv=0;
+    bool return_on_root=false;
+    int autorestart=3;
+
+    auto tout_yout = cvodes_anyode::simple_adaptive(&odesys, {1e-8}, 1e-8, cvodes_cxx::LMM::BDF, &y0[0], t0, tend, root_indices,
+                                                    mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
+                                                    maxl, eps_lin, nderiv, return_on_root, autorestart);
     auto& tout = tout_yout.first;
     auto& yout = tout_yout.second;
     const int ref = tout.size() * odesys.get_ny();

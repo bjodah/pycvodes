@@ -32,7 +32,8 @@ namespace cvodes_anyode_parallel {
                    const int maxl=0,
                    const realtype eps_lin=0.0,
                    const unsigned nderiv=0,
-                   bool return_on_root=false
+                   bool return_on_root=false,
+                   int autorestart=0 // must be autonomous!
                    ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -53,7 +54,8 @@ namespace cvodes_anyode_parallel {
                 local_result.first = simple_adaptive<OdeSys>(
                     odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
                     local_result.second, mxsteps, dx0, dx_min, dx_max, with_jacobian,
-                    iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root);
+                    iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root,
+                    autorestart);
             });
             results[idx] = local_result;
         }

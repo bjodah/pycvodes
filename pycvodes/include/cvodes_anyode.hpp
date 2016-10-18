@@ -207,7 +207,8 @@ namespace cvodes_anyode {
                     const int maxl=0,
                     const realtype eps_lin=0.0,
                     const unsigned nderiv=0,
-                    bool return_on_root=false
+                    bool return_on_root=false,
+                    int autorestart=0
                     ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -229,7 +230,7 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root);
+        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root, autorestart);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(

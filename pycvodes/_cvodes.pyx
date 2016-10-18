@@ -40,7 +40,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0, double dx_max=0.0, roots=None,
              cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0, str iter_type="undecided",
              int linear_solver=0, const int maxl=0, const double eps_lin=0.0, const unsigned nderiv=0,
-             bool return_on_root=False):
+             bool return_on_root=False, int autorestart=0):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
@@ -59,7 +59,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
             odesys, [atol], rtol, lmm_from_name(method.lower().encode('UTF-8')),
             &y0[0], x0, xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')),
-            linear_solver, maxl, eps_lin, nderiv, return_on_root))
+            linear_solver, maxl, eps_lin, nderiv, return_on_root, autorestart))
         info = get_last_info(odesys)
         if nroots > 0:
             info['root_indices'] = root_indices

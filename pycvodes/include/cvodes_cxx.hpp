@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_map> // std::unordered_map
 #include <sstream>
+#include <iostream> // DO-NOT-MERGE!
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -476,7 +477,9 @@ namespace cvodes_cxx {
                  const realtype * const y0,
                  const unsigned nderiv,
                  std::vector<int>& root_indices,
-                 bool return_on_root=false){
+                 bool return_on_root=false,
+                 int autorestart=0 // must be autonomous!
+                 ){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -512,7 +515,18 @@ namespace cvodes_cxx {
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
                     }else{
-                        unsuccessful_step_(status);
+                        if (autorestart == 0) {
+                            unsuccessful_step_(status);
+                        } else {
+                            std::cout << "Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            this->reinit(0, y);
+                            auto inner = this->adaptive(0, xend - cur_t, y.get_data_ptr(), nderiv,
+                                                        root_indices, return_on_root, autorestart-1);
+                            for (const auto& v : inner.first)
+                                xout.push_back(v + cur_t);
+                            yout.insert(yout.end(), inner.second.begin(), inner.second.end());
+                            break;
+                        }
                     }
                 }
                 xout.push_back(cur_t);
