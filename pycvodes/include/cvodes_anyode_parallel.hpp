@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream> //DO-NOT-MERGE!
 #include "anyode/anyode_parallel.hpp"
 #include "cvodes_anyode.hpp"
 
@@ -40,6 +41,13 @@ namespace cvodes_anyode_parallel {
         anyode_parallel::ThreadException te;
         #pragma omp parallel for
         for (int idx=0; idx<nsys; ++idx){
+            // std::cerr << idx << " t0=" << t0[idx] << " tend=" << tend[idx] << " y0=["; // DO-NOT-MERGE!
+            // for (int i=0; i<odesys[idx]->get_ny(); ++i)// DO-NOT-MERGE!
+            //     std::cerr << y0[idx*ny + i] << " "; // DO-NOT-MERGE!
+            // std::cerr << "] params=["; // DO-NOT-MERGE!
+            // for (const auto& v : odesys[idx]->m_p)// DO-NOT-MERGE!
+            //     std::cerr << v << " "; // DO-NOT-MERGE!
+            // std::cerr << "]\n";// DO-NOT-MERGE!
             std::pair<sa_t, std::vector<int>> local_result;
             te.run([&]{
                 local_result.first = simple_adaptive<OdeSys>(
