@@ -128,10 +128,12 @@ namespace cvodes_anyode {
                                    )
     {
         const int ny = odesys->get_ny();
+        const int nroots = odesys->get_nroots();
         CVodeIntegrator integr {lmm, iter_type};
         integr.set_user_data(static_cast<void *>(odesys));
         integr.init(rhs_cb<OdeSys>, t0, y0, ny);
-        integr.root_init(odesys->get_nroots(), roots_cb<OdeSys>);
+        if (nroots > 0)
+            integr.root_init(nroots, roots_cb<OdeSys>);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
         }else{
@@ -208,7 +210,8 @@ namespace cvodes_anyode {
                     const realtype eps_lin=0.0,
                     const unsigned nderiv=0,
                     bool return_on_root=false,
-                    int autorestart=0
+                    int autorestart=0,
+                    bool return_on_error=false
                     ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -230,7 +233,8 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root, autorestart);
+        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root,
+                                      autorestart, return_on_error);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
@@ -264,7 +268,8 @@ namespace cvodes_anyode {
                            int linear_solver=0,
                            const int maxl=0,
                            const realtype eps_lin=0.0,
-                           const unsigned nderiv=0
+                           const unsigned nderiv=0,
+                           int autorestart=0
                            ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -286,7 +291,7 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out);
+        integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out, autorestart);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(

@@ -27,7 +27,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         unsigned,
         bool,
         int
-    ) nogil except +
+    ) except +
 
     cdef vector[pair[vector[int], vector[double]]] multi_predefined[U](
         vector[U*],
@@ -45,4 +45,4 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         bool,
         IterType,
         int,
-    ) nogil except +
+    ) except +
