@@ -305,3 +305,24 @@ def test_rhs_recoverable_error():
 
     kwargs = dict(dx0=0.0, atol=1e-8, rtol=1e-8, method='adams')
     yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
+
+
+def test_adaptive_return_on_error():
+    k = k0, k1, k2 = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
+                  method='bdf')
+    f, j = _get_f_j(k)
+    xout, yout, info = integrate_adaptive(f, j, y0, nsteps=7, return_on_error=True, **kwargs)
+    yref = decay_get_Cref(k, y0, xout)
+    assert np.allclose(yout, yref,
+                       rtol=10*rtol,
+                       atol=10*atol)
+    assert xout.size > 2
+    assert xout[-1] > 1e-6
+    assert yout.shape[0] == xout.size
+    assert info['nfev'] > 0
+    assert info['njev'] > 0
+    assert info['success'] == False
+    assert xout[-1] < kwargs['xend']  # obviously not strict

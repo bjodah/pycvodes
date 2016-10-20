@@ -19,4 +19,5 @@ tests/test_cvodes_cxx
 tests/test_sundials_cxx
 tests/test_cvodes_anyode_parallel
 tests/_cvodes_anyode.cpp
-tests/test_cvodes_anyode_autostart
+tests/test_cvodes_anyode_autorestart
+tests/test_cvodes_anyode_svd

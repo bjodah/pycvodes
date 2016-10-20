@@ -1,6 +1,7 @@
 CXX ?= g++
-LIBS ?=-lsundials_cvodes -llapack -lsundials_nvecserial
+LIBS ?=-lsundials_cvodes -lsundials_nvecserial -llapack -lblas
 CXXFLAGS ?= -std=c++11 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -D_GLIBCXX_DEBUG
+# -O3 -ffast-math -funroll-loops -march=native
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../include -I../external/anyode/include
 DEFINES ?=
@@ -9,12 +10,14 @@ OPENMP_LIB ?= -lgomp
 
 .PHONY: test clean
 
-test: test_cvodes_anyode test_cvodes_anyode_parallel test_cvodes_anyode_autostart test_cvodes_cxx test_sundials_cxx
+test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_cvodes_anyode_parallel test_tough_case
+	./test_tough_case --abortx 1
 	./test_cvodes_anyode --abortx 1
-	./test_cvodes_anyode_parallel --abortx 1
-	./test_cvodes_anyode_autostart --abortx 1
+	./test_cvodes_anyode_autorestart --abortx 1
+	./test_cvodes_anyode_svd --abortx 1
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
+	./test_cvodes_anyode_parallel --abortx 1
 	python ./_test_cvodes_anyode.py
 
 clean:

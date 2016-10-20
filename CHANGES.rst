@@ -1,3 +1,8 @@
+v0.6.1
+======
+- New kwarg for autonomous systems: autorestart=<int>, helps when h/t ~= machine epsilon
+- New kwarg for ``adaptive``: return_on_error, useful to take a fixed number of steps.
+
 v0.6.0
 ======
 - Bug-fix in get_integrator, dx_min and dx_max were ignored.
