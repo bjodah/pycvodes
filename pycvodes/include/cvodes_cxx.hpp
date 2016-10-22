@@ -528,6 +528,7 @@ namespace cvodes_cxx {
                         root_indices.push_back(idx);
                     }else{
                         if (autorestart == 0) {
+                            std::cerr << "return_on_error=" << return_on_error << "\n";
                             if (return_on_error)
                                 break;
                             else
@@ -553,7 +554,7 @@ namespace cvodes_cxx {
                             const double last_x = xout.back();
                             xout.pop_back();
                             auto inner = this->adaptive(0, xend - last_x, &yout[(nderiv+1)*(idx-1)], nderiv,
-                                                        root_indices, return_on_root, autorestart-1);
+                                                        root_indices, return_on_root, autorestart-1, return_on_error);
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);
                             yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
