@@ -324,5 +324,5 @@ def test_adaptive_return_on_error():
     assert yout.shape[0] == xout.size
     assert info['nfev'] > 0
     assert info['njev'] > 0
-    assert info['success'] == False
+    assert info['success'] is False
     assert xout[-1] < kwargs['xend']  # obviously not strict
