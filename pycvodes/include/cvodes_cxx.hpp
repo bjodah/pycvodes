@@ -12,7 +12,7 @@
 #include <vector>
 #include <unordered_map> // std::unordered_map
 #include <sstream>
-#include <iostream> // DO-NOT-MERGE!
+#include <iostream>
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -528,18 +528,17 @@ namespace cvodes_cxx {
                         root_indices.push_back(idx);
                     }else{
                         if (autorestart == 0) {
-                            std::cerr << "return_on_error=" << return_on_error << "\n";
                             if (return_on_error)
                                 break;
                             else
                                 unsuccessful_step_throw_(status);
                         } else {
-                            std::cerr << "Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
                             this->reinit(0, y);
-                            if (status == CV_CONV_FAILURE) { // Most likely close to singular matrix
-                                std::cerr << "Singlar Jacobian?";
+                            if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
+                                std::cerr << "Singular Jacobian?";
                                 this->set_tol(1e-3, 1e-3); std::cerr << " - using atol=1e-3, rtol=1e-3";
-                                this->set_dense_jac_fn(nullptr); std::cerr << " - using finite differences.\n";
+                                this->set_dense_jac_fn(nullptr); std::cerr << " - using finite differences.\n"; // Hail Mary
                                 // root_indices.clear();
                                 // return this->adaptive(x0, xend, y0, nderiv, root_indices, return_on_root, autorestart-1);
 
@@ -550,6 +549,7 @@ namespace cvodes_cxx {
                                 // std::cerr << " - using diag\n";
                                 // this->set_linear_solver_to_diag();
                             }
+                            std::cerr << '\n';
                             this->set_max_num_steps(mxsteps - idx);
                             const double last_x = xout.back();
                             xout.pop_back();
