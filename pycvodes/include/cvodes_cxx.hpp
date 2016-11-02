@@ -512,6 +512,8 @@ namespace cvodes_cxx {
                 for (int i=0; i<ny; ++i)  // higher order too expensive
                     yout.push_back(0);
             }
+            if (x0 >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
+                goto done;
             this->set_stop_time(xend);
             do {
                 idx++;
@@ -579,6 +581,7 @@ namespace cvodes_cxx {
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
+        done:
             return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 

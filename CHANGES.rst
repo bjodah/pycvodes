@@ -3,6 +3,7 @@ v0.6.1
 - New kwarg for autonomous systems: autorestart=<int>, helps when h/t ~= machine epsilon
 - New kwarg for ``adaptive``: return_on_error, useful to take a fixed number of steps.
 - New non-public module: _config (stores choice of lapack for now)
+- adaptive in cvodes_cxx now return starting point when x0 >= xend (was CV_ILL_INPUT)
 
 v0.6.0
 ======
