@@ -111,6 +111,21 @@ def test_integrate_predefined(method, forgiveness, banded):
             assert nfo['njev'] > 0
 
 
+def test_integrate_adaptive_tstop0():
+    k = k0, k1, k2 = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(dx0=1e-10, atol=atol, rtol=rtol)
+    f, j = _get_f_j(k)
+    xout, yout, info = integrate_adaptive(f, j, y0, x0=0, xend=3, **kwargs)
+    yref = decay_get_Cref(k, y0, xout)
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+
+    xout, yout, info = integrate_adaptive(f, j, y0, x0=0, xend=0, **kwargs)
+    assert xout == [0]
+    assert np.allclose(yout, y0)
+
+
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_adaptive(method, forgiveness, banded):
     use_jac = method in requires_jac
@@ -319,7 +334,7 @@ def test_adaptive_return_on_error():
     assert np.allclose(yout, yref,
                        rtol=10*rtol,
                        atol=10*atol)
-    assert xout.size > 2
+    assert xout.size == 8
     assert xout[-1] > 1e-6
     assert yout.shape[0] == xout.size
     assert info['nfev'] > 0
