@@ -56,6 +56,16 @@ Binary distribution is available here:
 Source distribution is available here:
 `<https://pypi.python.org/pypi/pycvodes>`_
 
+When installing from source you can choose what lapack lib to link against by setting
+the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed from python:
+
+.. code:: python
+
+   >>> from pycvodes import _config
+   >>> _config.env['LAPACK']
+   'lapack'
+
+
 Examples
 --------
 The classic van der Pol oscillator (see `examples/van_der_pol.py <examples/van_der_pol.py>`_)
