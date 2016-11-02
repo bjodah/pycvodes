@@ -94,7 +94,7 @@ long_description = io.open(_path_under_setup('README.rst'),
                            encoding='utf-8').read()
 if not len(long_description) > 100:
     warnings.warn("Long description from README.rst probably not read correctly.")
-_author, _author_email = open('AUTHORS', 'rt').readline().split('<')
+_author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().split('<')
 
 setup_kwargs = dict(
     name=pkg_name,
