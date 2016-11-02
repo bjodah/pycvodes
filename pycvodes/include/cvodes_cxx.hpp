@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_map> // std::unordered_map
 #include <sstream>
+#include <iostream>
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
@@ -21,6 +22,7 @@
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
 
 namespace {
@@ -209,6 +211,12 @@ namespace cvodes_cxx {
             if (status < 0)
                 throw std::runtime_error("CVodeSetUserData failed.");
         }
+        // diagonal  solver
+        void set_linear_solver_to_diag(){
+            int status = CVDiag(this->mem);
+            if (status < 0)
+                throw std::runtime_error("CVDiag failed.");
+        }
 
         // dense jacobian
         void set_linear_solver_to_dense(int ny){
@@ -235,17 +243,17 @@ namespace cvodes_cxx {
         }
 
         // Iterative Linear solvers
-        void set_linear_solver_to_iterative(IterLinSolEnum solver, int maxl=0){
+        void set_linear_solver_to_iterative(IterLinSolEnum solver, int maxl=0, PrecType ptyp=PrecType::Left){
             int flag;
             switch (solver) {
             case IterLinSolEnum::GMRES:
-                flag = CVSpgmr(this->mem, static_cast<int>(PrecType::Left), maxl);
+                flag = CVSpgmr(this->mem, static_cast<int>(ptyp), maxl);
                 break;
             case IterLinSolEnum::BICGSTAB:
-                flag = CVSpbcg(this->mem, static_cast<int>(PrecType::Left), maxl);
+                flag = CVSpbcg(this->mem, static_cast<int>(ptyp), maxl);
                 break;
             case IterLinSolEnum::TFQMR:
-                flag = CVSptfqmr(this->mem, static_cast<int>(PrecType::Left), maxl);
+                flag = CVSptfqmr(this->mem, static_cast<int>(ptyp), maxl);
                 break;
             default:
                 throw std::runtime_error("unknown solver kind.");
@@ -465,7 +473,7 @@ namespace cvodes_cxx {
             if (status)
                 throw std::runtime_error("call_rhs failed.");
         }
-        void unsuccessful_step_(int flag){
+        void unsuccessful_step_throw_(int flag){
             throw std::runtime_error(StreamFmt() << std::scientific << "Unsuccessful step (t="
                                      << get_current_time() << ", h=" << get_current_step() << "): " <<
                                      CVodeGetReturnFlagName(flag));
@@ -476,7 +484,10 @@ namespace cvodes_cxx {
                  const realtype * const y0,
                  const unsigned nderiv,
                  std::vector<int>& root_indices,
-                 bool return_on_root=false){
+                 bool return_on_root=false,
+                 int autorestart=0, // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
+                 bool return_on_error=false
+                 ){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
             realtype cur_t;
@@ -501,18 +512,57 @@ namespace cvodes_cxx {
                 for (int i=0; i<ny; ++i)  // higher order too expensive
                     yout.push_back(0);
             }
+            if (x0 >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
+                goto done;
             this->set_stop_time(xend);
             do {
                 idx++;
-                if (idx > 0 and idx > mxsteps)
-                    throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
-                                             << cur_t <<"): " << mxsteps);
+                if (idx > mxsteps){
+                    if (return_on_error)
+                        break;
+                    else
+                        throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
+                                                 << cur_t <<"): " << mxsteps);
+                }
                 status = this->step(xend, y, &cur_t, Task::One_Step);
                 if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
                     }else{
-                        unsuccessful_step_(status);
+                        if (autorestart == 0) {
+                            if (return_on_error)
+                                break;
+                            else
+                                unsuccessful_step_throw_(status);
+                        } else {
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
+                            this->reinit(0, y);
+                            if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
+                                std::cerr << "Singular Jacobian?";
+                                this->set_tol(1e-3, 1e-3); std::cerr << " - using atol=1e-3, rtol=1e-3";
+                                this->set_dense_jac_fn(nullptr); std::cerr << " - using finite differences.\n"; // Hail Mary
+                                // root_indices.clear();
+                                // return this->adaptive(x0, xend, y0, nderiv, root_indices, return_on_root, autorestart-1);
+
+                                // std::cerr << " - using GMRES\n";
+                                // this->set_linear_solver_to_iterative(IterLinSolEnum::GMRES, 0, PrecType::None);
+                                // this->set_gram_schmidt_type(GramSchmidtType::Modified);
+
+                                // std::cerr << " - using diag\n";
+                                // this->set_linear_solver_to_diag();
+                            }
+                            std::cerr << '\n';
+                            this->set_max_num_steps(mxsteps - idx);
+                            const double last_x = xout.back();
+                            xout.pop_back();
+                            auto inner = this->adaptive(0, xend - last_x, &yout[(nderiv+1)*(idx-1)], nderiv,
+                                                        root_indices, return_on_root, autorestart-1, return_on_error);
+                            for (const auto& v : inner.first)
+                                xout.push_back(v + last_x);
+                            yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
+                            this->set_max_num_steps(mxsteps);
+                            break;
+                        }
                     }
                 }
                 xout.push_back(cur_t);
@@ -531,16 +581,19 @@ namespace cvodes_cxx {
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
+        done:
             return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 
-        void predefined(const long int nt,  // sundials does not use unsigned types here...
+        void predefined(const long int nt,
                         const realtype * const tout,
                         const realtype * const y0,
                         realtype * const yout,
                         const unsigned nderiv,
                         std::vector<int>& root_indices,
-                        std::vector<realtype>& root_out){
+                        std::vector<realtype>& root_out,
+                        int autorestart=0 // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
+                        ){
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -570,18 +623,29 @@ namespace cvodes_cxx {
                         iout--;
                         continue;
                     }else{
-                        unsuccessful_step_(status);
+                        if (autorestart == 0){
+                            unsuccessful_step_throw_(status);
+                        } else {
+                            std::array<double, 2> tout_ {{0, tout[iout] - tout[iout-1]}};
+                            std::vector<double> yout_((nderiv+1)*ny*2);
+                            std::vector<int> root_indices_;
+                            this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1), yout_.data(), nderiv,
+                                             root_indices_, root_out, autorestart-1);
+                            root_indices.insert(root_indices.end(), root_indices_.begin(), root_indices_.end());
+                            std::memcpy(yout + ny*(iout*(nderiv+1)), yout_.data() + ny*(nderiv+1), ny*(nderiv+1));
+                        }
                     }
-                }
-                y.dump(&yout[ny*(iout*(nderiv+1))]);
-                // Derivatives for interpolation
-                for (unsigned di=0; di<nderiv; ++di){
-                    if (this->get_n_steps() < 2*(nderiv+1))
-                        // Too few points collected
-                        work.zero_out();
-                    else
-                        this->get_dky(tout[iout], di+1, work);
-                    work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
+                } else {
+                    y.dump(&yout[ny*(iout*(nderiv+1))]);
+                    // Derivatives for interpolation
+                    for (unsigned di=0; di<nderiv; ++di){
+                        if (this->get_n_steps() < 2*(nderiv+1))
+                            // Too few points collected
+                            work.zero_out();
+                        else
+                            this->get_dky(tout[iout], di+1, work);
+                        work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
+                    }
                 }
             }
         }

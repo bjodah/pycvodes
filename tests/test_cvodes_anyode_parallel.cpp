@@ -25,5 +25,7 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
         }
         REQUIRE( systems[idx]->last_integration_info["n_steps"] > 1 );
         REQUIRE( systems[idx]->last_integration_info["n_steps"] < 997 );
+        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] > 0 );
+        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] < 100 );
     }
 }
