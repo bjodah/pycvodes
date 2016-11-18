@@ -485,7 +485,7 @@ namespace cvodes_cxx {
                  const unsigned nderiv,
                  std::vector<int>& root_indices,
                  bool return_on_root=false,
-                 int autorestart=0, // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
+                 int autorestart=0, // must be autonomous if >0
                  bool return_on_error=false
                  ){
             std::vector<realtype> xout;
@@ -552,7 +552,7 @@ namespace cvodes_cxx {
                                 // this->set_linear_solver_to_diag();
                             }
                             std::cerr << '\n';
-                            this->set_max_num_steps(mxsteps - idx);
+                            // this->set_max_num_steps(mxsteps - idx);
                             const double last_x = xout.back();
                             xout.pop_back();
                             auto inner = this->adaptive(0, xend - last_x, &yout[(nderiv+1)*(idx-1)], nderiv,
@@ -560,7 +560,7 @@ namespace cvodes_cxx {
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);
                             yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
-                            this->set_max_num_steps(mxsteps);
+                            // this->set_max_num_steps(mxsteps);
                             break;
                         }
                     }
@@ -592,7 +592,7 @@ namespace cvodes_cxx {
                         const unsigned nderiv,
                         std::vector<int>& root_indices,
                         std::vector<realtype>& root_out,
-                        int autorestart=0 // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
+                        int autorestart=0 // must be autonomous if >0
                         ){
             realtype cur_t;
             int status;
