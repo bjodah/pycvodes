@@ -21,10 +21,10 @@ namespace cvodes_anyode_parallel {
                    const realtype * const y0,  // vectorized
                    const realtype * t0,  // vectorized
                    const realtype * tend,  // vectorized
-                   const long int mxsteps=0,
-                   const realtype dx0=0.0,
-                   const realtype dx_min=0.0,
-                   const realtype dx_max=0.0,
+                   const long int mxsteps,
+                   const realtype * dx0,  // vectorized
+                   const realtype * dx_min,  // vectorized
+                   const realtype * dx_max,  // vectorized
                    const bool with_jacobian=false,
                    IterType iter_type=IterType::Undecided,
                    int linear_solver=0,
@@ -46,7 +46,7 @@ namespace cvodes_anyode_parallel {
             te.run([&]{
                 local_result.first = simple_adaptive<OdeSys>(
                     odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
-                    local_result.second, mxsteps, dx0, dx_min, dx_max, with_jacobian,
+                    local_result.second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                     iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root,
                     autorestart, return_on_error);
             });
@@ -67,10 +67,10 @@ namespace cvodes_anyode_parallel {
                      const std::size_t nout,
                      const realtype * const tout, // vectorized
                      realtype * const yout,  // vectorized
-                     const long int mxsteps=0,
-                     const realtype dx0=0.0,
-                     const realtype dx_min=0.0,
-                     const realtype dx_max=0.0,
+                     const long int mxsteps,
+                     const realtype * dx0,  // vectorized
+                     const realtype * dx_min,  // vectorized
+                     const realtype * dx_max,  // vectorized
                      const bool with_jacobian=false,
                      IterType iter_type=IterType::Undecided,
                      int linear_solver=0,
@@ -91,7 +91,7 @@ namespace cvodes_anyode_parallel {
                simple_predefined<OdeSys>(odesys[idx], atol, rtol, lmm, y0 + idx*ny,
                                          nout, tout + idx*nout, yout + idx*ny*nout*(nderiv+1),
                                          roots[idx].first, roots[idx].second,
-                                         mxsteps, dx0, dx_min, dx_max, with_jacobian,
+                                         mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                                          iter_type, linear_solver, maxl, eps_lin, nderiv,
                                          autorestart);
             });

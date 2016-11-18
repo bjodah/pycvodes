@@ -27,7 +27,7 @@ clean:
 test_%: test_%.cpp ../include/cvodes_cxx.hpp catch.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS)
 
-test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../include/cvodes_*.hpp
+test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../include/cvodes_*.hpp catch.hpp
 	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS) $(OPENMP_LIB)
 
 catch.hpp: catch.hpp.bz2
