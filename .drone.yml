@@ -1,6 +1,8 @@
 build:
   image: bjodah/bjodahimg16:v1.2
   commands:
+    - python2 -m pip install --upgrade pip  # pip 8.1.1 has a bug
+    - python3 -m pip install --upgrade pip  # pip 8.1.1 has a bug
     - ./scripts/ci.sh pycvodes
     - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
