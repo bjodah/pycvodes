@@ -6,7 +6,9 @@
 import io
 import os
 import pprint
+import re
 import shutil
+import subprocess
 import sys
 import warnings
 from setuptools import setup
@@ -73,6 +75,14 @@ if len(RELEASE_VERSION) > 1:
 else:  # set `__version__` from _release.py:
     TAGGED_RELEASE = False
     exec(open(release_py_path).read())
+    if __version__.endswith('git'):
+        try:
+            _git_version = subprocess.check_output(['git', 'describe']).rstrip().decode('utf-8')
+        except subprocess.CalledProcessError:
+            warnings.warn("A git-archive is being installed - version information incomplete.")
+        else:
+            warnings.warn("Using git to derive version: dev-branches may compete.")
+            __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
 classifiers = [
     "Development Status :: 4 - Beta",
