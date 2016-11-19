@@ -517,26 +517,22 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
-                if (idx > mxsteps){
-                    if (return_on_error)
-                        break;
-                    else
-                        throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
-                                                 << cur_t <<"): " << mxsteps);
-                }
                 status = this->step(xend, y, &cur_t, Task::One_Step);
-                if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
+                if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (idx > mxsteps)){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
                     }else{
                         if (autorestart == 0) {
                             if (return_on_error)
                                 break;
+                            else if (idx > mxsteps)
+                                throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
+                                                         << cur_t <<"): " << mxsteps);
                             else
                                 unsuccessful_step_throw_(status);
                         } else {
                             std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
-                            this->reinit(0, y);
+                            //this->reinit(0, y);
                             if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
                                 std::cerr << "Singular Jacobian?";
                                 this->set_tol(1e-3, 1e-3); std::cerr << " - using atol=1e-3, rtol=1e-3";
@@ -555,7 +551,7 @@ namespace cvodes_cxx {
                             // this->set_max_num_steps(mxsteps - idx);
                             const double last_x = xout.back();
                             xout.pop_back();
-                            auto inner = this->adaptive(0, xend - last_x, &yout[(nderiv+1)*(idx-1)], nderiv,
+                            auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1)], nderiv,
                                                         root_indices, return_on_root, autorestart-1, return_on_error);
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);

@@ -48,7 +48,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
         PyOdeSys * odesys
         vector[int] root_indices
 
-    if method in requires_jac and jac is None:
+    if method.lower() in requires_jac and jac is None:
         warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     if np.isinf([x0, xend]).any(): raise ValueError("+/-Inf found in x0/xend")
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
@@ -87,7 +87,7 @@ def predefined(rhs, jac,
         vector[int] root_indices
         vector[double] roots_output
 
-    if method in requires_jac and jac is None:
+    if method.lower() in requires_jac and jac is None:
         warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     if np.isinf(xout).any(): raise ValueError("+/-Inf found in xout")
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
