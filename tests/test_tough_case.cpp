@@ -15,7 +15,7 @@ TEST_CASE( "adaptive_autorestart_tricky", "[simple_adaptive]" ) {
     OdeSys odesys(p.data());
     std::vector<int> root_indices;
 
-    const long int mxsteps=15000;
+    const long int mxsteps=5000;
     const realtype dx0=0.0;
     const realtype dx_min=0.0;
     const realtype dx_max=0.0;
