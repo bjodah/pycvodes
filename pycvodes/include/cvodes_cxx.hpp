@@ -581,15 +581,17 @@ namespace cvodes_cxx {
             return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 
-        void predefined(const long int nt,
-                        const realtype * const tout,
-                        const realtype * const y0,
-                        realtype * const yout,
-                        const unsigned nderiv,
-                        std::vector<int>& root_indices,
-                        std::vector<realtype>& root_out,
-                        int autorestart=0 // must be autonomous if >0
-                        ){
+        int predefined(const long int nt,
+                       const realtype * const tout,
+                       const realtype * const y0,
+                       realtype * const yout,
+                       const unsigned nderiv,
+                       std::vector<int>& root_indices,
+                       std::vector<realtype>& root_out,
+                       int autorestart=0, // must be autonomous if >0b
+                       bool return_on_error=false
+                       ){
+            int iout = 0;
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -608,7 +610,7 @@ namespace cvodes_cxx {
                     yout[ny*(di+1) + i] = 0;
             }
 
-            for(int iout=1; (iout < nt); iout++) {
+            for(iout=1; (iout < nt); iout++) {
                 status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
@@ -620,13 +622,18 @@ namespace cvodes_cxx {
                         continue;
                     }else{
                         if (autorestart == 0){
-                            unsuccessful_step_throw_(status);
+                            if (return_on_error)
+                                break;
+                            else
+                                unsuccessful_step_throw_(status);
                         } else {
                             std::array<double, 2> tout_ {{0, tout[iout] - tout[iout-1]}};
                             std::vector<double> yout_((nderiv+1)*ny*2);
                             std::vector<int> root_indices_;
-                            this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1), yout_.data(), nderiv,
-                                             root_indices_, root_out, autorestart-1);
+                            int n_reached = this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1), yout_.data(),
+                                                            nderiv, root_indices_, root_out, autorestart-1);
+                            if (n_reached == 0)
+                                break;
                             root_indices.insert(root_indices.end(), root_indices_.begin(), root_indices_.end());
                             std::memcpy(yout + ny*(iout*(nderiv+1)), yout_.data() + ny*(nderiv+1), ny*(nderiv+1));
                         }
@@ -644,6 +651,7 @@ namespace cvodes_cxx {
                     }
                 }
             }
+            return iout;
         }
 
     };

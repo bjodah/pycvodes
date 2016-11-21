@@ -385,3 +385,23 @@ def test_predefined_autorestart():
     assert info['njev'] > 0
     assert info['success']
     assert xout[-1] == xend
+
+
+def test_predefined_return_on_error():
+    k = k0, k1, k2 = 2.0, 3.0, 4.0
+    y0 = [0.7, 0., 0.]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(dx0=1e-10, atol=atol, rtol=rtol,
+                  method='bdf', return_on_error=True, nsteps=7)
+    f, j = _get_f_j(k)
+    xout = np.logspace(-3, 1)
+    yout, info = integrate_predefined(f, j, y0, xout, **kwargs)
+    yref = decay_get_Cref(k, y0, xout - xout[0])
+    assert np.allclose(yout[:info['nreached'], :], yref[:info['nreached'], :],
+                       rtol=10*rtol,
+                       atol=10*atol)
+    assert 0 < info['nreached'] < 40
+    assert yout.shape[0] == xout.size
+    assert info['nfev'] > 0
+    assert info['njev'] > 0
+    assert info['success'] is False

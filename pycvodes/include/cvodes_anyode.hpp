@@ -249,28 +249,29 @@ namespace cvodes_anyode {
     }
 
     template <class OdeSys>
-    void simple_predefined(OdeSys * const odesys,
-                           const std::vector<realtype> atol,
-                           const realtype rtol,
-                           const LMM lmm,
-                           const realtype * const y0,
-                           const std::size_t nout,
-                           const realtype * const tout,
-                           realtype * const yout,
-                           std::vector<int>& root_indices,
-                           std::vector<double>& root_out,
-                           const long int mxsteps=0,
-                           const realtype dx0=0.0,
-                           const realtype dx_min=0.0,
-                           const realtype dx_max=0.0,
-                           const bool with_jacobian=false,
-                           IterType iter_type=IterType::Undecided,
-                           int linear_solver=0,
-                           const int maxl=0,
-                           const realtype eps_lin=0.0,
-                           const unsigned nderiv=0,
-                           int autorestart=0
-                           ){
+    int simple_predefined(OdeSys * const odesys,
+                          const std::vector<realtype> atol,
+                          const realtype rtol,
+                          const LMM lmm,
+                          const realtype * const y0,
+                          const std::size_t nout,
+                          const realtype * const tout,
+                          realtype * const yout,
+                          std::vector<int>& root_indices,
+                          std::vector<double>& root_out,
+                          const long int mxsteps=0,
+                          const realtype dx0=0.0,
+                          const realtype dx_min=0.0,
+                          const realtype dx_max=0.0,
+                          const bool with_jacobian=false,
+                          IterType iter_type=IterType::Undecided,
+                          int linear_solver=0,
+                          const int maxl=0,
+                          const realtype eps_lin=0.0,
+                          const unsigned nderiv=0,
+                          int autorestart=0,
+                          bool return_on_error=false
+                          ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
         // linear_solver ==  0 => 1 if get_mlower() == -1 else 2
@@ -291,7 +292,8 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out, autorestart);
+        auto steps_taken = integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out,
+                                             autorestart, return_on_error);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
@@ -302,5 +304,6 @@ namespace cvodes_anyode {
                                          iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
+        return steps_taken;
     }
 }
