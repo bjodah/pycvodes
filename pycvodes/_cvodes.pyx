@@ -78,7 +78,7 @@ def predefined(rhs, jac,
                double atol, double rtol, str method='bdf', int nsteps=500, double dx0=0.0,
                double dx_min=0.0, double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
                str iter_type="undecided", int linear_solver=0, const int maxl=0, const double eps_lin=0.0,
-               const unsigned nderiv=0, bool return_on_root=False, int autorestart=0):
+               const unsigned nderiv=0, bool return_on_root=False, int autorestart=0, bool return_on_error=False):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
@@ -96,11 +96,13 @@ def predefined(rhs, jac,
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nroots)
     try:
-        simple_predefined[PyOdeSys](odesys, [atol], rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],
-                                    xout.size, &xout[0], <double *>yout.data, root_indices, roots_output, nsteps,
-                                    dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
-                                    linear_solver, maxl, eps_lin, nderiv, autorestart)
-        info = get_last_info(odesys)
+        nreached = simple_predefined[PyOdeSys](
+            odesys, [atol], rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],
+            xout.size, &xout[0], <double *>yout.data, root_indices, roots_output, nsteps,
+            dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
+            linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error)
+        info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size - 1 else True)
+        info['nreached'] = nreached
         if nroots > 0:
             info['root_indices'] = root_indices
             info['roots_output'] = _reshape_roots(np.asarray(roots_output), ny)
