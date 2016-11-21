@@ -622,16 +622,18 @@ namespace cvodes_cxx {
                         continue;
                     }else{
                         if (autorestart == 0){
-                            if (return_on_error)
+                            if (return_on_error){
+                                iout--;
                                 break;
-                            else
+                            } else {
                                 unsuccessful_step_throw_(status);
+                            }
                         } else {
                             std::array<double, 2> tout_ {{0, tout[iout] - tout[iout-1]}};
                             std::vector<double> yout_((nderiv+1)*ny*2);
                             std::vector<int> root_indices_;
-                            int n_reached = this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1), yout_.data(),
-                                                            nderiv, root_indices_, root_out, autorestart-1);
+                            int n_reached = this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1)*ny, yout_.data(),
+                                                             nderiv, root_indices_, root_out, autorestart-1, return_on_error);
                             if (n_reached == 0)
                                 break;
                             root_indices.insert(root_indices.end(), root_indices_.begin(), root_indices_.end());

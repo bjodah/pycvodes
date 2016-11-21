@@ -400,7 +400,7 @@ def test_predefined_return_on_error():
     assert np.allclose(yout[:info['nreached'], :], yref[:info['nreached'], :],
                        rtol=10*rtol,
                        atol=10*atol)
-    assert 0 < info['nreached'] < 40
+    assert 10 < info['nreached'] < 40
     assert yout.shape[0] == xout.size
     assert info['nfev'] > 0
     assert info['njev'] > 0

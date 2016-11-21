@@ -292,7 +292,7 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto steps_taken = integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out,
+        auto nreached = integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out,
                                              autorestart, return_on_error);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
@@ -304,6 +304,6 @@ namespace cvodes_anyode {
                                          iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
-        return steps_taken;
+        return nreached;
     }
 }

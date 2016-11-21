@@ -83,6 +83,7 @@ def predefined(rhs, jac,
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
         bool with_jacobian = jac is not None
+        int nreached
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] roots_output
@@ -101,7 +102,7 @@ def predefined(rhs, jac,
             xout.size, &xout[0], <double *>yout.data, root_indices, roots_output, nsteps,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error)
-        info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size - 1 else True)
+        info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size else True)
         info['nreached'] = nreached
         if nroots > 0:
             info['root_indices'] = root_indices
