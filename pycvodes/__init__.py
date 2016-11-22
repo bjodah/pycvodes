@@ -9,6 +9,7 @@ import numpy as np
 from ._cvodes import adaptive, predefined, requires_jac, steppers
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
+from ._config import env as config
 
 
 def get_include():
