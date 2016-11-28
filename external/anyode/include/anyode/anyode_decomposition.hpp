@@ -1,6 +1,8 @@
 #ifndef ANYODE_DECOMPOSITION_HPP_3BD9D4BE95FC11E6A79D1F63EAC57037
 #define ANYODE_DECOMPOSITION_HPP_3BD9D4BE95FC11E6A79D1F63EAC57037
 
+#include <cmath>
+
 #include "anyode/anyode_matrix.hpp"
 #include "anyode/anyode_buffer.hpp"
 
@@ -44,7 +46,7 @@ namespace AnyODE {
                     buffer_get_raw_ptr(m_s), buffer_get_raw_ptr(m_u), &m_ldu,
                     buffer_get_raw_ptr(m_vt), &m_ldvt, buffer_get_raw_ptr(m_work), &m_lwork, &info);
 
-            m_condition_number = std::abs(m_s[0]/m_s[std::min(m_view->m_nr, m_view->m_nc) - 1]);
+            m_condition_number = std::fabs(m_s[0]/m_s[std::min(m_view->m_nr, m_view->m_nc) - 1]);
             return info;
         }
         int solve(const double* const b, double * const x) override{

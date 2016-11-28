@@ -196,11 +196,11 @@ namespace cvodes_anyode {
                     const realtype rtol,
                     const LMM lmm,
                     const realtype * const y0,
-                    const realtype t0,
-                    const realtype tend,
+                    const realtype x0,
+                    const realtype xend,
                     std::vector<int>& root_indices,
                     const long int mxsteps=0,
-                    const realtype dx0=0.0,
+                    realtype dx0=0.0,
                     const realtype dx_min=0.0,
                     const realtype dx_max=0.0,
                     const bool with_jacobian=false,
@@ -227,13 +227,15 @@ namespace cvodes_anyode {
         if (linear_solver == 0)
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
 
-        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, t0, mxsteps, dx0, dx_min, dx_max,
+        if (dx0 == 0.0)
+            dx0 = odesys->get_dx0(x0, y0);
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
         odesys->integrator = static_cast<void*>(&integr);
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto result = integr.adaptive(t0, tend, y0, nderiv, root_indices, return_on_root,
+        auto result = integr.adaptive(x0, xend, y0, nderiv, root_indices, return_on_root,
                                       autorestart, return_on_error);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
@@ -255,12 +257,12 @@ namespace cvodes_anyode {
                           const LMM lmm,
                           const realtype * const y0,
                           const std::size_t nout,
-                          const realtype * const tout,
+                          const realtype * const xout,
                           realtype * const yout,
                           std::vector<int>& root_indices,
                           std::vector<double>& root_out,
                           const long int mxsteps=0,
-                          const realtype dx0=0.0,
+                          realtype dx0=0.0,
                           const realtype dx_min=0.0,
                           const realtype dx_max=0.0,
                           const bool with_jacobian=false,
@@ -285,14 +287,16 @@ namespace cvodes_anyode {
             iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
         if (linear_solver == 0)
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
-        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, tout[0], mxsteps, dx0, dx_min, dx_max,
+        if (dx0 == 0.0)
+            dx0 = odesys->get_dx0(xout[0], y0);
+        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, xout[0], mxsteps, dx0, dx_min, dx_max,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin);
         odesys->integrator = static_cast<void*>(&integr);
 
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto nreached = integr.predefined(nout, tout, y0, yout, nderiv, root_indices, root_out,
+        auto nreached = integr.predefined(nout, xout, y0, yout, nderiv, root_indices, root_out,
                                              autorestart, return_on_error);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
