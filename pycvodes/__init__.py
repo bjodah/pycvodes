@@ -18,7 +18,7 @@ def get_include():
                              '%s/include' % __name__)
 
 
-def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
+def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
                        dx_min=.0, dx_max=.0, nsteps=500, method=None, nderiv=0,
                        roots=None, nroots=0, return_on_root=False,
                        check_callable=False, check_indexing=False, **kwargs):
@@ -103,7 +103,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                     return_on_root=return_on_root, **kwargs)
 
 
-def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
+def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
                          dx_min=.0, dx_max=.0, nsteps=500, method=None,
                          nderiv=0, roots=None, nroots=0, check_callable=False,
                          check_indexing=False, **kwargs):
