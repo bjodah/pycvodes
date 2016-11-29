@@ -79,6 +79,14 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         'linear_solver': str (default: 'default')
             One of: 'default', 'dense', 'banded', 'gmres',
             'gmres_classic', 'bicgstab', 'tfqmr'
+        'return_on_error': bool
+            Returns on error without raising an excpetion (with ``'success'==False``).
+        'autorestart': int
+            Useful for autonomous systems where conditions change during integration.
+            Will restart the integration with ``x==0``.
+        'dx0cb': callable
+            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
+            Signature: ``f(x, y[:]) -> float``.
 
     Returns
     -------
@@ -161,6 +169,14 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
         'linear_solver': str (default: 'default')
             One of: 'default', 'dense', 'banded', 'gmres',
             'gmres_classic', 'bicgstab', 'tfqmr'.
+        'return_on_error': bool
+            Returns on error without raising an excpetion (with ``'success'==False``).
+        'autorestart': int
+            Useful for autonomous systems where conditions change during integration.
+            Will restart the integration with ``x==0``.
+        'dx0cb': callable
+            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
+            Signature: ``f(x, y[:]) -> float``.
 
     Returns
     -------
