@@ -22,7 +22,7 @@ namespace cvodes_anyode {
         case AnyODE::Status::unrecoverable_error:
             return -1;
         default:
-            throw std::runtime_error("impossible (this is for silencing -Wreturn-type)");
+            throw std::runtime_error(StreamFmt() << "Got an unhandle status: " << static_cast<int>(status));
         }
     }
 
