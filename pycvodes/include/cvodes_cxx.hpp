@@ -485,7 +485,7 @@ namespace cvodes_cxx {
                  const unsigned nderiv,
                  std::vector<int>& root_indices,
                  bool return_on_root=false,
-                 int autorestart=0, // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
+                 int autorestart=0, // must be autonomous if >0
                  bool return_on_error=false
                  ){
             std::vector<realtype> xout;
@@ -517,26 +517,22 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
-                if (idx > mxsteps){
-                    if (return_on_error)
-                        break;
-                    else
-                        throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
-                                                 << cur_t <<"): " << mxsteps);
-                }
                 status = this->step(xend, y, &cur_t, Task::One_Step);
-                if(status != CV_SUCCESS && status != CV_TSTOP_RETURN){
+                if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (idx > mxsteps)){
                     if (status == CV_ROOT_RETURN){
                         root_indices.push_back(idx);
                     }else{
                         if (autorestart == 0) {
                             if (return_on_error)
                                 break;
+                            else if (idx > mxsteps)
+                                throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
+                                                         << cur_t <<"): " << mxsteps);
                             else
                                 unsuccessful_step_throw_(status);
                         } else {
                             std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
-                            this->reinit(0, y);
+                            //this->reinit(0, y);
                             if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
                                 std::cerr << "Singular Jacobian?";
                                 this->set_tol(1e-3, 1e-3); std::cerr << " - using atol=1e-3, rtol=1e-3";
@@ -552,15 +548,15 @@ namespace cvodes_cxx {
                                 // this->set_linear_solver_to_diag();
                             }
                             std::cerr << '\n';
-                            this->set_max_num_steps(mxsteps - idx);
+                            // this->set_max_num_steps(mxsteps - idx);
                             const double last_x = xout.back();
                             xout.pop_back();
-                            auto inner = this->adaptive(0, xend - last_x, &yout[(nderiv+1)*(idx-1)], nderiv,
+                            auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1)], nderiv,
                                                         root_indices, return_on_root, autorestart-1, return_on_error);
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);
                             yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
-                            this->set_max_num_steps(mxsteps);
+                            // this->set_max_num_steps(mxsteps);
                             break;
                         }
                     }
@@ -585,15 +581,17 @@ namespace cvodes_cxx {
             return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
         }
 
-        void predefined(const long int nt,
-                        const realtype * const tout,
-                        const realtype * const y0,
-                        realtype * const yout,
-                        const unsigned nderiv,
-                        std::vector<int>& root_indices,
-                        std::vector<realtype>& root_out,
-                        int autorestart=0 // must be autonomous!, -1 => inifite number of restarts (limited by mxsteps)
-                        ){
+        int predefined(const long int nt,
+                       const realtype * const tout,
+                       const realtype * const y0,
+                       realtype * const yout,
+                       const unsigned nderiv,
+                       std::vector<int>& root_indices,
+                       std::vector<realtype>& root_out,
+                       int autorestart=0, // must be autonomous if >0b
+                       bool return_on_error=false
+                       ){
+            int iout = 0;
             realtype cur_t;
             int status;
             SVector y {ny};
@@ -612,7 +610,7 @@ namespace cvodes_cxx {
                     yout[ny*(di+1) + i] = 0;
             }
 
-            for(int iout=1; (iout < nt); iout++) {
+            for(iout=1; (iout < nt); iout++) {
                 status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
@@ -624,13 +622,20 @@ namespace cvodes_cxx {
                         continue;
                     }else{
                         if (autorestart == 0){
-                            unsuccessful_step_throw_(status);
+                            if (return_on_error){
+                                iout--;
+                                break;
+                            } else {
+                                unsuccessful_step_throw_(status);
+                            }
                         } else {
                             std::array<double, 2> tout_ {{0, tout[iout] - tout[iout-1]}};
                             std::vector<double> yout_((nderiv+1)*ny*2);
                             std::vector<int> root_indices_;
-                            this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1), yout_.data(), nderiv,
-                                             root_indices_, root_out, autorestart-1);
+                            int n_reached = this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1)*ny, yout_.data(),
+                                                             nderiv, root_indices_, root_out, autorestart-1, return_on_error);
+                            if (n_reached == 0)
+                                break;
                             root_indices.insert(root_indices.end(), root_indices_.begin(), root_indices_.end());
                             std::memcpy(yout + ny*(iout*(nderiv+1)), yout_.data() + ny*(nderiv+1), ny*(nderiv+1));
                         }
@@ -648,6 +653,7 @@ namespace cvodes_cxx {
                     }
                 }
             }
+            return iout;
         }
 
     };

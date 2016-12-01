@@ -1,10 +1,12 @@
 #ifndef ANYODE_ITERATIVE_HPP_42E48E8295F411E6BFBC5726D640C316
 #define ANYODE_ITERATIVE_HPP_42E48E8295F411E6BFBC5726D640C316
 
+#include <memory>
+
 #include <anyode/anyode.hpp>
-#include <anyode/anyode_matrix.hpp>
+#include <anyode/anyode_blas_lapack.hpp>  // dgemv, dgesvd
+#include <anyode/anyode_matrix.hpp> // DenseMatrixView
 #include <anyode/anyode_buffer.hpp>  // make_unique
-#include <anyode/anyode_blas_lapack.hpp>  // SVD
 #include <anyode/anyode_decomposition.hpp>  // SVD
 
 namespace AnyODE {

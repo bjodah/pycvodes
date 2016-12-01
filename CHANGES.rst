@@ -1,3 +1,8 @@
+v0.7.0
+======
+- dx0cb
+- atol may now be vector even from Python
+
 v0.6.1
 ======
 - New kwarg for autonomous systems: autorestart=<int>, helps when h/t ~= machine epsilon

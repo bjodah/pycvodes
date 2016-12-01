@@ -6,7 +6,9 @@
 import io
 import os
 import pprint
+import re
 import shutil
+import subprocess
 import sys
 import warnings
 from setuptools import setup
@@ -51,7 +53,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].extra_compile_args = ['-std=c++11']
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
-    ext_modules[0].libraries += ['sundials_cvodes', env['LAPACK'], 'sundials_nvecserial']
+    ext_modules[0].libraries += env['LAPACK'].split(',') + env['SUNDIALS_LIBS'].split(',')
 
 
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
@@ -73,6 +75,16 @@ if len(RELEASE_VERSION) > 1:
 else:  # set `__version__` from _release.py:
     TAGGED_RELEASE = False
     exec(open(release_py_path).read())
+    if __version__.endswith('git'):
+        try:
+            _git_version = subprocess.check_output(
+                ['git', 'describe', '--dirty']).rstrip().decode('utf-8').replace('-dirty', '.dirty')
+        except subprocess.CalledProcessError:
+            warnings.warn("A git-archive is being installed - version information incomplete.")
+        else:
+            if 'develop' not in sys.argv:
+                warnings.warn("Using git to derive version: dev-branches may compete.")
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -94,7 +106,7 @@ long_description = io.open(_path_under_setup('README.rst'),
                            encoding='utf-8').read()
 if not len(long_description) > 100:
     warnings.warn("Long description from README.rst probably not read correctly.")
-_author, _author_email = open(_path_under_setup('AUTHORS'), 'rt').readline().split('<')
+_author, _author_email = io.open(_path_under_setup('AUTHORS'), 'rt', encoding='utf-8').readline().split('<')
 
 setup_kwargs = dict(
     name=pkg_name,

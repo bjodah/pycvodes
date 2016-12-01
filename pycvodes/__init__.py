@@ -9,6 +9,7 @@ import numpy as np
 from ._cvodes import adaptive, predefined, requires_jac, steppers
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
+from ._config import env as config
 
 
 def get_include():
@@ -17,7 +18,7 @@ def get_include():
                              '%s/include' % __name__)
 
 
-def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
+def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
                        dx_min=.0, dx_max=.0, nsteps=500, method=None, nderiv=0,
                        roots=None, nroots=0, return_on_root=False,
                        check_callable=False, check_indexing=False, **kwargs):
@@ -78,6 +79,14 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
         'linear_solver': str (default: 'default')
             One of: 'default', 'dense', 'banded', 'gmres',
             'gmres_classic', 'bicgstab', 'tfqmr'
+        'return_on_error': bool
+            Returns on error without raising an excpetion (with ``'success'==False``).
+        'autorestart': int
+            Useful for autonomous systems where conditions change during integration.
+            Will restart the integration with ``x==0``.
+        'dx0cb': callable
+            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
+            Signature: ``f(x, y[:]) -> float``.
 
     Returns
     -------
@@ -102,7 +111,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, dx0, atol, rtol,
                     return_on_root=return_on_root, **kwargs)
 
 
-def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
+def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
                          dx_min=.0, dx_max=.0, nsteps=500, method=None,
                          nderiv=0, roots=None, nroots=0, check_callable=False,
                          check_indexing=False, **kwargs):
@@ -160,6 +169,14 @@ def integrate_predefined(rhs, jac, y0, xout, dx0, atol, rtol,
         'linear_solver': str (default: 'default')
             One of: 'default', 'dense', 'banded', 'gmres',
             'gmres_classic', 'bicgstab', 'tfqmr'.
+        'return_on_error': bool
+            Returns on error without raising an excpetion (with ``'success'==False``).
+        'autorestart': int
+            Useful for autonomous systems where conditions change during integration.
+            Will restart the integration with ``x==0``.
+        'dx0cb': callable
+            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
+            Signature: ``f(x, y[:]) -> float``.
 
     Returns
     -------
