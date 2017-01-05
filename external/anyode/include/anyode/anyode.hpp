@@ -22,7 +22,7 @@ namespace AnyODE {
         std::unordered_map<std::string, int> last_integration_info;
         std::unordered_map<std::string, double> last_integration_info_dbl;
         double default_dx0 = 0.0;  // *may* be used by `get_dx0`, 0 signifies solver default
-        bool use_dx_max = false;  // whether get_dx_max should be called
+        bool use_get_dx_max = false;  // whether get_dx_max should be called
         virtual ~OdeSysBase() {}
         virtual int get_ny() const = 0;
         virtual int get_mlower() const { return -1; } // -1 denotes "not banded"

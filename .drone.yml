@@ -3,11 +3,14 @@ build:
   commands:
     - python2 -m pip install --upgrade pip  # pip 8.1.1 has a bug
     - python3 -m pip install --upgrade pip  # pip 8.1.1 has a bug
+    - python2 -m pip install git+https://github.com/bjodah/pycvodes.git@get_dx_max  # DO-NOT-MERGE!
+    - python3 -m pip install git+https://github.com/bjodah/pycvodes.git@get_dx_max  # DO-NOT-MERGE!
     - ./scripts/ci.sh pycvodes
     - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
+    - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
 
 deploy:
 
