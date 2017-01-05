@@ -1,6 +1,8 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
+
 #include "anyode/anyode.hpp"
 #include "cvodes_cxx.hpp"
 
@@ -235,8 +237,10 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto result = integr.adaptive(x0, xend, y0, nderiv, root_indices, return_on_root,
-                                      autorestart, return_on_error);
+        auto result = integr.adaptive(
+	    x0, xend, y0, nderiv, root_indices, return_on_root, autorestart, return_on_error,
+            ((odesys->use_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
+	     : cvodes_cxx::get_dx_max_fn()));
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
@@ -296,8 +300,10 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto nreached = integr.predefined(nout, xout, y0, yout, nderiv, root_indices, root_out,
-                                             autorestart, return_on_error);
+        auto nreached = integr.predefined(
+	    nout, xout, y0, yout, nderiv, root_indices, root_out, autorestart, return_on_error,
+            ((odesys->use_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
+	     : cvodes_cxx::get_dx_max_fn()));
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(

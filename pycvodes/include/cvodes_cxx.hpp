@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <cmath>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <new> // bad_alloc
 #include <utility>
@@ -54,8 +55,8 @@ namespace cvodes_cxx {
 
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
-    using get_dx_max_fn = double(double, const double * const);
-
+    //using get_dx_max_fn = double(double, const double * const) *;
+    using get_dx_max_fn = std::function<double(double, const double * const)>;
     // Wrapper for Revision 4306 of cvodes.c
 
     enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
@@ -489,7 +490,7 @@ namespace cvodes_cxx {
                  bool return_on_root=false,
                  int autorestart=0, // must be autonomous if >0
                  bool return_on_error=false,
-                 get_dx_max_fn * get_dx_max = nullptr
+                 get_dx_max_fn get_dx_max = get_dx_max_fn()
                  ){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
@@ -595,7 +596,7 @@ namespace cvodes_cxx {
                        std::vector<realtype>& root_out,
                        int autorestart=0, // must be autonomous if >0b
                        bool return_on_error=false,
-                       get_dx_max_fn * get_dx_max = nullptr
+                       get_dx_max_fn get_dx_max = get_dx_max_fn()
                        ){
             int iout = 0;
             realtype cur_t;
