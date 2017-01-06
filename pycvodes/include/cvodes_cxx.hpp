@@ -164,14 +164,14 @@ namespace cvodes_cxx {
         void set_min_step(realtype hmin){
             int status = CVodeSetMinStep(this->mem, hmin);
             if (status == CV_ILL_INPUT)
-                throw std::runtime_error("hmin non-positive or exceeding maximum allowable step size");
+                throw std::runtime_error(StreamFmt() << "hmin=" << hmin << " non-positive or exceeding maximum allowable step size.");
             else
                 check_flag(status);
         }
         void set_max_step(realtype hmax){
             int status = CVodeSetMaxStep(this->mem, hmax);
             if (status == CV_ILL_INPUT)
-                throw std::runtime_error("hmax non-positive or smaller than minimumem allowable step size");
+                throw std::runtime_error(StreamFmt() << "hmax=" << hmax << " non-positive or smaller than minimumem allowable step size");
             else
                 check_flag(status);
         }
