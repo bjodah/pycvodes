@@ -41,7 +41,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
              str iter_type="undecided", int linear_solver=0, const int maxl=0,
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
-             int autorestart=0, bool return_on_error=False, dx0cb=None):
+             int autorestart=0, bool return_on_error=False, dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
@@ -62,7 +62,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
 
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb)
+                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     try:
         xout, yout = map(np.asarray, simple_adaptive[PyOdeSys](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
@@ -84,7 +84,7 @@ def predefined(rhs, jac,
                atol, double rtol, str method='bdf', int nsteps=500, double dx0=0.0,
                double dx_min=0.0, double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
                str iter_type="undecided", int linear_solver=0, const int maxl=0, const double eps_lin=0.0,
-               const unsigned nderiv=0, bool return_on_root=False, int autorestart=0, bool return_on_error=False, dx0cb=None):
+               const unsigned nderiv=0, bool return_on_root=False, int autorestart=0, bool return_on_error=False, dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
@@ -108,7 +108,7 @@ def predefined(rhs, jac,
     if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb)
+                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     try:
         nreached = simple_predefined[PyOdeSys](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],

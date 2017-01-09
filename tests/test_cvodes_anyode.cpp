@@ -19,6 +19,21 @@ TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
     REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
 }
 
+TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
+    Decay odesys(1.0);
+    double y0 = 1.0;
+    std::vector<int> root_indices;
+    odesys.use_get_dx_max = true;
+    auto tout_yout = cvodes_anyode::simple_adaptive(&odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::Adams, &y0, 0.0, 1.0, root_indices, 1005);
+    auto& tout = tout_yout.first;
+    auto& yout = tout_yout.second;
+    REQUIRE( tout.size() == yout.size() );
+    for (uint i = 0; i < tout.size(); ++i){
+        REQUIRE( std::abs(std::exp(-tout[i]) - yout[i]) < 1e-8 );
+    }
+    REQUIRE( odesys.last_integration_info["n_steps"] > 1000 );  // dx_max == 1e-3
+}
+
 
 TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
     Decay odesys(1.0);

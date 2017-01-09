@@ -12,4 +12,7 @@ struct Decay : public AnyODE::OdeSysBase {
         f[0] = -y[0];
         return AnyODE::Status::success;
     }
+    double get_dx_max(double /* t */, const double * const /* y */){
+        return 1e-3;
+    }
 };

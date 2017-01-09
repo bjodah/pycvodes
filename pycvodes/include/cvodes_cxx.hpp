@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <cmath>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <new> // bad_alloc
 #include <utility>
@@ -47,13 +48,15 @@ namespace {
         }
 
     };
+
 }
 
 namespace cvodes_cxx {
 
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
-
+    //using get_dx_max_fn = double(double, const double * const) *;
+    using get_dx_max_fn = std::function<double(double, const double * const)>;
     // Wrapper for Revision 4306 of cvodes.c
 
     enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
@@ -161,14 +164,14 @@ namespace cvodes_cxx {
         void set_min_step(realtype hmin){
             int status = CVodeSetMinStep(this->mem, hmin);
             if (status == CV_ILL_INPUT)
-                throw std::runtime_error("hmin non-positive or exceeding maximum allowable step size");
+                throw std::runtime_error(StreamFmt() << "hmin=" << hmin << " non-positive or exceeding maximum allowable step size.");
             else
                 check_flag(status);
         }
         void set_max_step(realtype hmax){
             int status = CVodeSetMaxStep(this->mem, hmax);
             if (status == CV_ILL_INPUT)
-                throw std::runtime_error("hmax non-positive or smaller than minimumem allowable step size");
+                throw std::runtime_error(StreamFmt() << "hmax=" << hmax << " non-positive or smaller than minimumem allowable step size");
             else
                 check_flag(status);
         }
@@ -486,7 +489,8 @@ namespace cvodes_cxx {
                  std::vector<int>& root_indices,
                  bool return_on_root=false,
                  int autorestart=0, // must be autonomous if >0
-                 bool return_on_error=false
+                 bool return_on_error=false,
+                 get_dx_max_fn get_dx_max = get_dx_max_fn()
                  ){
             std::vector<realtype> xout;
             std::vector<realtype> yout;
@@ -517,6 +521,8 @@ namespace cvodes_cxx {
             this->set_stop_time(xend);
             do {
                 idx++;
+                if (get_dx_max)
+                    this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
                 status = this->step(xend, y, &cur_t, Task::One_Step);
                 if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (idx > mxsteps)){
                     if (status == CV_ROOT_RETURN){
@@ -589,7 +595,8 @@ namespace cvodes_cxx {
                        std::vector<int>& root_indices,
                        std::vector<realtype>& root_out,
                        int autorestart=0, // must be autonomous if >0b
-                       bool return_on_error=false
+                       bool return_on_error=false,
+                       get_dx_max_fn get_dx_max = get_dx_max_fn()
                        ){
             int iout = 0;
             realtype cur_t;
@@ -611,6 +618,8 @@ namespace cvodes_cxx {
             }
 
             for(iout=1; (iout < nt); iout++) {
+                if (get_dx_max)
+                    this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
                 status = this->step(tout[iout], y, &cur_t, Task::Normal);
                 if(status != CV_SUCCESS){
                     if (status == CV_ROOT_RETURN){
