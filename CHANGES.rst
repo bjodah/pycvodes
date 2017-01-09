@@ -1,3 +1,7 @@
+v0.7.1
+======
+- get_dx_max_cb (callback to calculate dx_max)
+
 v0.7.0
 ======
 - dx0cb
