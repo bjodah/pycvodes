@@ -46,4 +46,8 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         bool,
         IterType,
         int,
+        int,
+        double,
+        unsigned,
+        int
     ) except +

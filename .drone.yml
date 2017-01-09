@@ -1,14 +1,13 @@
 build:
-  image: bjodah/bjodahimg16:v1.2
+  image: bjodah/bjodahimg16dev:latest
   commands:
     - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
-    - python2 -m pip install --upgrade pip  # pip 8.1.1 has a bug
-    - python3 -m pip install --upgrade pip  # pip 8.1.1 has a bug
     - ./scripts/ci.sh pycvodes
     - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
+    - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
 
 deploy:
