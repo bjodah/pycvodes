@@ -45,7 +45,7 @@ Simplest way to install is to use the `conda package manager <http://conda.pydat
 
 ::
 
-   $ conda install -c bjodah pycvodes pytest
+   $ conda install -c conda-forge -c bjodah pycvodes pytest
    $ python -m pytest --pyargs pycvodes
 
 tests should pass.
