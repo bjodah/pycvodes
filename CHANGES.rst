@@ -1,3 +1,7 @@
+v0.7.2
+======
+- Address VisibleDeprecationWarning from numpy ndarray.reshape
+
 v0.7.1
 ======
 - get_dx_max_cb (callback to calculate dx_max)
