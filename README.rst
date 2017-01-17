@@ -29,7 +29,7 @@ The following multistep methods are available:
 - ``bdf``: Backward differentiation formula (of order 1 to 5)
 - ``adams``: implicit Adams method (order 1 to 12)
 
-Note that bdf (as an implicit stepper) require a user supplied
+Note that bdf (as an implicit stepper) requires a user supplied
 callback for calculating the jacobian.
 
 Documentation
