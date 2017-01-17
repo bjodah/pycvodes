@@ -32,7 +32,7 @@ cdef dict get_last_info(PyOdeSys * odesys, success=True):
     return info
 
 cdef _reshape_roots(cnp.ndarray[cnp.float64_t, ndim=1] roots, int ny):
-    cdef cnp.ndarray[cnp.float64_t, ndim=2] out = roots.reshape((roots.size / (ny + 1), ny + 1))
+    cdef cnp.ndarray[cnp.float64_t, ndim=2] out = roots.reshape((roots.size // (ny + 1), ny + 1))
     return out[:, 0], out[:, 1:]
 
 
