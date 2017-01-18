@@ -21,8 +21,13 @@ namespace AnyODE {
         void * integrator = nullptr;
         std::unordered_map<std::string, int> last_integration_info;
         std::unordered_map<std::string, double> last_integration_info_dbl;
+        std::unordered_map<std::string, std::vector<double> > last_integration_info_vecdbl;
+        std::unordered_map<std::string, std::vector<int> > last_integration_info_vecint;
         double default_dx0 = 0.0;  // *may* be used by `get_dx0`, 0 signifies solver default
         bool use_get_dx_max = false;  // whether get_dx_max should be called
+        bool record_rhs_tvals = false;
+        bool record_jac_tvals = false;
+        bool record_order = false;
         virtual ~OdeSysBase() {}
         virtual int get_ny() const = 0;
         virtual int get_mlower() const { return -1; } // -1 denotes "not banded"

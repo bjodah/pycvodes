@@ -100,7 +100,11 @@ namespace cvodes_cxx {
     class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
     public:
         void *mem {nullptr};
-        long int ny {0};  // cvodes uses a signed data type for this...
+        long int ny {0};
+
+        bool record_order = false;
+        std::vector<int> orders_seen;
+
         CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
             if (!this->mem)
@@ -502,6 +506,9 @@ namespace cvodes_cxx {
             long int mxsteps = get_max_num_steps();
             if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
             xout.push_back(x0);
+            if (record_order)
+                orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
+
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
                 yout.push_back(y0[i]);
@@ -568,6 +575,8 @@ namespace cvodes_cxx {
                     }
                 }
                 xout.push_back(cur_t);
+                if (record_order)
+                    orders_seen.push_back(get_current_order());
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 // Derivatives for interpolation
