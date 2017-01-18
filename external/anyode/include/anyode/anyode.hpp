@@ -28,6 +28,7 @@ namespace AnyODE {
         bool record_rhs_tvals = false;
         bool record_jac_tvals = false;
         bool record_order = false;
+        bool record_fpe = false;
         virtual ~OdeSysBase() {}
         virtual int get_ny() const = 0;
         virtual int get_mlower() const { return -1; } // -1 denotes "not banded"

@@ -16,6 +16,7 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
         bool record_rhs_tvals
         bool record_jac_tvals
         bool record_order
+        bool record_fpe
         int mlower, mupper, nroots
         unordered_map[string, int] last_integration_info
         unordered_map[string, double] last_integration_info_dbl

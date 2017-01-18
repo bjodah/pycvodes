@@ -1,9 +1,10 @@
 # -*- coding: utf-8; mode: cython -*-
 
 from libcpp.string cimport string
-
+from libcpp.unordered_map cimport unordered_map
 
 cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx":
+    cdef unordered_map[string, int] fpes
     cdef cppclass LMM:
         pass  # LMM is an enum class
 
