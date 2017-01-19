@@ -31,8 +31,8 @@ namespace cvodes_anyode {
     template<class OdeSys>
     int rhs_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        if (odesys.record_rhs_tvals)
-            odesys.last_integration_info_vecdbl["rhs_tvals"].push_back(t);
+        if (odesys.record_rhs_xvals)
+            odesys.last_integration_info_vecdbl["rhs_xvals"].push_back(t);
         AnyODE::Status status = odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
         return handle_status_(status);
     }
@@ -53,8 +53,8 @@ namespace cvodes_anyode {
         // callback of req. signature wrapping OdeSys method.
         AnyODE::ignore(N); AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
-        if (odesys.record_jac_tvals)
-            odesys.last_integration_info_vecdbl["jac_tvals"].push_back(t);
+        if (odesys.record_jac_xvals)
+            odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
         AnyODE::Status status = odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0), Jac->ldim);
         return handle_status_(status);
     }
@@ -69,8 +69,8 @@ namespace cvodes_anyode {
             throw std::runtime_error("mupper mismatch");
         if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
-        if (odesys.record_jac_tvals)
-            odesys.last_integration_info_vecdbl["jac_tvals"].push_back(t);
+        if (odesys.record_jac_xvals)
+            odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
         AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
         return handle_status_(status);
     }
@@ -250,10 +250,10 @@ namespace cvodes_anyode {
         odesys->last_integration_info_dbl.clear();
         odesys->last_integration_info_vecdbl.clear();
         odesys->last_integration_info_vecint.clear();
-        if (odesys->record_rhs_tvals)
-            odesys->last_integration_info_vecdbl["rhs_tvals"] = {};
-        if (odesys->record_jac_tvals)
-            odesys->last_integration_info_vecdbl["jac_tvals"] = {};
+        if (odesys->record_rhs_xvals)
+            odesys->last_integration_info_vecdbl["rhs_xvals"] = {};
+        if (odesys->record_jac_xvals)
+            odesys->last_integration_info_vecdbl["jac_xvals"] = {};
 
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
@@ -325,10 +325,10 @@ namespace cvodes_anyode {
         odesys->last_integration_info.clear();
         odesys->last_integration_info_dbl.clear();
         odesys->last_integration_info_vecdbl.clear();
-        if (odesys->record_rhs_tvals)
-            odesys->last_integration_info_vecdbl["rhs_tvals"] = {};
-        if (odesys->record_jac_tvals)
-            odesys->last_integration_info_vecdbl["jac_tvals"] = {};
+        if (odesys->record_rhs_xvals)
+            odesys->last_integration_info_vecdbl["rhs_xvals"] = {};
+        if (odesys->record_jac_xvals)
+            odesys->last_integration_info_vecdbl["jac_xvals"] = {};
 
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();

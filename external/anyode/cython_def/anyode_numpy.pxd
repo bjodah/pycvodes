@@ -13,8 +13,8 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
         double get_dx0(double, double *) except +
         double get_dx_max(double, double *) except +
         bool use_get_dx_max
-        bool record_rhs_tvals
-        bool record_jac_tvals
+        bool record_rhs_xvals
+        bool record_jac_xvals
         bool record_order
         bool record_fpe
         int mlower, mupper, nroots

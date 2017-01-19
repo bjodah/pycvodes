@@ -25,8 +25,8 @@ namespace AnyODE {
         std::unordered_map<std::string, std::vector<int> > last_integration_info_vecint;
         double default_dx0 = 0.0;  // *may* be used by `get_dx0`, 0 signifies solver default
         bool use_get_dx_max = false;  // whether get_dx_max should be called
-        bool record_rhs_tvals = false;
-        bool record_jac_tvals = false;
+        bool record_rhs_xvals = false;
+        bool record_jac_xvals = false;
         bool record_order = false;
         bool record_fpe = false;
         virtual ~OdeSysBase() {}

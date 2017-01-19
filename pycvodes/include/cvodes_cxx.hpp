@@ -27,6 +27,8 @@
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
 
+//pragma STDC FENV_ACCESS on  // GCC 5.4 does not seem to support the pragma
+
 namespace {
     class StreamFmt
     {
@@ -53,7 +55,6 @@ namespace {
 }
 
 namespace cvodes_cxx {
-    #pragma STDC FENV_ACCESS on
 
     static const std::unordered_map<std::string, int> fpes {{
         {"FE_INEXACT", FE_INEXACT},

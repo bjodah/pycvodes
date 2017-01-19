@@ -84,6 +84,14 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         'autorestart': int
             Useful for autonomous systems where conditions change during integration.
             Will restart the integration with ``x==0``.
+        'record_rhs_xvals' : bool
+            When True: will return x values for rhs calls in ``info['rhs_xvals']``.
+        'record_jac_xvals' : bool
+            When True will return x values for jac calls in ``info['jac_xvals']``.
+        'record_order' : bool
+            When True will return used time stepper order in ``info['orders']``.
+        'record_fpe' : bool
+            When True will return observed floating point errors in ``info['fpes']``. (see ``fpes``)
         'dx0cb': callable
             Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
             Signature: ``f(x, y[:]) -> float``.
@@ -178,6 +186,14 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
         'autorestart': int
             Useful for autonomous systems where conditions change during integration.
             Will restart the integration with ``x==0``.
+        'record_rhs_xvals' : bool
+            When True: will return x values for rhs calls in ``info['rhs_xvals']``.
+        'record_jac_xvals' : bool
+            When True will return x values for jac calls in ``info['jac_xvals']``.
+        'record_order' : bool
+            When True will return used time stepper order in ``info['orders']``.
+        'record_fpe' : bool
+            When True will return observed floating point errors in ``info['fpes']``. (see ``fpes``)
         'dx0cb': callable
             Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
             Signature: ``f(x, y[:]) -> float``.
