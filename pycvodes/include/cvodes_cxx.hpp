@@ -633,6 +633,12 @@ namespace cvodes_cxx {
             for (int i=0; i<ny; ++i)
                 y[i] = y0[i];
             this->reinit(tout[0], y);
+            if (record_order)
+                orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
+            if (record_fpe){
+                std::feclearexcept(FE_ALL_EXCEPT);
+                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+            }
             y.dump(yout);
             if (nderiv >= 1){
                 this->call_rhs(tout[0], y, work);
@@ -676,6 +682,12 @@ namespace cvodes_cxx {
                         }
                     }
                 } else {
+                    if (record_order)
+                        orders_seen.push_back(get_current_order());
+                    if (record_fpe){
+                        fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+                        std::feclearexcept(FE_ALL_EXCEPT);
+                    }
                     y.dump(&yout[ny*(iout*(nderiv+1))]);
                     // Derivatives for interpolation
                     for (unsigned di=0; di<nderiv; ++di){

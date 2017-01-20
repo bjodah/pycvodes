@@ -245,7 +245,6 @@ namespace cvodes_anyode {
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin, odesys->record_order, odesys->record_fpe);
         odesys->integrator = static_cast<void*>(&integr);
 
-
         odesys->last_integration_info.clear();
         odesys->last_integration_info_dbl.clear();
         odesys->last_integration_info_vecdbl.clear();
@@ -319,7 +318,8 @@ namespace cvodes_anyode {
         if (dx0 == 0.0)
             dx0 = odesys->get_dx0(xout[0], y0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, xout[0], mxsteps, dx0, dx_min, dx_max,
-                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin, odesys->record_order);
+                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin,
+                                             odesys->record_order, odesys->record_fpe);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();
@@ -344,6 +344,8 @@ namespace cvodes_anyode {
 
         if (odesys->record_order)
             odesys->last_integration_info_vecint["orders"] = integr.orders_seen;
+        if (odesys->record_fpe)
+            odesys->last_integration_info_vecint["fpes"] = integr.fpes_seen;
 
         cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
                                          iter_type, linear_solver);
