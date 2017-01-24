@@ -4,6 +4,7 @@
 // sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
 
 #include <assert.h>
+#include <cfenv>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -25,6 +26,8 @@
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
+
+//pragma STDC FENV_ACCESS on  // GCC 5.4 does not seem to support the pragma
 
 namespace {
     class StreamFmt
@@ -53,6 +56,13 @@ namespace {
 
 namespace cvodes_cxx {
 
+    static const std::unordered_map<std::string, int> fpes {{
+        {"FE_INEXACT", FE_INEXACT},
+        {"FE_UNDERFLOW", FE_UNDERFLOW},
+        {"FE_OVERFLOW", FE_OVERFLOW},
+        {"FE_INVALID", FE_INVALID},
+        {"FE_DIVBYZERO", FE_DIVBYZERO}
+    }};
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
     //using get_dx_max_fn = double(double, const double * const) *;
@@ -100,7 +110,10 @@ namespace cvodes_cxx {
     class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
     public:
         void *mem {nullptr};
-        long int ny {0};  // cvodes uses a signed data type for this...
+        long int ny {0};
+
+        bool record_order = false, record_fpe = false;
+        std::vector<int> orders_seen, fpes_seen;
         CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
             if (!this->mem)
@@ -502,6 +515,12 @@ namespace cvodes_cxx {
             long int mxsteps = get_max_num_steps();
             if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
             xout.push_back(x0);
+            if (record_order)
+                orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
+            if (record_fpe){
+                std::feclearexcept(FE_ALL_EXCEPT);
+                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+            }
             for (int i=0; i<ny; ++i){
                 y[i] = y0[i];
                 yout.push_back(y0[i]);
@@ -568,6 +587,13 @@ namespace cvodes_cxx {
                     }
                 }
                 xout.push_back(cur_t);
+                if (record_order)
+                    orders_seen.push_back(get_current_order());
+                if (record_fpe){
+                    fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+                    std::feclearexcept(FE_ALL_EXCEPT);
+                }
+
                 for (int i=0; i<ny; ++i)
                     yout.push_back(y[i]);
                 // Derivatives for interpolation
@@ -607,6 +633,12 @@ namespace cvodes_cxx {
             for (int i=0; i<ny; ++i)
                 y[i] = y0[i];
             this->reinit(tout[0], y);
+            if (record_order)
+                orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
+            if (record_fpe){
+                std::feclearexcept(FE_ALL_EXCEPT);
+                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+            }
             y.dump(yout);
             if (nderiv >= 1){
                 this->call_rhs(tout[0], y, work);
@@ -650,6 +682,12 @@ namespace cvodes_cxx {
                         }
                     }
                 } else {
+                    if (record_order)
+                        orders_seen.push_back(get_current_order());
+                    if (record_fpe){
+                        fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+                        std::feclearexcept(FE_ALL_EXCEPT);
+                    }
                     y.dump(&yout[ny*(iout*(nderiv+1))]);
                     // Derivatives for interpolation
                     for (unsigned di=0; di<nderiv; ++di){

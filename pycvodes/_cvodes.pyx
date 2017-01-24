@@ -9,7 +9,7 @@ from libcpp.vector cimport vector
 cimport numpy as cnp
 
 from anyode_numpy cimport PyOdeSys
-from cvodes_cxx cimport lmm_from_name, iter_type_from_name
+from cvodes_cxx cimport lmm_from_name, iter_type_from_name, fpes as _fpes
 from cvodes_anyode cimport simple_adaptive, simple_predefined
 
 import numpy as np
@@ -22,10 +22,13 @@ requires_jac = ('bdf',)
 iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
 linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
 
+fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
 cdef dict get_last_info(PyOdeSys * odesys, success=True):
     info = {str(k.decode('utf-8')): v for k, v in dict(odesys.last_integration_info).items()}
     info.update({str(k.decode('utf-8')): v for k, v in dict(odesys.last_integration_info_dbl).items()})
+    info.update({str(k.decode('utf-8')): np.array(v, dtype=np.float64) for k, v in dict(odesys.last_integration_info_vecdbl).items()})
+    info.update({str(k.decode('utf-8')): np.array(v, dtype=int) for k, v in dict(odesys.last_integration_info_vecint).items()})
     info['nfev'] = odesys.nfev
     info['njev'] = odesys.njev
     info['success'] = success
@@ -41,7 +44,9 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
              str iter_type="undecided", int linear_solver=0, const int maxl=0,
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
-             int autorestart=0, bool return_on_error=False, dx0cb=None, dx_max_cb=None):
+             int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
+             bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
+             dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
@@ -63,6 +68,11 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
 
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+    odesys.record_rhs_xvals = record_rhs_xvals
+    odesys.record_jac_xvals = record_jac_xvals
+    odesys.record_order = record_order
+    odesys.record_fpe = record_fpe
+
     try:
         xout, yout = map(np.asarray, simple_adaptive[PyOdeSys](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
@@ -80,11 +90,14 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
 
 def predefined(rhs, jac,
                cnp.ndarray[cnp.float64_t, mode='c'] y0,
-               cnp.ndarray[cnp.float64_t, ndim=1] xout,
-               atol, double rtol, str method='bdf', int nsteps=500, double dx0=0.0,
-               double dx_min=0.0, double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
-               str iter_type="undecided", int linear_solver=0, const int maxl=0, const double eps_lin=0.0,
-               const unsigned nderiv=0, bool return_on_root=False, int autorestart=0, bool return_on_error=False, dx0cb=None, dx_max_cb=None):
+               cnp.ndarray[cnp.float64_t, ndim=1] xout, atol,
+               double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
+               double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
+               str iter_type="undecided", int linear_solver=0, const int maxl=0,
+               const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
+               int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
+               bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
+               dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
@@ -109,6 +122,10 @@ def predefined(rhs, jac,
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+    odesys.record_rhs_xvals = record_rhs_xvals
+    odesys.record_jac_xvals = record_jac_xvals
+    odesys.record_order = record_order
+    odesys.record_fpe = record_fpe
     try:
         nreached = simple_predefined[PyOdeSys](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],
