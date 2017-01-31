@@ -226,6 +226,7 @@ def test_roots_adaptive():
                   roots=roots, nroots=1)
     xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
     assert len(info['root_indices']) == 1
+    assert info['n_root_evals'] > 10
     assert np.min(np.abs(xout - 1)) < 1e-11
 
 

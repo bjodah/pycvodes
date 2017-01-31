@@ -403,6 +403,13 @@ namespace cvodes_cxx {
             return res;
         }
 
+        long int get_n_root_evals() const {
+            long int res=0;
+            int flag = CVodeGetNumGEvals(this->mem, &res);
+            check_flag(flag);
+            return res;
+        }
+
         long int get_n_rhs_evals() const {
             long int res=0;
             int flag = CVodeGetNumRhsEvals(this->mem, &res);
@@ -709,6 +716,7 @@ namespace cvodes_cxx {
                               const CVodeIntegrator& integrator,
                               IterType iter_type, int linear_solver){
         info["n_steps"] = integrator.get_n_steps();
+        info["n_root_evals"] = integrator.get_n_root_evals();
         info["n_rhs_evals"] = integrator.get_n_rhs_evals();
         info["n_lin_solv_setups"] = integrator.get_n_lin_solv_setups();
         info["n_err_test_fails"] = integrator.get_n_err_test_fails();
