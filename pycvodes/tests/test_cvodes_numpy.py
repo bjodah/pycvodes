@@ -246,6 +246,22 @@ def test_roots_predefined():
     assert info['root_indices'][0] == 2
 
 
+def test_roots_predefined_autorestart():
+    def f(t, y, fout):
+        fout[0] = y[0]
+
+    def roots(t, y, out):
+        out[0] = y[0] - exp(1)
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  roots=roots, nroots=1, nsteps=3, autorestart=4)
+    xout = [0, 0.5, 1.5, 2]
+    yout, info = integrate_predefined(f, None, [1], xout, **kwargs)
+    discrepancy = np.exp(xout) - yout.flatten()
+    assert np.allclose(discrepancy, 0)
+    assert len(info['root_indices']) == 1
+    assert info['root_indices'][0] == 2
+
+
 def test_adaptive_nderiv_4():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -370,7 +386,7 @@ def test_predefined_autorestart():
     atol, rtol = 1e-8, 1e-8
     x0, xend = 0, 3
     kwargs = dict(dx0=1e-10, atol=atol, rtol=rtol,
-                  method='BDF', nsteps=62,
+                  method='BDF', nsteps=7,
                   autorestart=10)
     f, j = _get_f_j(k)
     xout = np.linspace(x0, xend)

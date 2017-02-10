@@ -580,7 +580,6 @@ namespace cvodes_cxx {
                                 // this->set_linear_solver_to_diag();
                             }
                             std::cerr << '\n';
-                            // this->set_max_num_steps(mxsteps - idx);
                             const double last_x = xout.back();
                             xout.pop_back();
                             auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1)], nderiv,
@@ -588,7 +587,6 @@ namespace cvodes_cxx {
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);
                             yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
-                            // this->set_max_num_steps(mxsteps);
                             break;
                         }
                     }
@@ -632,11 +630,11 @@ namespace cvodes_cxx {
                        get_dx_max_fn get_dx_max = get_dx_max_fn()
                        ){
             int iout = 0;
-            realtype cur_t;
+            realtype cur_t=tout[0];
             int status;
             SVector y {ny};
             SVector work {ny};
-
+            long int mxsteps = get_max_num_steps();
             for (int i=0; i<ny; ++i)
                 y[i] = y0[i];
             this->reinit(tout[0], y);
@@ -660,35 +658,7 @@ namespace cvodes_cxx {
                 if (get_dx_max)
                     this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
                 status = this->step(tout[iout], y, &cur_t, Task::Normal);
-                if(status != CV_SUCCESS){
-                    if (status == CV_ROOT_RETURN){
-                        root_out.push_back(cur_t);
-                        for (int i=0; i<ny; ++i)
-                            root_out.push_back(y[i]);
-                        root_indices.push_back(iout);
-                        iout--;
-                        continue;
-                    }else{
-                        if (autorestart == 0){
-                            if (return_on_error){
-                                iout--;
-                                break;
-                            } else {
-                                unsuccessful_step_throw_(status);
-                            }
-                        } else {
-                            std::array<double, 2> tout_ {{0, tout[iout] - tout[iout-1]}};
-                            std::vector<double> yout_((nderiv+1)*ny*2);
-                            std::vector<int> root_indices_;
-                            int n_reached = this->predefined(2, tout_.data(), yout + (iout-1)*(nderiv+1)*ny, yout_.data(),
-                                                             nderiv, root_indices_, root_out, autorestart-1, return_on_error);
-                            if (n_reached == 0)
-                                break;
-                            root_indices.insert(root_indices.end(), root_indices_.begin(), root_indices_.end());
-                            std::memcpy(yout + ny*(iout*(nderiv+1)), yout_.data() + ny*(nderiv+1), ny*(nderiv+1));
-                        }
-                    }
-                } else {
+                if(status == CV_SUCCESS){
                     if (record_order)
                         orders_seen.push_back(get_current_order());
                     if (record_fpe){
@@ -704,6 +674,42 @@ namespace cvodes_cxx {
                         else
                             this->get_dky(tout[iout], di+1, work);
                         work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
+                    }
+                } else if (status == CV_ROOT_RETURN) {
+                    root_out.push_back(cur_t);
+                    for (int i=0; i<ny; ++i)
+                        root_out.push_back(y[i]);
+                    root_indices.push_back(iout);
+                    iout--;
+                } else {  // unsuccessful step
+                    if (autorestart == 0){
+                        if (return_on_error){
+                            iout--;
+                            break;
+                        } else {
+                            unsuccessful_step_throw_(status);
+                        }
+                    } else {
+                        std::cerr << __FILE__ << ":" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        this->set_max_num_steps(mxsteps + this->get_max_num_steps());
+                        std::vector<double> tout_;
+                        long int nleft = nt - iout + 1;
+                        for (int i=0; i<nleft; ++i)
+                            tout_.push_back(tout[iout + i - 1] - tout[iout - 1]);
+                        std::vector<int> root_indices_;
+                        std::vector<realtype> root_out_;
+                        int n_reached = this->predefined(nleft, &tout_[0],
+                                                         yout + (iout-1)*(nderiv+1)*ny,
+                                                         yout + (iout-1)*(nderiv+1)*ny,
+                                                         nderiv, root_indices_, root_out_,
+                                                         autorestart-1,
+                                                         return_on_error,
+                                                         get_dx_max);
+                        for (const auto &ri : root_indices_)
+                            root_indices.push_back(iout+ri-1);
+                        root_out.insert(root_out.end(), root_out_.begin(), root_out_.end());
+                        iout += n_reached - 1;
+                        break;
                     }
                 }
             }
