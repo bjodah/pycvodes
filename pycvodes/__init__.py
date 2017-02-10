@@ -83,7 +83,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
             Returns on error without raising an excpetion (with ``'success'==False``).
         'autorestart': int
             Useful for autonomous systems where conditions change during integration.
-            Will restart the integration with ``x==0``.
+            Will restart the integration with ``x==0``. Maximum number of steps is then
+            given by ``autorestart * nsteps``.
         'record_rhs_xvals' : bool
             When True: will return x values for rhs calls in ``info['rhs_xvals']``.
         'record_jac_xvals' : bool
@@ -185,7 +186,8 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
             Returns on error without raising an excpetion (with ``'success'==False``).
         'autorestart': int
             Useful for autonomous systems where conditions change during integration.
-            Will restart the integration with ``x==0``.
+            Will restart the integration with ``x==0``. Maximum number of steps is then
+            given by ``2**autorestart * nsteps``.
         'record_rhs_xvals' : bool
             When True: will return x values for rhs calls in ``info['rhs_xvals']``.
         'record_jac_xvals' : bool
