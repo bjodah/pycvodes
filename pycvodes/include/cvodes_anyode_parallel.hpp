@@ -81,7 +81,8 @@ namespace cvodes_anyode_parallel {
                      const int maxl=0,
                      const realtype eps_lin=0.0,
                      const unsigned nderiv=0,
-                     int autorestart=0 // must be autonomous!
+                     int autorestart=0, // must be autonomous!
+                     bool return_on_error=false
                      ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -97,7 +98,7 @@ namespace cvodes_anyode_parallel {
                                          roots[idx].first, roots[idx].second,
                                          mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                                          iter_type, linear_solver, maxl, eps_lin, nderiv,
-                                         autorestart);
+                                         autorestart, return_on_error);
             });
         }
         te.rethrow();
