@@ -1,3 +1,8 @@
+v0.7.4
+======
+- Add return_on_error to cvodes_anyode_parallel
+- Use environment variable ANYODE_NUM_THREADS
+
 v0.7.3
 ======
 - support for record_rhs_xvals/record_jac_xvals/record_order/record_fpe
