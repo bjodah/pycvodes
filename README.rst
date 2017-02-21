@@ -63,7 +63,7 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
 
    >>> from pycvodes import _config
    >>> _config.env['LAPACK']
-   'lapack'
+   'lapack,blas'
 
 
 Examples
