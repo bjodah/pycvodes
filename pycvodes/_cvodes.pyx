@@ -79,7 +79,16 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
             &y0[0], x0, xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
             eps_lin, nderiv, return_on_root, autorestart, return_on_error))
-        info = get_last_info(odesys, False if return_on_error and xout[-1] != xend else True)
+
+        if return_on_error:
+            if return_on_root and root_indices[root_indices.size() - 1] == len(xout) - 1:
+                success = True
+            else:
+                success = xout[-1] == xend
+        else:
+            success = True
+
+        info = get_last_info(odesys, success)
         if nroots > 0:
             info['root_indices'] = root_indices
         yout_shape = (xout.size, ny) if nderiv == 0 else (xout.size, nderiv+1, ny)
