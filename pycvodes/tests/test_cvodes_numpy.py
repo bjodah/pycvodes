@@ -97,12 +97,13 @@ def test_integrate_predefined(method, forgiveness, banded):
         xout = np.linspace(0, 3, 31)
         atol, rtol = 1e-8, 1e-8
         # Run twice to catch possible side-effects:
-        yout, nfo = integrate_predefined(f, j, y0, xout, 1e-8, 1e-8, **kwargs)
-        yout, nfo = integrate_predefined(f, j, y0, xout, 1e-8, 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
         yref = decay_get_Cref(k, y0, xout)
         assert np.allclose(yout, yref,
                            rtol=forgiveness*rtol,
                            atol=forgiveness*atol)
+        assert nfo['atol'] == [1e-8, 3e-9, 2e-9] and nfo['rtol'] == 1e-8
         assert nfo['nfev'] > 0
         assert nfo['time_cpu'] > 1e-9
         assert nfo['time_wall'] > 1e-9
@@ -151,6 +152,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert info['nfev'] > 0
     if method in requires_jac:
         assert info['njev'] > 0
+    assert info['atol'] == [1e-8] and info['rtol'] == 1e-8
 
     with pytest.raises(RuntimeError) as excinfo:
         kw = kwargs.copy()

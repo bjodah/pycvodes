@@ -89,6 +89,8 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
             success = True
 
         info = get_last_info(odesys, success)
+        info['atol'] = atol_vec
+        info['rtol'] = rtol
         if nroots > 0:
             info['root_indices'] = root_indices
         yout_shape = (xout.size, ny) if nderiv == 0 else (xout.size, nderiv+1, ny)
@@ -143,6 +145,8 @@ def predefined(rhs, jac,
             linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error)
         info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size else True)
         info['nreached'] = nreached
+        info['atol'] = atol_vec
+        info['rtol'] = rtol
         if nroots > 0:
             info['root_indices'] = root_indices
             info['roots_output'] = _reshape_roots(np.asarray(roots_output), ny)
