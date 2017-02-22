@@ -97,12 +97,13 @@ def test_integrate_predefined(method, forgiveness, banded):
         xout = np.linspace(0, 3, 31)
         atol, rtol = 1e-8, 1e-8
         # Run twice to catch possible side-effects:
-        yout, nfo = integrate_predefined(f, j, y0, xout, 1e-8, 1e-8, **kwargs)
-        yout, nfo = integrate_predefined(f, j, y0, xout, 1e-8, 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
         yref = decay_get_Cref(k, y0, xout)
         assert np.allclose(yout, yref,
                            rtol=forgiveness*rtol,
                            atol=forgiveness*atol)
+        assert nfo['atol'] == [1e-8, 3e-9, 2e-9] and nfo['rtol'] == 1e-8
         assert nfo['nfev'] > 0
         assert nfo['time_cpu'] > 1e-9
         assert nfo['time_wall'] > 1e-9
@@ -151,6 +152,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert info['nfev'] > 0
     if method in requires_jac:
         assert info['njev'] > 0
+    assert info['atol'] == [1e-8] and info['rtol'] == 1e-8
 
     with pytest.raises(RuntimeError) as excinfo:
         kw = kwargs.copy()
@@ -289,11 +291,13 @@ def test_return_on_root():
     def roots(t, y, out):
         out[0] = y[0] - exp(1)
     kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
-                  roots=roots, nroots=1, return_on_root=True)
+                  roots=roots, nroots=1, return_on_root=True,
+                  return_on_error=True)
     xout, yout, info = integrate_adaptive(f, None, [1], 0, 2, **kwargs)
     assert len(info['root_indices']) == 1
     assert abs(xout[-1] - 1) < 1e-11
     assert abs(yout[-1, 0] - exp(1)) < 1e-11
+    assert info['success']
 
 
 def test_predefined_roots_output():
@@ -351,11 +355,11 @@ def test_adaptive_return_on_error():
                        rtol=10*rtol,
                        atol=10*atol)
     assert xout.size == 8
-    assert xout[-1] > 1e-6
+    assert 1e-6 < xout[-1] < 1
     assert yout.shape[0] == xout.size
     assert info['nfev'] > 0
     assert info['njev'] > 0
-    assert info['success'] is False
+    assert info['success'] == False  # noqa
     assert xout[-1] < kwargs['xend']  # obviously not strict
 
 
