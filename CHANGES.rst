@@ -1,3 +1,8 @@
+v0.7.5
+======
+- Return atol & rtol in info dict
+- Fix 'success' in info dict when return_on_error & return_on_root are both true.
+
 v0.7.4
 ======
 - Add return_on_error to cvodes_anyode_parallel
