@@ -1,0 +1,496 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pycvodes package &mdash; pycvodes 0.7.5 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pycvodes 0.7.5 documentation" href="index.html"/>
+        <link rel="prev" title="Welcome to pycvodes’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pycvodes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pycvodes package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pycvodes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>pycvodes package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/pycvodes/blob/v0.7.5/doc/pycvodes.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-pycvodes">
+<span id="pycvodes-package"></span><h1>pycvodes package<a class="headerlink" href="#module-pycvodes" title="Permalink to this headline">¶</a></h1>
+<p>Python binding for cvodes from the sundials library.</p>
+<dl class="function">
+<dt id="pycvodes.get_include">
+<code class="descclassname">pycvodes.</code><code class="descname">get_include</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#get_include"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.get_include" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycvodes.integrate_adaptive">
+<code class="descclassname">pycvodes.</code><code class="descname">integrate_adaptive</code><span class="sig-paren">(</span><em>rhs</em>, <em>jac</em>, <em>y0</em>, <em>x0</em>, <em>xend</em>, <em>atol</em>, <em>rtol</em>, <em>dx0=0.0</em>, <em>dx_min=0.0</em>, <em>dx_max=0.0</em>, <em>nsteps=500</em>, <em>method=None</em>, <em>nderiv=0</em>, <em>roots=None</em>, <em>nroots=0</em>, <em>return_on_root=False</em>, <em>check_callable=False</em>, <em>check_indexing=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#integrate_adaptive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.integrate_adaptive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrates a system of ordinary differential equations.</p>
+<p>Solves the initial value problem (IVP) defined by the user supplied
+arguments. The solver chooses at what values of the independent variable
+results should be reported.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rhs</strong> : callable</p>
+<blockquote>
+<div><p>Function with signature f(t, y, fout) which modifies fout <em>inplace</em>.</p>
+</div></blockquote>
+<p><strong>jac</strong> : callable</p>
+<blockquote>
+<div><p>Function with signature j(t, y, jmat_out, dfdx_out) which modifies
+jmat_out and dfdx_out <em>inplace</em>.</p>
+</div></blockquote>
+<p><strong>y0</strong> : array_like</p>
+<blockquote>
+<div><p>Initial values of the dependent variables.</p>
+</div></blockquote>
+<p><strong>x0</strong> : float</p>
+<blockquote>
+<div><p>Initial value of the independent variable.</p>
+</div></blockquote>
+<p><strong>xend</strong> : float</p>
+<blockquote>
+<div><p>Stopping value for the independent variable.</p>
+</div></blockquote>
+<p><strong>dx0</strong> : float</p>
+<blockquote>
+<div><p>Initial step-size.</p>
+</div></blockquote>
+<p><strong>atol</strong> : float</p>
+<blockquote>
+<div><p>Absolute tolerance.</p>
+</div></blockquote>
+<p><strong>rtol</strong> : float</p>
+<blockquote>
+<div><p>Relative tolerance.</p>
+</div></blockquote>
+<p><strong>dx_min</strong> : float</p>
+<blockquote>
+<div><p>Minimum step (default: 0.0).</p>
+</div></blockquote>
+<p><strong>dx_max</strong> : float</p>
+<blockquote>
+<div><p>Maximum step (default: 0.0).</p>
+</div></blockquote>
+<p><strong>nsteps</strong> : int</p>
+<blockquote>
+<div><p>Maximum number of steps (default: 500).</p>
+</div></blockquote>
+<p><strong>method</strong> : str</p>
+<blockquote>
+<div><p>One of: &#8216;adams&#8217; or &#8216;bdf&#8217; (default: &#8216;bdf&#8217;)</p>
+</div></blockquote>
+<p><strong>nderiv</strong> : int</p>
+<blockquote>
+<div><p>Number of derivatives (default: 0).</p>
+</div></blockquote>
+<p><strong>roots</strong> : callback</p>
+<blockquote>
+<div><p>With signature <code class="docutils literal"><span class="pre">roots(x,</span> <span class="pre">yarr[:ny],</span> <span class="pre">out[:nroots])</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>.</p>
+</div></blockquote>
+<p><strong>nroots</strong> : int</p>
+<blockquote>
+<div><p>Number of root functions in roots.</p>
+</div></blockquote>
+<p><strong>return_on_root</strong> : bool</p>
+<blockquote>
+<div><p>Exit early (on first found root).</p>
+</div></blockquote>
+<p><strong>check_callable</strong> : bool</p>
+<blockquote>
+<div><p>perform signature sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code></p>
+</div></blockquote>
+<p><strong>check_indexing</strong> : bool</p>
+<blockquote>
+<div><p>Perform item setting sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</p>
+</div></blockquote>
+<p><strong>**kwargs:</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>&#8216;lband&#8217;: int</dt>
+<dd><p class="first last">Number of lower bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</p>
+</dd>
+<dt>&#8216;uband&#8217;: int</dt>
+<dd><p class="first last">Number of upper bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</p>
+</dd>
+<dt>&#8216;iter_type&#8217;: str (default: &#8216;default&#8217;)</dt>
+<dd><p class="first last">One of: &#8216;default&#8217;, &#8216;functional&#8217;, &#8216;newton&#8217;</p>
+</dd>
+<dt>&#8216;linear_solver&#8217;: str (default: &#8216;default&#8217;)</dt>
+<dd><p class="first last">One of: &#8216;default&#8217;, &#8216;dense&#8217;, &#8216;banded&#8217;, &#8216;gmres&#8217;,
+&#8216;gmres_classic&#8217;, &#8216;bicgstab&#8217;, &#8216;tfqmr&#8217;</p>
+</dd>
+<dt>&#8216;return_on_error&#8217;: bool</dt>
+<dd><p class="first last">Returns on error without raising an excpetion (with <code class="docutils literal"><span class="pre">'success'==False</span></code>).</p>
+</dd>
+<dt>&#8216;autorestart&#8217;: int</dt>
+<dd><p class="first last">Useful for autonomous systems where conditions change during integration.
+Will restart the integration with <code class="docutils literal"><span class="pre">x==0</span></code>. Maximum number of steps is then
+given by <code class="docutils literal"><span class="pre">autorestart</span> <span class="pre">*</span> <span class="pre">nsteps</span></code>.</p>
+</dd>
+<dt>&#8216;record_rhs_xvals&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True: will return x values for rhs calls in <code class="docutils literal"><span class="pre">info['rhs_xvals']</span></code>.</p>
+</dd>
+<dt>&#8216;record_jac_xvals&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return x values for jac calls in <code class="docutils literal"><span class="pre">info['jac_xvals']</span></code>.</p>
+</dd>
+<dt>&#8216;record_order&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return used time stepper order in <code class="docutils literal"><span class="pre">info['orders']</span></code>.</p>
+</dd>
+<dt>&#8216;record_fpe&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return observed floating point errors in <code class="docutils literal"><span class="pre">info['fpes']</span></code>. (see <code class="docutils literal"><span class="pre">fpes</span></code>)</p>
+</dd>
+<dt>&#8216;dx0cb&#8217;: callable</dt>
+<dd><p class="first last">Callback for calculating dx0 (make sure to pass <code class="docutils literal"><span class="pre">dx0==0.0</span></code>) to enable.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+</dd>
+<dt>&#8216;dx_max_cb&#8217;: callable</dt>
+<dd><p class="first last">Callback for calculating dx_max.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(xout, yout, info):</p>
+<blockquote class="last">
+<div><p>xout: 1-dimensional array of values for the independent variable
+yout: 2-dimensional array of the dependent variables (axis 1) for</p>
+<blockquote>
+<div><p>values corresponding to xout (axis 0).</p>
+</div></blockquote>
+<p>info: Dictionary with information about the integration.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycvodes.integrate_predefined">
+<code class="descclassname">pycvodes.</code><code class="descname">integrate_predefined</code><span class="sig-paren">(</span><em>rhs</em>, <em>jac</em>, <em>y0</em>, <em>xout</em>, <em>atol</em>, <em>rtol</em>, <em>dx0=0.0</em>, <em>dx_min=0.0</em>, <em>dx_max=0.0</em>, <em>nsteps=500</em>, <em>method=None</em>, <em>nderiv=0</em>, <em>roots=None</em>, <em>nroots=0</em>, <em>check_callable=False</em>, <em>check_indexing=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#integrate_predefined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.integrate_predefined" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrates a system of ordinary differential equations.</p>
+<p>Solves the initial value problem (IVP) defined by the user supplied
+arguments. The user chooses at what values of the independent variable
+results should be reported.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>rhs</strong> : callable</p>
+<blockquote>
+<div><p>Function with signature f(t, y, fout) which modifies fout <em>inplace</em>.</p>
+</div></blockquote>
+<p><strong>jac</strong> : callable</p>
+<blockquote>
+<div><p>Function with signature j(t, y, jmat_out, dfdx_out) which modifies
+jmat_out and dfdx_out <em>inplace</em>.</p>
+</div></blockquote>
+<p><strong>y0</strong> : array_like</p>
+<blockquote>
+<div><p>Initial values of the dependent variables.</p>
+</div></blockquote>
+<p><strong>xout</strong> : array_like</p>
+<blockquote>
+<div><p>Values of the independent variable.</p>
+</div></blockquote>
+<p><strong>dx0</strong> : float</p>
+<blockquote>
+<div><p>Initial step-size.</p>
+</div></blockquote>
+<p><strong>atol</strong> : float</p>
+<blockquote>
+<div><p>Absolute tolerance.</p>
+</div></blockquote>
+<p><strong>rtol</strong> : float</p>
+<blockquote>
+<div><p>Relative tolerance.</p>
+</div></blockquote>
+<p><strong>dx_min</strong> : float</p>
+<blockquote>
+<div><p>Minimum step (default: 0.0).</p>
+</div></blockquote>
+<p><strong>dx_max</strong> : float</p>
+<blockquote>
+<div><p>Maximum step (default: 0.0).</p>
+</div></blockquote>
+<p><strong>nsteps</strong> : int</p>
+<blockquote>
+<div><p>Maximum number of steps (default: 500).</p>
+</div></blockquote>
+<p><strong>method</strong> : str</p>
+<blockquote>
+<div><p>One of: &#8216;adams&#8217; or &#8216;bdf&#8217; (default: &#8216;bdf&#8217;).</p>
+</div></blockquote>
+<p><strong>nderiv</strong> : int</p>
+<blockquote>
+<div><p>Number of derivatives (default: 0).</p>
+</div></blockquote>
+<p><strong>roots</strong> : callback (default: None)</p>
+<blockquote>
+<div><p>With signature <code class="docutils literal"><span class="pre">roots(x,</span> <span class="pre">yarr[:ny],</span> <span class="pre">out[:nroots])</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>,
+see info[&#8216;root_indices&#8217;], note that xout is unaffected.</p>
+</div></blockquote>
+<p><strong>nroots</strong> : int (default: 0)</p>
+<blockquote>
+<div><p>Number of root functions in roots.</p>
+</div></blockquote>
+<p><strong>check_callable</strong> : bool (default: False)</p>
+<blockquote>
+<div><p>Perform signature sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</p>
+</div></blockquote>
+<p><strong>check_indexing</strong> : bool (default: False)</p>
+<blockquote>
+<div><p>Perform item setting sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</p>
+</div></blockquote>
+<p><strong>**kwargs:</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>&#8216;lband&#8217;: int</dt>
+<dd><p class="first last">Number of lower bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</p>
+</dd>
+<dt>&#8216;uband&#8217;: int</dt>
+<dd><p class="first last">Number of upper bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</p>
+</dd>
+<dt>&#8216;iter_type&#8217;: str (default: &#8216;default&#8217;)</dt>
+<dd><p class="first last">One of: &#8216;default&#8217;, &#8216;functional&#8217;, &#8216;newton&#8217;.</p>
+</dd>
+<dt>&#8216;linear_solver&#8217;: str (default: &#8216;default&#8217;)</dt>
+<dd><p class="first last">One of: &#8216;default&#8217;, &#8216;dense&#8217;, &#8216;banded&#8217;, &#8216;gmres&#8217;,
+&#8216;gmres_classic&#8217;, &#8216;bicgstab&#8217;, &#8216;tfqmr&#8217;.</p>
+</dd>
+<dt>&#8216;return_on_error&#8217;: bool</dt>
+<dd><p class="first last">Returns on error without raising an excpetion (with <code class="docutils literal"><span class="pre">'success'==False</span></code>).</p>
+</dd>
+<dt>&#8216;autorestart&#8217;: int</dt>
+<dd><p class="first last">Useful for autonomous systems where conditions change during integration.
+Will restart the integration with <code class="docutils literal"><span class="pre">x==0</span></code>. Maximum number of steps is then
+given by <code class="docutils literal"><span class="pre">2**autorestart</span> <span class="pre">*</span> <span class="pre">nsteps</span></code>.</p>
+</dd>
+<dt>&#8216;record_rhs_xvals&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True: will return x values for rhs calls in <code class="docutils literal"><span class="pre">info['rhs_xvals']</span></code>.</p>
+</dd>
+<dt>&#8216;record_jac_xvals&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return x values for jac calls in <code class="docutils literal"><span class="pre">info['jac_xvals']</span></code>.</p>
+</dd>
+<dt>&#8216;record_order&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return used time stepper order in <code class="docutils literal"><span class="pre">info['orders']</span></code>.</p>
+</dd>
+<dt>&#8216;record_fpe&#8217;</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd><p class="first last">When True will return observed floating point errors in <code class="docutils literal"><span class="pre">info['fpes']</span></code>. (see <code class="docutils literal"><span class="pre">fpes</span></code>)</p>
+</dd>
+<dt>&#8216;dx0cb&#8217;: callable</dt>
+<dd><p class="first last">Callback for calculating dx0 (make sure to pass <code class="docutils literal"><span class="pre">dx0==0.0</span></code>) to enable.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+</dd>
+<dt>&#8216;dx_max_cb&#8217;: callable</dt>
+<dd><p class="first last">Callback for calculating dx_max.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(yout, info):</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>yout: 2-dimensional array of the dependent variables (axis 1) for</dt>
+<dd><p class="first last">values corresponding to xout (axis 0)</p>
+</dd>
+</dl>
+<p>info: Dictionary with information about the integration.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to pycvodes’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.7.5',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
