@@ -5,8 +5,6 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
-(cd tests/; make)
-
 python2.7 setup.py sdist
 for PYTHON in python2.7 python3; do
     (cd dist/; $PYTHON -m pip install $PKG_NAME-$($PYTHON ../setup.py --version).tar.gz)

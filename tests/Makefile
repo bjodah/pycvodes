@@ -1,7 +1,8 @@
 CXX ?= g++
 LIBS ?=-lsundials_cvodes -lsundials_nvecserial -llapack -lblas
-CXXFLAGS ?= -std=c++11 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -D_GLIBCXX_DEBUG
+CXXFLAGS ?= -std=c++11 -Wall -Wextra -Werror -pedantic -g -ggdb -O0
 # -O3 -ffast-math -funroll-loops -march=native
+EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include
 DEFINES ?=

@@ -1,4 +1,4 @@
 env = {
-    'LAPACK': 'lapack,blas',
+    'LAPACK': 'openblas',
     'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial,m',
 }
