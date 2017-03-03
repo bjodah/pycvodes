@@ -102,7 +102,8 @@ namespace cvodes_anyode_parallel {
                         autorestart, return_on_error);
             });
         }
-        te.rethrow();
+        if (!return_on_error)
+            te.rethrow();
 
         return nreached_roots;
     }
