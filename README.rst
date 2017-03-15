@@ -62,7 +62,7 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
 .. code:: python
 
    >>> from pycvodes import _config
-   >>> _config.env['LAPACK']
+   >>> _config.env['LAPACK']  # doctest: +SKIP
    'lapack,blas'
 
 

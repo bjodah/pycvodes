@@ -117,7 +117,7 @@ TEST_CASE( "predefined_autorestart", "[CVodeIntegrator]" ) {
     REQUIRE( intgr.get_n_steps() > 1000 );
     for (int idx=0; idx<nt; ++idx){
         const double yref = std::exp(-tout[idx]);
-        std::cout << yout[idx*ny] << " " << yref << " " << yout[idx*ny] - yref << "\n";
+        //std::cout << yout[idx*ny] << " " << yref << " " << yout[idx*ny] - yref << "\n";
         REQUIRE( std::abs(yout[idx*ny] - yref) < 1e-7 );
     }
 

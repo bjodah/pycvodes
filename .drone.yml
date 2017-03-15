@@ -1,10 +1,16 @@
 build:
   image: bjodah/bjodahimg16dev:latest
+  environment:
+    - PYCVODES_LAPACK=lapack,blas
   commands:
-    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
+    - bash -c '[[ $(python setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
     - ./scripts/ci.sh pycvodes
+    - cd tests/; make; cd -
+    - cd tests/; make CXX=clang++ EXTRA_FLAGS=-fsanitize=address -B; cd -
+    - cd tests/; make CXX=clang++ EXTRA_FLAGS=-fsanitize=undefined -B; cd -
     - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
+    - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe

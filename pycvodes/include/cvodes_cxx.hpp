@@ -684,7 +684,6 @@ namespace cvodes_cxx {
                 } else {  // unsuccessful step
                     if (autorestart == 0){
                         if (return_on_error){
-                            iout--;
                             break;
                         } else {
                             unsuccessful_step_throw_(status);

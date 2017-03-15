@@ -62,7 +62,7 @@ namespace cvodes_anyode_parallel {
     }
 
     template <class OdeSys>
-    std::vector<std::pair<std::vector<int>, std::vector<double>>>
+    std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<double>>>>
     multi_predefined(std::vector<OdeSys *> odesys,  // vectorized
                      const std::vector<realtype> atol,
                      const realtype rtol,
@@ -87,23 +87,25 @@ namespace cvodes_anyode_parallel {
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
 
-        auto roots = std::vector<std::pair<std::vector<int>, std::vector<double>>>(nsys);
+        auto nreached_roots = std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<double>>>>(nsys);
 
         anyode_parallel::ThreadException te;
         #pragma omp parallel for
         for (int idx=0; idx<nsys; ++idx){
             te.run([&]{
-               simple_predefined<OdeSys>(odesys[idx], atol, rtol, lmm, y0 + idx*ny,
-                                         nout, tout + idx*nout, yout + idx*ny*nout*(nderiv+1),
-                                         roots[idx].first, roots[idx].second,
-                                         mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
-                                         iter_type, linear_solver, maxl, eps_lin, nderiv,
-                                         autorestart, return_on_error);
+                    nreached_roots[idx].first = simple_predefined<OdeSys>(
+                        odesys[idx], atol, rtol, lmm, y0 + idx*ny,
+                        nout, tout + idx*nout, yout + idx*ny*nout*(nderiv+1),
+                        nreached_roots[idx].second.first, nreached_roots[idx].second.second,
+                        mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
+                        iter_type, linear_solver, maxl, eps_lin, nderiv,
+                        autorestart, return_on_error);
             });
         }
-        te.rethrow();
+        if (!return_on_error)
+            te.rethrow();
 
-        return roots;
+        return nreached_roots;
     }
 
 }
