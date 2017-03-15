@@ -1,3 +1,7 @@
+v0.7.6
+======
+- return nreached in parallel predefined
+
 v0.7.5
 ======
 - Return atol & rtol in info dict
