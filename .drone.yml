@@ -3,7 +3,6 @@ build:
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
-    - bash -c '[[ $(python setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
     - ./scripts/ci.sh pycvodes
     - cd tests/; make; cd -
     - cd tests/; make CXX=clang++ EXTRA_FLAGS=-fsanitize=address -B; cd -
@@ -15,6 +14,7 @@ build:
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
+    - bash -c '[[ $(python setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 
 deploy:
 
