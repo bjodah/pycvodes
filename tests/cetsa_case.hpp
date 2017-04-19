@@ -1,7 +1,7 @@
 #pragma once
 // This is a real-world based test example
 
-struct OdeSys : public AnyODE::OdeSysBase {
+struct OdeSys : public AnyODE::OdeSysBase<double> {
     std::vector<double> m_p;
     OdeSys(const double * const params);
     int get_ny() const override;

@@ -1,7 +1,7 @@
 CXX ?= g++
 LAPACK ?= -llapack -lblas
 LIBS ?=-lsundials_cvodes -lsundials_nvecserial $(LAPACK)
-CXXFLAGS ?= -std=c++11 -Wall -Wextra -Werror -pedantic -g -ggdb -O0
+CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0
 # -O3 -ffast-math -funroll-loops -march=native
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)

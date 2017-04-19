@@ -1,5 +1,4 @@
-#ifndef ANYODE_ITERATIVE_HPP_42E48E8295F411E6BFBC5726D640C316
-#define ANYODE_ITERATIVE_HPP_42E48E8295F411E6BFBC5726D640C316
+#pragma once
 
 #include <memory>
 
@@ -11,64 +10,67 @@
 
 namespace AnyODE {
 
-    struct OdeSysIterativeBase : public OdeSysBase {
-        int njacvec_dot=0, nprec_setup=0, nprec_solve=0;
-        std::unique_ptr<MatrixView> m_jac_cache {nullptr};
-        std::unique_ptr<MatrixView> m_prec_cache {nullptr};
+    template <typename Real_t=double, typename JacMat_t=DenseMatrixView<Real_t>, typename Decomp_t=SVD<Real_t>>
+    struct OdeSysIterativeBase : public OdeSysBase<Real_t> {
+        int m_njacvec_dot=0, m_nprec_setup=0, m_nprec_solve=0;
+        std::unique_ptr<JacMat_t> m_jac_cache {nullptr};
+        std::unique_ptr<JacMat_t> m_prec_cache {nullptr};
         bool m_update_prec_cache = false;
-        double m_old_gamma;
+        Real_t m_old_gamma;
 
-        virtual Status jac_times_vec(const double * const __restrict__ vec,
-                                     double * const __restrict__ out,
-                                     double t,
-                                     const double * const __restrict__ y,
-                                     const double * const __restrict__ fy
+        virtual Status jac_times_vec(const Real_t * const __restrict__ vec,
+                                     Real_t * const __restrict__ out,
+                                     Real_t t,
+                                     const Real_t * const __restrict__ y,
+                                     const Real_t * const __restrict__ fy
                                      ) override
         {
-            // See 4.6.7 on page 67 (77) in cvs_guide.pdf (Sundials 2.5)
+            // See "Jacobian information (matrix-vector product)"
+            //     (4.6.8 in cvs_guide.pdf for sundials 2.7.0)
             auto status = AnyODE::Status::success;
             const int ny = this->get_ny();
             if (m_jac_cache == nullptr){
-                m_jac_cache = make_unique<DenseMatrixView>(nullptr, ny, ny, ny, true);
+                m_jac_cache = make_unique<JacMat_t>(nullptr, ny, ny, ny, true);
                 status = this->dense_jac_cmaj(t, y, fy, m_jac_cache->m_data, m_jac_cache->m_ld);
             }
             m_jac_cache->dot_vec(vec, out);
-            njacvec_dot++;
+            m_njacvec_dot++;
             return status;
         }
 
-        virtual Status prec_setup(double t,
-                                const double * const __restrict__ y,
-                                const double * const __restrict__ fy,
-                                bool jok,
-                                bool& jac_recomputed,
-                                double gamma) override
+        virtual Status prec_setup(Real_t t,
+                                  const Real_t * const __restrict__ y,
+                                  const Real_t * const __restrict__ fy,
+                                  bool jac_ok,
+                                  bool& jac_recomputed,
+                                  Real_t gamma) override
         {
             const int ny = this->get_ny();
             auto status = AnyODE::Status::success;
             ignore(gamma);
-            // See 4.6.9 on page 68 (78) in cvs_guide.pdf (Sundials 2.5)
+            // See "Preconditioning (Jacobian data)" in cvs_guide.pdf (4.6.10 for 2.7.0)
             if (m_jac_cache == nullptr)
-                m_jac_cache = make_unique<DenseMatrixView>(nullptr, ny, ny, ny, true);
-            if (!jok){
+                m_jac_cache = make_unique<JacMat_t>(nullptr, ny, ny, ny, true);
+
+            if (jac_ok){
+                jac_recomputed = false;
+            } else {
                 status = this->dense_jac_cmaj(t, y, fy, m_jac_cache->m_data, m_jac_cache->m_ld);
                 m_update_prec_cache = true;
                 jac_recomputed = true;
-            } else {
-                jac_recomputed = false;
             }
-            nprec_setup++;
+            m_nprec_setup++;
             return status;
         }
 
-        virtual Status prec_solve_left(const double t,
-                                       const double * const __restrict__ y,
-                                       const double * const __restrict__ fy,
-                                       const double * const __restrict__ r,
-                                       double * const __restrict__ z,
-                                       double gamma,
-                                       double delta,
-                                       const double * const __restrict__ ewt
+        virtual Status prec_solve_left(const Real_t t,
+                                       const Real_t * const __restrict__ y,
+                                       const Real_t * const __restrict__ fy,
+                                       const Real_t * const __restrict__ r,
+                                       Real_t * const __restrict__ z,
+                                       Real_t gamma,
+                                       Real_t delta,
+                                       const Real_t * const __restrict__ ewt
                                        ) override
         {
             // See 4.6.9 on page 75 in cvs_guide.pdf (Sundials 2.6.2)
@@ -77,12 +79,12 @@ namespace AnyODE {
             const int ny = this->get_ny();
             if (ewt)
                 throw std::runtime_error("Not implemented.");
-            nprec_solve++;
+            m_nprec_solve++;
 
             ignore(t); ignore(fy); ignore(y);
             bool recompute = false;
             if (m_prec_cache == nullptr){
-                m_prec_cache = make_unique<DenseMatrixView>(nullptr, ny, ny, ny, true);
+                m_prec_cache = make_unique<JacMat_t>(nullptr, ny, ny, ny, true);
                 recompute = true;
             } else {
                 if (m_update_prec_cache or (m_old_gamma != gamma))
@@ -93,7 +95,7 @@ namespace AnyODE {
                 m_prec_cache->set_to_eye_plus_scaled_mtx(-gamma, *m_jac_cache);
             }
             int info;
-            auto decomp = SVD((DenseMatrixView*)(m_prec_cache.get()));
+            auto decomp = Decomp_t((JacMat_t*)(m_prec_cache.get()));
             info = decomp.solve(r, z);
             if (info == 0)
                 return AnyODE::Status::success;
@@ -103,5 +105,3 @@ namespace AnyODE {
 
     };
 }
-
-#endif /* ANYODE_ITERATIVE_HPP_42E48E8295F411E6BFBC5726D640C316 */
