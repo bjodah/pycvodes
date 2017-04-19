@@ -580,12 +580,17 @@ namespace cvodes_cxx {
                                 // this->set_linear_solver_to_diag();
                             }
                             std::cerr << '\n';
-                            const double last_x = xout.back();
-                            xout.pop_back();
-                            auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1)], nderiv,
+                            const int step_back = (idx > 1) ? 1 : 0;
+                            const double last_x = *(xout.end() - 1 - step_back);
+                            for (int i=0; i < step_back+1; ++i)
+                                xout.pop_back();
+                            auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1-step_back)], nderiv,
                                                         root_indices, return_on_root, autorestart-1, return_on_error);
                             for (const auto& v : inner.first)
                                 xout.push_back(v + last_x);
+                            for (int i=0; i< step_back; ++i)
+                                for (int j=0; j<ny; ++j)
+                                    yout.pop_back();
                             yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
                             break;
                         }
