@@ -4,11 +4,13 @@
 
 #include "anyode/anyode_matrix.hpp"
 #include "anyode/anyode_buffer.hpp"
+#include "anyode/anyode_blas_lapack.hpp"
 
 namespace AnyODE {
 
     template<typename Real_t>
     struct DecompositionBase {
+        virtual ~DecompositionBase() {};
         virtual int factorize() = 0;
         virtual int solve(const Real_t * const, Real_t * const) = 0;
     };
@@ -16,10 +18,10 @@ namespace AnyODE {
     template<typename Real_t = double>
     struct DenseLU : public DecompositionBase<Real_t> {
         // DenseLU_callbacks<Real_t> m_cbs;
-        DenseMatrixView<Real_t> * m_view;
+        DenseMatrix<Real_t> * m_view;
         buffer_t<int> m_ipiv;
         int m_info;
-        DenseLU(DenseMatrixView<Real_t> * view) :
+        DenseLU(DenseMatrix<Real_t> * view) :
             m_view(view),
             m_ipiv(buffer_factory<int>(view->m_nr))
         {
@@ -45,12 +47,12 @@ namespace AnyODE {
     };
 
     template<typename Real_t = double>
-    struct BandedLU : public DecompositionBase<Real_t> {
+    struct BandedLU : public DecompositionBase<Real_t> { // operates inplace
         // BandedLU_callbacks<Real_t> m_cbs;
-        BandedPaddedMatrixView<Real_t> * m_view;
+        BandedMatrix<Real_t> * m_view;
         buffer_t<int> m_ipiv;
         int m_info;
-        BandedLU(BandedPaddedMatrixView<Real_t> * view) :
+        BandedLU(BandedMatrix<Real_t> * view) :
             m_view(view),
             m_ipiv(buffer_factory<int>(view->m_nr))
         {
@@ -78,7 +80,7 @@ namespace AnyODE {
     template<typename Real_t = double>
     struct SVD : public DecompositionBase<Real_t> {
         // SVD_callbacks<Real_t> m_cbs;
-        DenseMatrixView<Real_t> * m_view;
+        DenseMatrix<Real_t> * m_view;
         buffer_t<Real_t> m_s;
         int m_ldu;
         buffer_t<Real_t> m_u;
@@ -89,7 +91,7 @@ namespace AnyODE {
         int m_info;
         Real_t m_condition_number = -1;
 
-        SVD(DenseMatrixView<Real_t> * view) :
+        SVD(DenseMatrix<Real_t> * view) :
             m_view(view), m_s(buffer_factory<Real_t>(std::min(view->m_nr, view->m_nc))),
             m_ldu(view->m_nr), m_u(buffer_factory<Real_t>(m_ldu*(view->m_nr))),
             m_ldvt(view->m_nc), m_vt(buffer_factory<Real_t>(m_ldvt*(view->m_nc)))
