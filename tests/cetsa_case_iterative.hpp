@@ -3,7 +3,7 @@
 
 #include "anyode/anyode_iterative.hpp"
 
-struct OdeSys : public AnyODE::OdeSysIterativeBase {
+struct OdeSys : public AnyODE::OdeSysIterativeBase<double> {
     std::vector<double> m_p;
     OdeSys(const double * const params);
     int get_ny() const override;

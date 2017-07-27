@@ -6,9 +6,9 @@
 
 TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
     std::vector<double> k {{ 2.0, 3.0}};
-    Decay odesys1(k[0]);
-    Decay odesys2(k[1]);
-    std::vector<Decay *> systems {{ &odesys1, &odesys2 }};
+    Decay<double> odesys1(k[0]);
+    Decay<double> odesys2(k[1]);
+    std::vector<Decay<double> *> systems {{ &odesys1, &odesys2 }};
     std::vector<double> y0 {{ 5.0, 7.0 }};
     std::vector<double> t0 {{ 1.0, 3.0 }};  // delta = 2
     std::vector<double> tend {{ 2.0, 5.0 }};  // delta = 3
@@ -37,9 +37,9 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
 
 TEST_CASE( "decay_predefined", "[multi_predefined]" ) {
     std::vector<double> k {{ 2.0, 3.0}};
-    Decay odesys1(k[0]);
-    Decay odesys2(k[1]);
-    std::vector<Decay *> systems {{ &odesys1, &odesys2 }};
+    Decay<double> odesys1(k[0]);
+    Decay<double> odesys2(k[1]);
+    std::vector<Decay<double> *> systems {{ &odesys1, &odesys2 }};
     std::vector<double> y0 {{ 5.0, 7.0 }};
     std::vector<double> yout(2*10);
     std::vector<double> tout(2*10);
