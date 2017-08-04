@@ -61,7 +61,7 @@ namespace AnyODE {
                 m_M_cache = make_unique<JacMat_t>(nullptr, ny, ny, ny, true);
             m_M_cache->set_to_eye_plus_scaled_mtx(-gamma, *m_jac_cache);
             m_decomp_cache = make_unique<Decomp_t>(m_M_cache.get());
-            m_decomp_cache.factorize();
+            m_decomp_cache->factorize();
             m_nprec_setup++;
             return status;
         }
