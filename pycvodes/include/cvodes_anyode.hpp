@@ -111,8 +111,7 @@ namespace cvodes_anyode {
         AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
-        bool compute_jac = (jok == TRUE) ? false : true; // TRUE, FALSE sundials macros
-        AnyODE::Status status = odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), compute_jac, jac_recomputed, gamma);
+        AnyODE::Status status = odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), jok, jac_recomputed, gamma);
         (*jcurPtr) = (jac_recomputed) ? TRUE : FALSE;
         return handle_status_(status);
     }
@@ -121,7 +120,7 @@ namespace cvodes_anyode {
     CVodeIntegrator get_integrator(OdeSys * odesys,
                                    const std::vector<realtype> atol,
                                    const realtype rtol,
-                                   const LMM lmm,  // Cython does not supported enum class...
+                                   const LMM lmm,
                                    const realtype * const y0,
                                    const realtype t0,
                                    const long int mxsteps=0,
