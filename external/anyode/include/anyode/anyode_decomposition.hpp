@@ -20,13 +20,11 @@ namespace AnyODE {
         // DenseLU_callbacks<Real_t> m_cbs;
         DenseMatrix<Real_t> * m_view;
         buffer_t<int> m_ipiv;
-        int m_info;
+
         DenseLU(DenseMatrix<Real_t> * view) :
             m_view(view),
             m_ipiv(buffer_factory<int>(view->m_nr))
-        {
-            m_info = factorize();
-        }
+        {}
         int factorize() override final {
             int info;
             constexpr getrf_callback<Real_t> getrf{};
@@ -48,16 +46,12 @@ namespace AnyODE {
 
     template<typename Real_t = double>
     struct BandedLU : public DecompositionBase<Real_t> { // operates inplace
-        // BandedLU_callbacks<Real_t> m_cbs;
         BandedMatrix<Real_t> * m_view;
         buffer_t<int> m_ipiv;
-        int m_info;
         BandedLU(BandedMatrix<Real_t> * view) :
             m_view(view),
             m_ipiv(buffer_factory<int>(view->m_nr))
-        {
-            m_info = factorize();
-        }
+        {}
         int factorize() override final {
             int info;
             constexpr gbtrf_callback<Real_t> gbtrf{};
@@ -88,7 +82,6 @@ namespace AnyODE {
         buffer_t<Real_t> m_vt;
         buffer_t<Real_t> m_work;
         int m_lwork = -1; // Query
-        int m_info;
         Real_t m_condition_number = -1;
 
         SVD(DenseMatrix<Real_t> * view) :
@@ -105,7 +98,6 @@ namespace AnyODE {
                   buffer_get_raw_ptr(m_vt), &m_ldvt, &optim_work_size, &m_lwork, &info);
             m_lwork = static_cast<int>(optim_work_size);
             m_work = buffer_factory<Real_t>(m_lwork);
-            m_info = factorize();
         }
         int factorize() override final {
             int info;
