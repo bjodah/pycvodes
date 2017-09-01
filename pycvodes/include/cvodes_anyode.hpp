@@ -183,11 +183,10 @@ namespace cvodes_anyode {
                 throw std::runtime_error("Invalid linear_solver");
             }
             if (linear_solver >= 10){
-                if (!with_jacobian)
-                    throw std::runtime_error("Iterative method requires an (approximate) jacobian");
                 integr.set_prec_type(PrecType::Left);
                 integr.set_iter_eps_lin(eps_lin);
-                integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
+                if (with_jacobian)
+                    integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
                 integr.set_preconditioner(prec_setup_cb<OdeSys>, jac_prec_solve_cb<OdeSys>);
                 if (linear_solver == 10 || linear_solver == 11) // GMRES
                     integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
