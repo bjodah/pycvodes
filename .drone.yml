@@ -1,12 +1,13 @@
 build:
-  image: bjodah/bjodahimg16dev:latest
+  image: bjodah/bjodahimg16dev:v1.3
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
     - ./scripts/ci.sh pycvodes
     - cd tests/; make; cd -
-    - cd tests/; make CXX=clang++ EXTRA_FLAGS=-fsanitize=address -B; cd -
-    - cd tests/; make CXX=clang++ EXTRA_FLAGS=-fsanitize=undefined -B; cd -
+    - cd tests/; make EXTRA_FLAGS=-DNDEBUG; cd -
+    - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=address -B; cd -
+    - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=undefined -B; cd -
     - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - python3 -m pip install --user -e .[docs]
