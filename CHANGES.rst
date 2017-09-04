@@ -1,3 +1,8 @@
+v0.8.0
+======
+- Use new (templated) AnyODE.
+- Fix back-stepping logic in adaptive.
+
 v0.7.6
 ======
 - return nreached in parallel predefined
