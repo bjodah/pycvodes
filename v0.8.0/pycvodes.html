@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pycvodes package &mdash; pycvodes 0.8.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="pycvodes 0.8.0 documentation" href="index.html"/>
+        <link rel="prev" title="Welcome to pycvodes’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pycvodes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pycvodes package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pycvodes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>pycvodes package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/bjodah/pycvodes/blob/v0.8.0/doc/pycvodes.rst" class="fa fa-github"> Edit on GitHub</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-pycvodes">
+<span id="pycvodes-package"></span><h1>pycvodes package<a class="headerlink" href="#module-pycvodes" title="Permalink to this headline">¶</a></h1>
+<p>Python binding for cvodes from the sundials library.</p>
+<dl class="function">
+<dt id="pycvodes.get_include">
+<code class="descclassname">pycvodes.</code><code class="descname">get_include</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#get_include"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.get_include" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycvodes.integrate_adaptive">
+<code class="descclassname">pycvodes.</code><code class="descname">integrate_adaptive</code><span class="sig-paren">(</span><em>rhs</em>, <em>jac</em>, <em>y0</em>, <em>x0</em>, <em>xend</em>, <em>atol</em>, <em>rtol</em>, <em>dx0=0.0</em>, <em>dx_min=0.0</em>, <em>dx_max=0.0</em>, <em>nsteps=500</em>, <em>method=None</em>, <em>nderiv=0</em>, <em>roots=None</em>, <em>nroots=0</em>, <em>return_on_root=False</em>, <em>check_callable=False</em>, <em>check_indexing=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#integrate_adaptive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.integrate_adaptive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrates a system of ordinary differential equations.</p>
+<p>Solves the initial value problem (IVP) defined by the user supplied
+arguments. The solver chooses at what values of the independent variable
+results should be reported.</p>
+<dl class="docutils">
+<dt>rhs <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>Function with signature f(t, y, fout) which modifies fout <em>inplace</em>.</dd>
+<dt>jac <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>Function with signature j(t, y, jmat_out, dfdx_out) which modifies
+jmat_out and dfdx_out <em>inplace</em>.</dd>
+<dt>y0 <span class="classifier-delimiter">:</span> <span class="classifier">array_like</span></dt>
+<dd>Initial values of the dependent variables.</dd>
+<dt>x0 <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Initial value of the independent variable.</dd>
+<dt>xend <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Stopping value for the independent variable.</dd>
+<dt>dx0 <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Initial step-size.</dd>
+<dt>atol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Absolute tolerance.</dd>
+<dt>rtol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Relative tolerance.</dd>
+<dt>dx_min <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Minimum step (default: 0.0).</dd>
+<dt>dx_max <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Maximum step (default: 0.0).</dd>
+<dt>nsteps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Maximum number of steps (default: 500).</dd>
+<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>One of: ‘adams’ or ‘bdf’ (default: ‘bdf’)</dd>
+<dt>nderiv <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Number of derivatives (default: 0).</dd>
+<dt>roots <span class="classifier-delimiter">:</span> <span class="classifier">callback</span></dt>
+<dd>With signature <code class="docutils literal"><span class="pre">roots(x,</span> <span class="pre">yarr[:ny],</span> <span class="pre">out[:nroots])</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>.</dd>
+<dt>nroots <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Number of root functions in roots.</dd>
+<dt>return_on_root <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Exit early (on first found root).</dd>
+<dt>check_callable <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>perform signature sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code></dd>
+<dt>check_indexing <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Perform item setting sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</dd>
+<dt>**kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>‘lband’: int</dt>
+<dd>Number of lower bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</dd>
+<dt>‘uband’: int</dt>
+<dd>Number of upper bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</dd>
+<dt>‘iter_type’: str (default: ‘default’)</dt>
+<dd>One of: ‘default’, ‘functional’, ‘newton’</dd>
+<dt>‘linear_solver’: str (default: ‘default’)</dt>
+<dd>One of: ‘default’, ‘dense’, ‘banded’, ‘gmres’,
+‘gmres_classic’, ‘bicgstab’, ‘tfqmr’</dd>
+<dt>‘return_on_error’: bool</dt>
+<dd>Returns on error without raising an excpetion (with <code class="docutils literal"><span class="pre">'success'==False</span></code>).</dd>
+<dt>‘autorestart’: int</dt>
+<dd>Useful for autonomous systems where conditions change during integration.
+Will restart the integration with <code class="docutils literal"><span class="pre">x==0</span></code>. Maximum number of steps is then
+given by <code class="docutils literal"><span class="pre">autorestart</span> <span class="pre">*</span> <span class="pre">nsteps</span></code>.</dd>
+<dt>‘record_rhs_xvals’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True: will return x values for rhs calls in <code class="docutils literal"><span class="pre">info['rhs_xvals']</span></code>.</dd>
+<dt>‘record_jac_xvals’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return x values for jac calls in <code class="docutils literal"><span class="pre">info['jac_xvals']</span></code>.</dd>
+<dt>‘record_order’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return used time stepper order in <code class="docutils literal"><span class="pre">info['orders']</span></code>.</dd>
+<dt>‘record_fpe’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return observed floating point errors in <code class="docutils literal"><span class="pre">info['fpes']</span></code>. (see <code class="docutils literal"><span class="pre">fpes</span></code>)</dd>
+<dt>‘dx0cb’: callable</dt>
+<dd>Callback for calculating dx0 (make sure to pass <code class="docutils literal"><span class="pre">dx0==0.0</span></code>) to enable.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</dd>
+<dt>‘dx_max_cb’: callable</dt>
+<dd>Callback for calculating dx_max.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="docutils">
+<dt>(xout, yout, info):</dt>
+<dd><p class="first">xout: 1-dimensional array of values for the independent variable
+yout: 2-dimensional array of the dependent variables (axis 1) for</p>
+<blockquote>
+<div>values corresponding to xout (axis 0).</div></blockquote>
+<p class="last">info: Dictionary with information about the integration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycvodes.integrate_predefined">
+<code class="descclassname">pycvodes.</code><code class="descname">integrate_predefined</code><span class="sig-paren">(</span><em>rhs</em>, <em>jac</em>, <em>y0</em>, <em>xout</em>, <em>atol</em>, <em>rtol</em>, <em>dx0=0.0</em>, <em>dx_min=0.0</em>, <em>dx_max=0.0</em>, <em>nsteps=500</em>, <em>method=None</em>, <em>nderiv=0</em>, <em>roots=None</em>, <em>nroots=0</em>, <em>check_callable=False</em>, <em>check_indexing=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycvodes.html#integrate_predefined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycvodes.integrate_predefined" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrates a system of ordinary differential equations.</p>
+<p>Solves the initial value problem (IVP) defined by the user supplied
+arguments. The user chooses at what values of the independent variable
+results should be reported.</p>
+<dl class="docutils">
+<dt>rhs <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>Function with signature f(t, y, fout) which modifies fout <em>inplace</em>.</dd>
+<dt>jac <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>Function with signature j(t, y, jmat_out, dfdx_out) which modifies
+jmat_out and dfdx_out <em>inplace</em>.</dd>
+<dt>y0 <span class="classifier-delimiter">:</span> <span class="classifier">array_like</span></dt>
+<dd>Initial values of the dependent variables.</dd>
+<dt>xout <span class="classifier-delimiter">:</span> <span class="classifier">array_like</span></dt>
+<dd>Values of the independent variable.</dd>
+<dt>dx0 <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Initial step-size.</dd>
+<dt>atol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Absolute tolerance.</dd>
+<dt>rtol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Relative tolerance.</dd>
+<dt>dx_min <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Minimum step (default: 0.0).</dd>
+<dt>dx_max <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Maximum step (default: 0.0).</dd>
+<dt>nsteps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Maximum number of steps (default: 500).</dd>
+<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>One of: ‘adams’ or ‘bdf’ (default: ‘bdf’).</dd>
+<dt>nderiv <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Number of derivatives (default: 0).</dd>
+<dt>roots <span class="classifier-delimiter">:</span> <span class="classifier">callback (default: None)</span></dt>
+<dd>With signature <code class="docutils literal"><span class="pre">roots(x,</span> <span class="pre">yarr[:ny],</span> <span class="pre">out[:nroots])</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>,
+see info[‘root_indices’], note that xout is unaffected.</dd>
+<dt>nroots <span class="classifier-delimiter">:</span> <span class="classifier">int (default: 0)</span></dt>
+<dd>Number of root functions in roots.</dd>
+<dt>check_callable <span class="classifier-delimiter">:</span> <span class="classifier">bool (default: False)</span></dt>
+<dd>Perform signature sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</dd>
+<dt>check_indexing <span class="classifier-delimiter">:</span> <span class="classifier">bool (default: False)</span></dt>
+<dd>Perform item setting sanity checks on <code class="docutils literal"><span class="pre">rhs</span></code> and <code class="docutils literal"><span class="pre">jac</span></code>.</dd>
+<dt>**kwargs:</dt>
+<dd><dl class="first last docutils">
+<dt>‘lband’: int</dt>
+<dd>Number of lower bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</dd>
+<dt>‘uband’: int</dt>
+<dd>Number of upper bands.
+Indexing: <code class="docutils literal"><span class="pre">banded[row_i</span> <span class="pre">-</span> <span class="pre">col_i</span> <span class="pre">+</span> <span class="pre">uband,</span> <span class="pre">col_i]</span></code>.</dd>
+<dt>‘iter_type’: str (default: ‘default’)</dt>
+<dd>One of: ‘default’, ‘functional’, ‘newton’.</dd>
+<dt>‘linear_solver’: str (default: ‘default’)</dt>
+<dd>One of: ‘default’, ‘dense’, ‘banded’, ‘gmres’,
+‘gmres_classic’, ‘bicgstab’, ‘tfqmr’.</dd>
+<dt>‘return_on_error’: bool</dt>
+<dd>Returns on error without raising an excpetion (with <code class="docutils literal"><span class="pre">'success'==False</span></code>).</dd>
+<dt>‘autorestart’: int</dt>
+<dd>Useful for autonomous systems where conditions change during integration.
+Will restart the integration with <code class="docutils literal"><span class="pre">x==0</span></code>. Maximum number of steps is then
+given by <code class="docutils literal"><span class="pre">2**autorestart</span> <span class="pre">*</span> <span class="pre">nsteps</span></code>.</dd>
+<dt>‘record_rhs_xvals’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True: will return x values for rhs calls in <code class="docutils literal"><span class="pre">info['rhs_xvals']</span></code>.</dd>
+<dt>‘record_jac_xvals’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return x values for jac calls in <code class="docutils literal"><span class="pre">info['jac_xvals']</span></code>.</dd>
+<dt>‘record_order’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return used time stepper order in <code class="docutils literal"><span class="pre">info['orders']</span></code>.</dd>
+<dt>‘record_fpe’ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>When True will return observed floating point errors in <code class="docutils literal"><span class="pre">info['fpes']</span></code>. (see <code class="docutils literal"><span class="pre">fpes</span></code>)</dd>
+<dt>‘dx0cb’: callable</dt>
+<dd>Callback for calculating dx0 (make sure to pass <code class="docutils literal"><span class="pre">dx0==0.0</span></code>) to enable.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</dd>
+<dt>‘dx_max_cb’: callable</dt>
+<dd>Callback for calculating dx_max.
+Signature: <code class="docutils literal"><span class="pre">f(x,</span> <span class="pre">y[:])</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="docutils">
+<dt>(yout, info):</dt>
+<dd><dl class="first docutils">
+<dt>yout: 2-dimensional array of the dependent variables (axis 1) for</dt>
+<dd>values corresponding to xout (axis 0)</dd>
+</dl>
+<p class="last">info: Dictionary with information about the integration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to pycvodes’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.8.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

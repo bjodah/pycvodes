@@ -1,0 +1,8 @@
+pycvodes package
+================
+
+.. automodule:: pycvodes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
