@@ -93,6 +93,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
             When True will return used time stepper order in ``info['orders']``.
         'record_fpe' : bool
             When True will return observed floating point errors in ``info['fpes']``. (see ``fpes``)
+        'record_steps' : bool
+            When True will return stepsizes taken in ``info['steps']``.
         'dx0cb': callable
             Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
             Signature: ``f(x, y[:]) -> float``.
@@ -196,6 +198,8 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
             When True will return used time stepper order in ``info['orders']``.
         'record_fpe' : bool
             When True will return observed floating point errors in ``info['fpes']``. (see ``fpes``)
+        'record_steps' : bool
+            When True will return stepsizes taken in ``info['steps']``.
         'dx0cb': callable
             Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.
             Signature: ``f(x, y[:]) -> float``.

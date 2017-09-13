@@ -8,7 +8,7 @@ build:
     - cd tests/; make EXTRA_FLAGS=-DNDEBUG; cd -
     - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=address -B; cd -
     - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=undefined -B; cd -
-    - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    - (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh

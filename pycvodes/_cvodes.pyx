@@ -46,7 +46,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-             dx0cb=None, dx_max_cb=None):
+             bool record_steps=False, dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
@@ -72,6 +72,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     odesys.record_jac_xvals = record_jac_xvals
     odesys.record_order = record_order
     odesys.record_fpe = record_fpe
+    odesys.record_steps = record_steps
 
     try:
         xout, yout = map(np.asarray, simple_adaptive[PyOdeSys](
@@ -108,7 +109,7 @@ def predefined(rhs, jac,
                const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-               dx0cb=None, dx_max_cb=None):
+               bool record_steps=False, dx0cb=None, dx_max_cb=None):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
@@ -137,6 +138,8 @@ def predefined(rhs, jac,
     odesys.record_jac_xvals = record_jac_xvals
     odesys.record_order = record_order
     odesys.record_fpe = record_fpe
+    odesys.record_steps = record_steps
+
     try:
         nreached = simple_predefined[PyOdeSys](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],
