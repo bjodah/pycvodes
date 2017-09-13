@@ -112,8 +112,9 @@ namespace cvodes_cxx {
         void *mem {nullptr};
         long int ny {0};
 
-        bool record_order = false, record_fpe = false;
+        bool record_order = false, record_fpe = false, record_steps = false;
         std::vector<int> orders_seen, fpes_seen;
+        std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
         CVodeIntegrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
             if (!this->mem)
@@ -522,6 +523,8 @@ namespace cvodes_cxx {
             long int mxsteps = get_max_num_steps();
             if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
             xout.push_back(x0);
+            if (record_steps)
+                steps_seen.push_back(get_current_step());
             if (record_order)
                 orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
             if (record_fpe){
@@ -597,6 +600,8 @@ namespace cvodes_cxx {
                     }
                 }
                 xout.push_back(cur_t);
+                if (record_steps)
+                    steps_seen.push_back(get_current_step());
                 if (record_order)
                     orders_seen.push_back(get_current_order());
                 if (record_fpe){

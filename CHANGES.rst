@@ -1,3 +1,7 @@
+v0.x.y
+======
+- Added ``record_steps`` option.
+
 v0.8.1
 ======
 - Explicit use of std::make_unique from the C++14 standard.
