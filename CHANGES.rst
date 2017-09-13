@@ -1,4 +1,4 @@
-v0.x.y
+v0.8.2
 ======
 - Added ``record_steps`` option.
 
