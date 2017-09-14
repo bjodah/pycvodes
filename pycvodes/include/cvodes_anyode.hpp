@@ -134,7 +134,8 @@ namespace cvodes_anyode {
                                    const realtype eps_lin=0.0,
                                    const bool record_order=false,
                                    const bool record_fpe=false,
-                                   const bool record_steps=false
+                                   const bool record_steps=false,
+                                   const bool with_jtimes=false
                                    )
     {
         const int ny = odesys->get_ny();
@@ -187,7 +188,7 @@ namespace cvodes_anyode {
             if (linear_solver >= 10){
                 integr.set_prec_type(PrecType::Left);
                 integr.set_iter_eps_lin(eps_lin);
-                if (with_jacobian)
+                if (with_jtimes)
                     integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
                 integr.set_preconditioner(prec_setup_cb<OdeSys>, jac_prec_solve_cb<OdeSys>);
                 if (linear_solver == 10 || linear_solver == 11) // GMRES
@@ -223,7 +224,8 @@ namespace cvodes_anyode {
                     const unsigned nderiv=0,
                     bool return_on_root=false,
                     int autorestart=0,
-                    bool return_on_error=false
+                    bool return_on_error=false,
+                    bool with_jtimes=false
                     ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -243,7 +245,8 @@ namespace cvodes_anyode {
             dx0 = odesys->get_dx0(x0, y0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin,
-                                             odesys->record_order, odesys->record_fpe, odesys->record_steps);
+                                             odesys->record_order, odesys->record_fpe, odesys->record_steps,
+                                             with_jtimes);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();
@@ -303,7 +306,8 @@ namespace cvodes_anyode {
                           const realtype eps_lin=0.0,
                           const unsigned nderiv=0,
                           int autorestart=0,
-                          bool return_on_error=false
+                          bool return_on_error=false,
+                          bool with_jtimes=false
                           ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -322,7 +326,7 @@ namespace cvodes_anyode {
             dx0 = odesys->get_dx0(xout[0], y0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, xout[0], mxsteps, dx0, dx_min, dx_max,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin,
-                                             odesys->record_order, odesys->record_fpe);
+                                             odesys->record_order, odesys->record_fpe, with_jtimes);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();
