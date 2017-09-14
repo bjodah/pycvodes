@@ -34,7 +34,8 @@ namespace cvodes_anyode_parallel {
                    const unsigned nderiv=0,
                    bool return_on_root=false,
                    int autorestart=0, // must be autonomous!
-                   bool return_on_error=false
+                   bool return_on_error=false,
+                   bool with_jtimes=false
                    ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -52,7 +53,7 @@ namespace cvodes_anyode_parallel {
                     odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
                     local_result.second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                     iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root,
-                    autorestart, return_on_error);
+                    autorestart, return_on_error, with_jtimes);
             });
             results[idx] = local_result;
         }
@@ -82,7 +83,8 @@ namespace cvodes_anyode_parallel {
                      const realtype eps_lin=0.0,
                      const unsigned nderiv=0,
                      int autorestart=0, // must be autonomous!
-                     bool return_on_error=false
+                     bool return_on_error=false,
+                     bool with_jtimes=false
                      ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -99,7 +101,7 @@ namespace cvodes_anyode_parallel {
                         nreached_roots[idx].second.first, nreached_roots[idx].second.second,
                         mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                         iter_type, linear_solver, maxl, eps_lin, nderiv,
-                        autorestart, return_on_error);
+                        autorestart, return_on_error, with_jtimes);
             });
         }
         if (!return_on_error)

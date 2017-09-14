@@ -27,6 +27,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         unsigned,
         bool,
         int,
+        bool,
         bool
     ) except +
 
@@ -49,5 +50,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         int,
         double,
         unsigned,
-        int
+        int,
+        bool,
+        bool
     ) except +

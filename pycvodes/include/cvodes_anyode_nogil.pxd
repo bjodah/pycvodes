@@ -28,6 +28,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         unsigned,
         bool,
         int,
+        bool,
         bool
     ) nogil except +
 
@@ -53,5 +54,6 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         double,
         unsigned,
         int,
+        bool,
         bool
     ) nogil except +

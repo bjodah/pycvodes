@@ -31,10 +31,11 @@ TEST_CASE( "adaptive_tricky_svd", "[simple_adaptive]" ) {
 
     int linear_solver=10; // 10 => GMRES
     int autorestart=0;
-
+    bool return_on_error = false;
+    bool with_jtimes = false;
     auto tout_yout = cvodes_anyode::simple_adaptive(&odesys, {atol}, rtol, cvodes_cxx::LMM::BDF, &y0[0], t0, tend, root_indices,
                                                     mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
-                                                    maxl, eps_lin, nderiv, return_on_root, autorestart);
+                                                    maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes);
     auto& tout = tout_yout.first;
     auto& yout = tout_yout.second;
     const int ref = tout.size() * odesys.get_ny();
