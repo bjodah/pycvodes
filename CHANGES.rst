@@ -1,3 +1,7 @@
+v0.8.3
+======
+- Add jtimes=False default option in simple_{adaptive,predefined}
+
 v0.8.2
 ======
 - Added ``record_steps`` option.
