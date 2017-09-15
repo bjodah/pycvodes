@@ -1,3 +1,7 @@
+v0.8.4
+======
+- Setting the environment variable ANYODE_VERBOSITY to 0 now silences errors & warnings.
+
 v0.8.3
 ======
 - Add jtimes=False default option in simple_{adaptive,predefined}

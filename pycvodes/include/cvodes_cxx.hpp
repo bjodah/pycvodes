@@ -108,9 +108,11 @@ namespace cvodes_cxx {
     }
 
     class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
+        FILE *errfp = nullptr;
     public:
         void *mem {nullptr};
         long int ny {0};
+        int verbosity = 50;  // "50%" -- plenty of room for future tuning.
 
         bool record_order = false, record_fpe = false, record_steps = false;
         std::vector<int> orders_seen, fpes_seen;
@@ -123,6 +125,8 @@ namespace cvodes_cxx {
         ~CVodeIntegrator(){
             if (this->mem)
                 CVodeFree(&(this->mem));
+            if (this->errfp)
+                fclose(errfp);
         }
         // init
         void init(CVRhsFn cb, realtype t0, N_Vector y) {
@@ -169,6 +173,16 @@ namespace cvodes_cxx {
                 check_flag(status);
         }
 
+        // Main solver optional input functions
+        void set_err_file(FILE * errfp){
+            int status = CVodeSetErrFile(this->mem, errfp);
+            check_flag(status);
+        }
+
+        void set_err_file_path(const char * filename) {
+            this->errfp = fopen(filename, "o");
+            set_err_file(this->errfp);
+        }
 
         // Step specifications
         void set_init_step(realtype h0){
@@ -566,12 +580,14 @@ namespace cvodes_cxx {
                             else
                                 unsuccessful_step_throw_(status);
                         } else {
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
+                            if (this->verbosity > 0)
+                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
                             //this->reinit(0, y);
                             if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
-                                std::cerr << "Singular Jacobian?";
-                                this->set_tol(1e-3, 1e-3); std::cerr << " - using atol=1e-3, rtol=1e-3";
-                                this->set_dense_jac_fn(nullptr); std::cerr << " - using finite differences.\n"; // Hail Mary
+                                if (this->verbosity > 0)
+                                    std::cerr << "Singular Jacobian?";
+                                this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
+                                this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
                                 // root_indices.clear();
                                 // return this->adaptive(x0, xend, y0, nderiv, root_indices, return_on_root, autorestart-1);
 
@@ -582,7 +598,7 @@ namespace cvodes_cxx {
                                 // std::cerr << " - using diag\n";
                                 // this->set_linear_solver_to_diag();
                             }
-                            std::cerr << '\n';
+                            if (this->verbosity > 0) std::cerr << '\n';
                             const int step_back = (idx > 1) ? 1 : 0;
                             const double last_x = *(xout.end() - 1 - step_back);
                             for (int i=0; i < step_back+1; ++i)
@@ -699,7 +715,8 @@ namespace cvodes_cxx {
                             unsuccessful_step_throw_(status);
                         }
                     } else {
-                        std::cerr << __FILE__ << ":" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        if (this->verbosity > 0) std::cerr << __FILE__ << ":" << __LINE__ <<
+                                                     ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                         this->set_max_num_steps(mxsteps + this->get_max_num_steps());
                         std::vector<double> tout_;
                         long int nleft = nt - iout + 1;

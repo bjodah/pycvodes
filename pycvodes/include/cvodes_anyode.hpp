@@ -161,6 +161,10 @@ namespace cvodes_anyode {
         if (mxsteps)
             integr.set_max_num_steps(mxsteps);
 
+        char * anyode_verbosity = std::getenv("ANYODE_VERBOSITY");
+        integr.verbosity = (anyode_verbosity) ? std::atoi(anyode_verbosity) : 50;
+        if (integr.verbosity == 0)
+            integr.set_err_file_path("/dev/null"); // supposedly "NUL:" on windows
 
         if (iter_type == IterType::Newton){
             // Newton iteration --> we need a linear solver:
