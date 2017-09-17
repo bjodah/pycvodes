@@ -58,9 +58,10 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
         vector[int] root_indices
         vector[double] atol_vec
         int td = 1
-        double * xyout = <double*>malloc(td*(ny+1)*sizeof(double))
+        double * xyout = <double*>malloc(td*(ny*(nderiv+1)+1)*sizeof(double))
         cnp.ndarray[cnp.float64_t, ndim=2] xyout_arr
         cnp.npy_intp xyout_dims[2]
+        int nout
     if isinstance(atol, float):
         atol_vec.push_back(atol)
     else:
@@ -86,12 +87,13 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     odesys.record_steps = record_steps
 
     try:
-        xyout_dims[0] = simple_adaptive[PyOdeSys](&xyout, &td,
+        nout = simple_adaptive[PyOdeSys](&xyout, &td,
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
             xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
             eps_lin, nderiv, return_on_root, autorestart, return_on_error)
-        xyout_dims[1] = ny + 1
+        xyout_dims[0] = nout + 1
+        xyout_dims[1] = ny*(nderiv+1) + 1
         xyout_arr = cnp.PyArray_SimpleNewFromData(2, xyout_dims,
                                                   cnp.NPY_DOUBLE, <void *>xyout)
         PyArray_ENABLEFLAGS(xyout_arr, cnp.NPY_OWNDATA)

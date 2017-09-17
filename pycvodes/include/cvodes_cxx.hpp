@@ -517,28 +517,27 @@ namespace cvodes_cxx {
                                      << get_current_time() << ", h=" << get_current_step() << "): " <<
                                      CVodeGetReturnFlagName(flag));
         }
-#define xout(ti) (*xyout)[(ny+1)*(nderiv+1)*ti]
-#define yout(ti, di, yi) (*xyout)[(ny+1)*(nderiv+1)*ti + (nderiv+1)*di + yi + 1]
-#define datalen(nt, nd, ny) ((nt)*(nd+1)*(ny+1)*sizeof(realtype))
-        int
-        adaptive(realtype ** xyout, // must have been allocated using malloc/calloc/etc (maybe be realloced)
-                 int * const nout, // trailing dimension of xyout
-                 const realtype xend,
-                 const unsigned nderiv,
-                 std::vector<int>& root_indices,
-                 bool return_on_root=false,
-                 int autorestart=0, // must be autonomous if >0
-                 bool return_on_error=false,
-                 get_dx_max_fn get_dx_max = get_dx_max_fn(),
-                 int tidx=0
-                 ){
+#define xout(ti) (*xyout)[(ny*(nderiv+1)+1)*(ti)]
+#define yout(ti, di, yi) (*xyout)[(ny*(nderiv+1)+1)*(ti) + ny*(di) + yi + 1]
+#define datalen(nt, nd, ny) (((ny)*((nd)+1) + 1)*(nt)*sizeof(realtype))
+        int adaptive(realtype ** xyout, // allocated using malloc (may be realloc:ed)
+                     int * const td, // trailing dimension of xyout
+                     const realtype xend,
+                     const unsigned nderiv,
+                     std::vector<int>& root_indices,
+                     bool return_on_root=false,
+                     int autorestart=0, // must be autonomous if >0
+                     bool return_on_error=false,
+                     get_dx_max_fn get_dx_max = get_dx_max_fn(),
+                     int tidx=0
+                     ){
             realtype cur_t;
             int status;
             SVector y {ny};
             SVector work {ny};
             long int mxsteps = get_max_num_steps();
-            if (*nout < 1)
-                throw std::logic_error("Expected nout >= 1");
+            if (*td < 1)
+                throw std::logic_error("Expected td >= 1");
             if (xyout == nullptr)
                 throw std::logic_error("xyout cannot be a nullptr");
             if (*xyout == nullptr)
@@ -552,9 +551,9 @@ namespace cvodes_cxx {
                 std::feclearexcept(FE_ALL_EXCEPT);
             for (int i=0; i<ny; ++i)
                 y[i] = yout(tidx, 0, i);
-            this->reinit(xout(0), y);
+            this->reinit(xout(tidx), y);
             if (nderiv >= 1){
-                this->call_rhs(xout(0), y, work);
+                this->call_rhs(xout(tidx), y, work);
                 for (int i=0; i<ny; ++i)
                     yout(tidx, 1, i) = work[i];
                 for (unsigned di=2; di<=nderiv; ++di){
@@ -562,18 +561,15 @@ namespace cvodes_cxx {
                         yout(tidx, di, i) = 0;
                 }
             }
-            if (xout(0) >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
+            if (xout(tidx) >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
                 return tidx;
             this->set_stop_time(xend);
             do {
                 tidx++;
-                if (tidx >= *nout){
-                    (*nout) *= 2;
-                    std::cout << "autorestart=" << autorestart << ", tidx = " << tidx << ", nout=" << *nout
-                              << ", datalen=" << datalen(*nout, nderiv, ny)
-                              << ", xout(0)=" << xout(0) << std::endl;   //DO-NOT-MERGE!
+                if (tidx >= *td){
+                    (*td) *= 2;
                     {
-                        void * new_xyout = realloc(*xyout, datalen(*nout, nderiv, ny));
+                        void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
                         if (new_xyout == nullptr){
                             throw std::bad_alloc();
                         } else {
@@ -589,13 +585,15 @@ namespace cvodes_cxx {
                         root_indices.push_back(tidx);
                     }else{
                         if (autorestart == 0) {
-                            if (return_on_error)
+                            if (return_on_error) {
+                                --tidx;
                                 break;
-                            else if (tidx > mxsteps)
+                            } else if (tidx > mxsteps) {
                                 throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
                                                          << cur_t <<"): " << mxsteps);
-                            else
+                            } else {
                                 unsuccessful_step_throw_(status);
+                            }
                         } else {
                             if (this->verbosity > 0)
                                 std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
@@ -606,16 +604,18 @@ namespace cvodes_cxx {
                                 this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
                             }
                             if (this->verbosity > 0) std::cerr << '\n';
-                            std::cout << "tidx = " << tidx << std::endl; //DO-NOT-MERGE!
-                            const int step_back = (tidx > 1) ? 1 : 0;
-                            const double last_x = xout(tidx - step_back);
-                            xout(tidx) = 0;
-                            auto inner = this->adaptive(xyout, nout, xend - last_x, nderiv, root_indices,
-                                                        return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
-                            for (int i=1; i<inner; ++i){
-                                xout(tidx + i) += last_x;
+                            if (tidx > mxsteps){
+                                this->set_max_num_steps(this->get_max_num_steps() + 500);
                             }
-                            tidx += inner;
+                            const int step_back = (tidx > 1) ? 2 : 1;
+                            const double last_x = xout(tidx - step_back);
+                            xout(tidx - step_back) = 0;
+                            auto inner = this->adaptive(xyout, td, xend - last_x, nderiv, root_indices,
+                                                        return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
+                            for (int i=tidx - step_back; i<=inner; ++i){
+                                xout(i) += last_x;
+                            }
+                            tidx = inner;
                             break;
                         }
                     }
@@ -638,7 +638,7 @@ namespace cvodes_cxx {
                         // Too few points collected
                         work.zero_out();
                     else
-                        this->get_dky(cur_t, di+1, work);
+                        this->get_dky(cur_t, di, work);
                     for (int i=0; i<ny; ++i)
                         yout(tidx, di, i) = work[i];
                 }

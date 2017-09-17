@@ -14,13 +14,13 @@ namespace cvodes_anyode_parallel {
     using sa_t = std::pair<std::vector<realtype>, std::vector<realtype> >;
 
     template <class OdeSys>
-    std::vector<std::pair<sa_t, std::vector<int>>>
-    multi_adaptive(std::vector<OdeSys *> odesys, // vectorized
+    std::vector<int>
+    multi_adaptive(realtype ** xyout_arr, // vectorized
+                   int * td_arr, // vectorized
+                   std::vector<OdeSys *> odesys, // vectorized
                    const std::vector<realtype> atol,
                    const realtype rtol,
                    const LMM lmm,
-                   const realtype * const y0,  // vectorized
-                   const realtype * t0,  // vectorized
                    const realtype * tend,  // vectorized
                    const long int mxsteps,
                    const realtype * dx0,  // vectorized
@@ -49,9 +49,9 @@ namespace cvodes_anyode_parallel {
         for (int idx=0; idx<nsys; ++idx){
             te.run([&]{
                 simple_adaptive<OdeSys>(
-                    results[idx].first.first, results[idx].first.second,
-                    odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
-                    results[idx].second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
+                    xyout_arr + idx, td + idx,
+                    odesys[idx], atol, rtol, lmm, tend[idx],
+                    root_outs[idx], mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
                     with_jacobian, iter_type, linear_solver, maxl, eps_lin, nderiv,
                     return_on_root, autorestart, return_on_error, with_jtimes);
             });
