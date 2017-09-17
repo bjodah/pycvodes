@@ -47,15 +47,14 @@ namespace cvodes_anyode_parallel {
             nt = 1;
         #pragma omp parallel for num_threads(nt) // OMP_NUM_THREADS should be 1 for openblas LU (small matrices)
         for (int idx=0; idx<nsys; ++idx){
-            std::pair<sa_t, std::vector<int>> local_result;
             te.run([&]{
-                local_result.first = simple_adaptive<OdeSys>(
+                simple_adaptive<OdeSys>(
+                    results[idx].first.first, results[idx].first.second,
                     odesys[idx], atol, rtol, lmm, y0 + idx*ny, t0[idx], tend[idx],
-                    local_result.second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
-                    iter_type, linear_solver, maxl, eps_lin, nderiv, return_on_root,
-                    autorestart, return_on_error, with_jtimes);
+                    results[idx].second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
+                    with_jacobian, iter_type, linear_solver, maxl, eps_lin, nderiv,
+                    return_on_root, autorestart, return_on_error, with_jtimes);
             });
-            results[idx] = local_result;
         }
         te.rethrow();
 

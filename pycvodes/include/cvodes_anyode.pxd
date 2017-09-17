@@ -7,13 +7,13 @@ from libcpp.utility cimport pair
 from cvodes_cxx cimport LMM, IterType
 
 cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
-    cdef pair[vector[double], vector[double]] simple_adaptive[U](
+    cdef int simple_adaptive[U](
+        double **,
+        int *,
         U * const,
         vector[double],
         double,
         LMM,
-        const double * const,
-        double,
         const double,
         vector[int]&,
         long int,
