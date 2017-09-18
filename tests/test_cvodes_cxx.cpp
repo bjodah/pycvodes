@@ -65,6 +65,7 @@ TEST_CASE( "adaptive", "[CVodeIntegrator]" ) {
         REQUIRE( xout(idx) <= 1 );
         REQUIRE( std::abs(yout(idx) - yref) < 1e-8 );
     }
+    free(xyout)
 #undef xout
 #undef yout
 }

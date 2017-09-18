@@ -41,4 +41,5 @@ TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
     REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
     REQUIRE( nout > 1 );
     REQUIRE( nout < 997 );
+    free(xyout);
 }

@@ -22,6 +22,7 @@ TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
     REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
 #undef xout
 #undef yout
+    free(xyout);
 }
 
 TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
@@ -42,6 +43,7 @@ TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
     REQUIRE( odesys.last_integration_info["n_steps"] > 1000 );  // dx_max == 1e-3
 #undef xout
 #undef yout
+    free(xyout);
 }
 
 
@@ -62,4 +64,5 @@ TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
     REQUIRE( odesys.last_integration_info["n_steps"] > 998 );
     REQUIRE( odesys.last_integration_info["n_steps"] >= nout );
     REQUIRE( nout >= 998 );
+    free(xyout);
 }
