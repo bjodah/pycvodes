@@ -50,14 +50,14 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False):
+             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] atol_vec
-        int td = 1
+        int td = nprealloc
         double * xyout = <double*>malloc(td*(ny*(nderiv+1)+1)*sizeof(double))
         cnp.ndarray[cnp.float64_t, ndim=2] xyout_arr
         cnp.npy_intp xyout_dims[2]
