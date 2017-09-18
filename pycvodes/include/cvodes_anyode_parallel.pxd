@@ -15,8 +15,6 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         double,
         LMM,
         const double * const,
-        const double *,
-        const double *,
         long int,
         const double *,
         const double *,
