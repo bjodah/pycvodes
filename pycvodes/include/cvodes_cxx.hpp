@@ -114,7 +114,7 @@ namespace cvodes_cxx {
         void *mem {nullptr};
         long int ny {0};
         int verbosity = 50;  // "50%" -- plenty of room for future tuning.
-
+        bool autonomous_exprs = false;
         bool record_order = false, record_fpe = false, record_steps = false;
         std::vector<int> orders_seen, fpes_seen;
         std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
@@ -526,7 +526,7 @@ namespace cvodes_cxx {
                      const unsigned nderiv,
                      std::vector<int>& root_indices,
                      bool return_on_root=false,
-                     int autorestart=0, // must be autonomous if >0
+                     int autorestart=0,
                      bool return_on_error=false,
                      get_dx_max_fn get_dx_max = get_dx_max_fn(),
                      int tidx=0
@@ -547,8 +547,10 @@ namespace cvodes_cxx {
                 steps_seen.push_back(get_current_step());
             if (record_order)
                 orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
-            if (record_fpe)
+            if (record_fpe){
                 std::feclearexcept(FE_ALL_EXCEPT);
+                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));  // gives equal length of output
+            }
             for (int i=0; i<ny; ++i)
                 y[i] = yout(tidx, 0, i);
             this->reinit(xout(tidx), y);
@@ -609,11 +611,13 @@ namespace cvodes_cxx {
                             }
                             const int step_back = (tidx > 1) ? 2 : 1;
                             const double last_x = xout(tidx - step_back);
-                            xout(tidx - step_back) = 0;
+                            if (autonomous_exprs)
+                                xout(tidx - step_back) = 0; // allows for smaller step sizes
                             auto inner = this->adaptive(xyout, td, xend - last_x, nderiv, root_indices,
                                                         return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
-                            for (int i=tidx - step_back; i<=inner; ++i){
-                                xout(i) += last_x;
+                            if (autonomous_exprs){
+                                for (int i=tidx - step_back; i<=inner; ++i)
+                                    xout(i) += last_x;
                             }
                             tidx = inner;
                             break;

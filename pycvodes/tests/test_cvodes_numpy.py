@@ -369,7 +369,7 @@ def test_adaptive_autorestart():
     atol, rtol = 1e-8, 1e-8
     kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
                   method='BDF', nsteps=62, return_on_error=True,
-                  autorestart=10)
+                  autorestart=10, autonomous_exprs=True)
     f, j = _get_f_j(k)
     xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
     yref = decay_get_Cref(k, y0, xout)

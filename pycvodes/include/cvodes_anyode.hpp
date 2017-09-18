@@ -132,18 +132,16 @@ namespace cvodes_anyode {
                                    const int linear_solver=0,
                                    const int maxl=0,
                                    const realtype eps_lin=0.0,
-                                   const bool record_order=false,
-                                   const bool record_fpe=false,
-                                   const bool record_steps=false,
                                    const bool with_jtimes=false
                                    )
     {
         const int ny = odesys->get_ny();
         const int nroots = odesys->get_nroots();
         CVodeIntegrator integr {lmm, iter_type};
-        integr.record_order = record_order;
-        integr.record_fpe = record_fpe;
-        integr.record_steps = record_steps;
+        integr.autonomous_exprs = odesys->autonomous_exprs;
+        integr.record_order = odesys->record_order;
+        integr.record_fpe = odesys->record_fpe;
+        integr.record_steps = odesys->record_steps;
         integr.set_user_data(static_cast<void *>(odesys));
         integr.init(rhs_cb<OdeSys>, t0, y0, ny);
         if (nroots > 0)
@@ -249,9 +247,7 @@ namespace cvodes_anyode {
         if (dx0 == 0.0)
             dx0 = odesys->get_dx0(x0, y0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
-                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin,
-                                             odesys->record_order, odesys->record_fpe, odesys->record_steps,
-                                             with_jtimes);
+                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();
@@ -337,8 +333,7 @@ namespace cvodes_anyode {
         if (dx0 == 0.0)
             dx0 = odesys->get_dx0(xout[0], y0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, xout[0], mxsteps, dx0, dx_min, dx_max,
-                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin,
-                                             odesys->record_order, odesys->record_fpe, with_jtimes);
+                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();

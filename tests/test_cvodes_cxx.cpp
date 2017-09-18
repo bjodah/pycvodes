@@ -65,7 +65,7 @@ TEST_CASE( "adaptive", "[CVodeIntegrator]" ) {
         REQUIRE( xout(idx) <= 1 );
         REQUIRE( std::abs(yout(idx) - yref) < 1e-8 );
     }
-    free(xyout)
+    free(xyout);
 #undef xout
 #undef yout
 }
@@ -130,5 +130,4 @@ TEST_CASE( "predefined_autorestart", "[CVodeIntegrator]" ) {
         //std::cout << yout[idx*ny] << " " << yref << " " << yout[idx*ny] - yref << "\n";
         REQUIRE( std::abs(yout[idx*ny] - yref) < 1e-7 );
     }
-
 }
