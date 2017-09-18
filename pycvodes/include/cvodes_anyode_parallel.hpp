@@ -11,10 +11,8 @@ namespace cvodes_anyode_parallel {
     using cvodes_anyode::simple_adaptive;
     using cvodes_anyode::simple_predefined;
 
-    using sa_t = std::pair<std::vector<realtype>, std::vector<realtype> >;
-
     template <class OdeSys>
-    std::vector<int>
+    std::vector<std::pair<int, std::vector<int>>>
     multi_adaptive(realtype ** xyout_arr, // vectorized
                    int * td_arr, // vectorized
                    std::vector<OdeSys *> odesys, // vectorized
@@ -39,7 +37,7 @@ namespace cvodes_anyode_parallel {
                    ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
-        auto results = std::vector<std::pair<sa_t, std::vector<int>>>(nsys);
+        auto results = std::vector<std::pair<int, std::vector<int>>>(nsys);
         anyode_parallel::ThreadException te;
         char * num_threads_var = std::getenv("ANYODE_NUM_THREADS");
         int nt = (num_threads_var) ? std::atoi(num_threads_var) : 1;
@@ -48,10 +46,10 @@ namespace cvodes_anyode_parallel {
         #pragma omp parallel for num_threads(nt) // OMP_NUM_THREADS should be 1 for openblas LU (small matrices)
         for (int idx=0; idx<nsys; ++idx){
             te.run([&]{
-                simple_adaptive<OdeSys>(
-                    xyout_arr + idx, td + idx,
+                results[idx].first = simple_adaptive<OdeSys>(
+                    xyout_arr + idx, td_arr + idx,
                     odesys[idx], atol, rtol, lmm, tend[idx],
-                    root_outs[idx], mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
+                    results[idx].second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
                     with_jacobian, iter_type, linear_solver, maxl, eps_lin, nderiv,
                     return_on_root, autorestart, return_on_error, with_jtimes);
             });

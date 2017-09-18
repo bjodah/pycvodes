@@ -7,7 +7,9 @@ from libcpp.utility cimport pair
 from cvodes_cxx cimport LMM, IterType
 
 cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel":
-    cdef vector[pair[pair[vector[double], vector[double]], vector[int]]] multi_adaptive[U](
+    cdef vector[pair[int, vector[int]]] multi_adaptive[U](
+        double **,
+        int *,
         vector[U*],
         vector[double],
         double,
