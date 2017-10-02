@@ -14,6 +14,7 @@
 #include <vector>
 #include <unordered_map> // std::unordered_map
 #include <sstream>
+#include <stdlib.h>
 #include <iostream>
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
@@ -113,7 +114,7 @@ namespace cvodes_cxx {
         void *mem {nullptr};
         long int ny {0};
         int verbosity = 50;  // "50%" -- plenty of room for future tuning.
-
+        bool autonomous_exprs = false;
         bool record_order = false, record_fpe = false, record_steps = false;
         std::vector<int> orders_seen, fpes_seen;
         std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
@@ -516,106 +517,114 @@ namespace cvodes_cxx {
                                      << get_current_time() << ", h=" << get_current_step() << "): " <<
                                      CVodeGetReturnFlagName(flag));
         }
-        std::pair<std::vector<realtype>, std::vector<realtype> >
-        adaptive(const realtype x0,
-                 const realtype xend,
-                 const realtype * const y0,
-                 const unsigned nderiv,
-                 std::vector<int>& root_indices,
-                 bool return_on_root=false,
-                 int autorestart=0, // must be autonomous if >0
-                 bool return_on_error=false,
-                 get_dx_max_fn get_dx_max = get_dx_max_fn()
-                 ){
-            std::vector<realtype> xout;
-            std::vector<realtype> yout;
+#define xout(ti) (*xyout)[(ny*(nderiv+1)+1)*(ti)]
+#define yout(ti, di, yi) (*xyout)[(ny*(nderiv+1)+1)*(ti) + ny*(di) + yi + 1]
+#define datalen(nt, nd, ny) (((ny)*((nd)+1) + 1)*(nt)*sizeof(realtype))
+        int adaptive(realtype ** xyout, // allocated using malloc (may be realloc:ed)
+                     int * const td, // trailing dimension of xyout
+                     const realtype xend,
+                     const unsigned nderiv,
+                     std::vector<int>& root_indices,
+                     bool return_on_root=false,
+                     int autorestart=0,
+                     bool return_on_error=false,
+                     get_dx_max_fn get_dx_max = get_dx_max_fn(),
+                     int tidx=0
+                     ){
             realtype cur_t;
             int status;
-            int idx = 0;
             SVector y {ny};
             SVector work {ny};
             long int mxsteps = get_max_num_steps();
+            if (*td < 1)
+                throw std::logic_error("Expected td >= 1");
+            if (xyout == nullptr)
+                throw std::logic_error("xyout cannot be a nullptr");
+            if (*xyout == nullptr)
+                throw std::logic_error("xyout cannot point to a nullptr");
             if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
-            xout.push_back(x0);
             if (record_steps)
                 steps_seen.push_back(get_current_step());
             if (record_order)
                 orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
             if (record_fpe){
                 std::feclearexcept(FE_ALL_EXCEPT);
-                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
+                fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));  // gives equal length of output
             }
-            for (int i=0; i<ny; ++i){
-                y[i] = y0[i];
-                yout.push_back(y0[i]);
-            }
-            this->reinit(x0, y);
+            for (int i=0; i<ny; ++i)
+                y[i] = yout(tidx, 0, i);
+            this->reinit(xout(tidx), y);
             if (nderiv >= 1){
-                this->call_rhs(x0, y, work);
+                this->call_rhs(xout(tidx), y, work);
                 for (int i=0; i<ny; ++i)
-                    yout.push_back(work[i]);
+                    yout(tidx, 1, i) = work[i];
+                for (unsigned di=2; di<=nderiv; ++di){
+                    for (int i=0; i<ny; ++i)  // higher order too expensive
+                        yout(tidx, di, i) = 0;
+                }
             }
-            for (unsigned di=1; di<nderiv; ++di){
-                for (int i=0; i<ny; ++i)  // higher order too expensive
-                    yout.push_back(0);
-            }
-            if (x0 >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
-                goto done;
+            if (xout(tidx) >= xend)  // negative step-sizes NOT supported (trade-off wrt. rounding errors)
+                return tidx;
             this->set_stop_time(xend);
             do {
-                idx++;
+                tidx++;
+                if (tidx >= *td){
+                    (*td) *= 2;
+                    {
+                        void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
+                        if (new_xyout == nullptr){
+                            throw std::bad_alloc();
+                        } else {
+                            *xyout = (realtype *)new_xyout;
+                        }
+                    }
+                }
                 if (get_dx_max)
                     this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
                 status = this->step(xend, y, &cur_t, Task::One_Step);
-                if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (idx > mxsteps)){
+                if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (tidx > mxsteps)){
                     if (status == CV_ROOT_RETURN){
-                        root_indices.push_back(idx);
+                        root_indices.push_back(tidx);
                     }else{
                         if (autorestart == 0) {
-                            if (return_on_error)
+                            if (return_on_error) {
+                                --tidx;
                                 break;
-                            else if (idx > mxsteps)
+                            } else if (tidx > mxsteps) {
                                 throw std::runtime_error(StreamFmt() << std::scientific << "Maximum number of steps reached (at t="
                                                          << cur_t <<"): " << mxsteps);
-                            else
+                            } else {
                                 unsuccessful_step_throw_(status);
+                            }
                         } else {
                             if (this->verbosity > 0)
                                 std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
-                            //this->reinit(0, y);
                             if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
                                 if (this->verbosity > 0)
                                     std::cerr << "Singular Jacobian?";
                                 this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
                                 this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
-                                // root_indices.clear();
-                                // return this->adaptive(x0, xend, y0, nderiv, root_indices, return_on_root, autorestart-1);
-
-                                // std::cerr << " - using GMRES\n";
-                                // this->set_linear_solver_to_iterative(IterLinSolEnum::GMRES, 0, PrecType::None);
-                                // this->set_gram_schmidt_type(GramSchmidtType::Modified);
-
-                                // std::cerr << " - using diag\n";
-                                // this->set_linear_solver_to_diag();
                             }
                             if (this->verbosity > 0) std::cerr << '\n';
-                            const int step_back = (idx > 1) ? 1 : 0;
-                            const double last_x = *(xout.end() - 1 - step_back);
-                            for (int i=0; i < step_back+1; ++i)
-                                xout.pop_back();
-                            auto inner = this->adaptive(0, xend - last_x, &yout[ny*(nderiv+1)*(idx-1-step_back)], nderiv,
-                                                        root_indices, return_on_root, autorestart-1, return_on_error);
-                            for (const auto& v : inner.first)
-                                xout.push_back(v + last_x);
-                            for (int i=0; i< step_back; ++i)
-                                for (int j=0; j<ny; ++j)
-                                    yout.pop_back();
-                            yout.insert(yout.end(), inner.second.begin() + (nderiv+1)*ny, inner.second.end());
+                            if (tidx > mxsteps){
+                                this->set_max_num_steps(this->get_max_num_steps() + 500);
+                            }
+                            const int step_back = (tidx > 1) ? 2 : 1;
+                            const double last_x = xout(tidx - step_back);
+                            if (autonomous_exprs)
+                                xout(tidx - step_back) = 0; // allows for smaller step sizes
+                            auto inner = this->adaptive(xyout, td, xend - last_x, nderiv, root_indices,
+                                                        return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
+                            if (autonomous_exprs){
+                                for (int i=tidx - step_back; i<=inner; ++i)
+                                    xout(i) += last_x;
+                            }
+                            tidx = inner;
                             break;
                         }
                     }
                 }
-                xout.push_back(cur_t);
+                xout(tidx) = cur_t;
                 if (record_steps)
                     steps_seen.push_back(get_current_step());
                 if (record_order)
@@ -626,24 +635,35 @@ namespace cvodes_cxx {
                 }
 
                 for (int i=0; i<ny; ++i)
-                    yout.push_back(y[i]);
+                    yout(tidx, 0, i) = y[i];
                 // Derivatives for interpolation
-                for (unsigned di=0; di<nderiv; ++di){
+                for (unsigned di=1; di<=nderiv; ++di){
                     if (this->get_n_steps() < 2*(nderiv+1))
                         // Too few points collected
                         work.zero_out();
                     else
-                        this->get_dky(cur_t, di+1, work);
+                        this->get_dky(cur_t, di, work);
                     for (int i=0; i<ny; ++i)
-                        yout.push_back(work[i]);
+                        yout(tidx, di, i) = work[i];
                 }
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
-        done:
-            return std::pair<std::vector<realtype>, std::vector<realtype>>(xout, yout);
-        }
 
+            if (*td > tidx + 1) { // Shrink xyout:
+                *td = tidx + 1;
+                void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
+                if (new_xyout == nullptr){
+                    throw std::bad_alloc();
+                } else {
+                    *xyout = (realtype *)new_xyout;
+                }
+            }
+            return tidx;
+        }
+#undef datalen
+#undef xout
+#undef yout
         int predefined(const long int nt,
                        const realtype * const tout,
                        const realtype * const y0,

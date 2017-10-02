@@ -38,26 +38,36 @@ double get_dx_max(double /* x */, const double * const /* y */){
 }
 
 TEST_CASE( "adaptive", "[CVodeIntegrator]" ) {
+    const int ny = 1;
     auto intgr = cvodes_cxx::CVodeIntegrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
-    std::vector<double> y(1, 1.0);
     std::vector<int> root_indices;
+    int td = 1;  // trailing dimension
+    double * xyout = (double*)malloc(td*(ny+1)*sizeof(double));
+    xyout[0] = 0.0;
+    xyout[1] = 1.0;
+#define xout(idx) xyout[idx*2]
+#define yout(idx) xyout[idx*2+1]
+    REQUIRE( xout(0) == 0.0 );
+    REQUIRE( yout(0) == 1.0 );
     bool return_on_root=false, return_on_error=false;
     int autorestart=0;
-    intgr.init(rhs_cb, 0.0, &y[0], 1);
+    intgr.init(rhs_cb, 0.0, xyout+1, 1);
     intgr.set_tol(1e-9, 1e-9);
     intgr.set_max_num_steps(1005);
-    auto xout_yout = intgr.adaptive(0.0, 1.0, &y[0], 0, root_indices, return_on_root, autorestart, return_on_error, get_dx_max);
-    auto xout = xout_yout.first;
-    auto yout = xout_yout.second;
-    REQUIRE( xout[0] == 0.0 );
-    REQUIRE( yout[0] == 1.0 );
-    int nt = xout.size();
+    const double xend = 1.0;
+    const int nderiv=0;
+    auto nt = intgr.adaptive(&xyout, &td, xend, nderiv, root_indices, return_on_root, autorestart, return_on_error, get_dx_max);
+    REQUIRE( xout(0) == 0.0 );
+    REQUIRE( yout(0) == 1.0 );
     for (int idx=1; idx<nt; ++idx){
-        const double yref = std::exp(-xout[idx]);
-        REQUIRE( xout[idx] > 0 );
-        REQUIRE( xout[idx] <= 1 );
-        REQUIRE( std::abs(yout[idx] - yref) < 1e-8 );
+        const double yref = std::exp(-xout(idx));
+        REQUIRE( xout(idx) > 0 );
+        REQUIRE( xout(idx) <= 1 );
+        REQUIRE( std::abs(yout(idx) - yref) < 1e-8 );
     }
+    free(xyout);
+#undef xout
+#undef yout
 }
 
 double get_dx_max2(double /* x */, const double * const /* y */){
@@ -120,5 +130,4 @@ TEST_CASE( "predefined_autorestart", "[CVodeIntegrator]" ) {
         //std::cout << yout[idx*ny] << " " << yref << " " << yout[idx*ny] - yref << "\n";
         REQUIRE( std::abs(yout[idx*ny] - yref) < 1e-7 );
     }
-
 }
