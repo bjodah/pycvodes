@@ -1,9 +1,10 @@
+import numpy as np
 from math import exp
 
 
 def test_PyDecay():
     import pyximport
-    pyximport.install()
+    pyximport.install(setup_args={'include_dirs': np.get_include()})
     from _cvodes_anyode import PyDecay
 
     pd = PyDecay(1.0)

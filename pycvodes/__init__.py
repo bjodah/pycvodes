@@ -101,7 +101,9 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         'dx_max_cb': callable
             Callback for calculating dx_max.
             Signature: ``f(x, y[:]) -> float``.
-
+        'autonomous_exprs' bool
+            Whether expressions contain the independent variable. If not, autorestart
+            is allowed to shift the independent variable to zero at restart).
 
     Returns
     -------
@@ -206,6 +208,9 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
         'dx_max_cb': callable
             Callback for calculating dx_max.
             Signature: ``f(x, y[:]) -> float``.
+        'autonomous_exprs' bool
+            Whether expressions contain the independent variable. If not, autorestart
+            is allowed to shift the independent variable to zero at restart).
 
     Returns
     -------

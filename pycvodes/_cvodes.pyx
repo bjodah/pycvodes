@@ -3,6 +3,7 @@
 
 import warnings
 from cpython.object cimport PyObject
+from libc.stdlib cimport malloc
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -13,6 +14,9 @@ from cvodes_cxx cimport lmm_from_name, iter_type_from_name, fpes as _fpes
 from cvodes_anyode cimport simple_adaptive, simple_predefined
 
 import numpy as np
+
+cdef extern from "numpy/arrayobject.h":
+    void PyArray_ENABLEFLAGS(cnp.ndarray arr, int flags)
 
 cnp.import_array()  # Numpy C-API initialization
 
@@ -46,13 +50,18 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-             bool record_steps=False, dx0cb=None, dx_max_cb=None):
+             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         bool with_jacobian = jac is not None
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] atol_vec
+        int td = nprealloc
+        double * xyout = <double*>malloc(td*(ny*(nderiv+1)+1)*sizeof(double))
+        cnp.ndarray[cnp.float64_t, ndim=2] xyout_arr
+        cnp.npy_intp xyout_dims[2]
+        int nout
     if isinstance(atol, float):
         atol_vec.push_back(atol)
     else:
@@ -65,9 +74,13 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
     if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
-
+    xyout[0] = x0
+    for i in range(ny):
+        xyout[1+i] = y0[i]
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb,
+                          <PyObject *>dx_max_cb)
+    odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals
     odesys.record_order = record_order
@@ -75,12 +88,18 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     odesys.record_steps = record_steps
 
     try:
-        xout, yout = map(np.asarray, simple_adaptive[PyOdeSys](
+        nout = simple_adaptive[PyOdeSys](&xyout, &td,
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
-            &y0[0], x0, xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
+            xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
-            eps_lin, nderiv, return_on_root, autorestart, return_on_error))
-
+            eps_lin, nderiv, return_on_root, autorestart, return_on_error)
+        xyout_dims[0] = nout + 1
+        xyout_dims[1] = ny*(nderiv+1) + 1
+        xyout_arr = cnp.PyArray_SimpleNewFromData(2, xyout_dims,
+                                                  cnp.NPY_DOUBLE, <void *>xyout)
+        PyArray_ENABLEFLAGS(xyout_arr, cnp.NPY_OWNDATA)
+        xout = xyout_arr[:, 0]
+        yout = xyout_arr[:, 1:]
         if return_on_error:
             if return_on_root and root_indices[root_indices.size() - 1] == len(xout) - 1:
                 success = True
@@ -109,7 +128,7 @@ def predefined(rhs, jac,
                const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-               bool record_steps=False, dx0cb=None, dx_max_cb=None):
+               bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False):
     cdef:
         int ny = y0.shape[y0.ndim - 1]
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
@@ -134,6 +153,7 @@ def predefined(rhs, jac,
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+    odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals
     odesys.record_order = record_order

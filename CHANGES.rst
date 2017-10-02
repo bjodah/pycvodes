@@ -1,3 +1,7 @@
+v0.9.0
+======
+- adaptive integration now reallocs its own space (allows direct transfer of ownership to e.g. numpy arrays)
+
 v0.8.4
 ======
 - Setting the environment variable ANYODE_VERBOSITY to 0 now silences errors & warnings.

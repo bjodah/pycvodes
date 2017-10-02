@@ -12,6 +12,7 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
         int get_ny()
         double get_dx0(double, double *) except +
         double get_dx_max(double, double *) except +
+        bool autonomous_exprs
         bool use_get_dx_max
         bool record_rhs_xvals
         bool record_jac_xvals
