@@ -649,6 +649,16 @@ namespace cvodes_cxx {
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
+
+            if (*td > tidx + 1) { // Shrink xyout:
+                *td = tidx + 1;
+                void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
+                if (new_xyout == nullptr){
+                    throw std::bad_alloc();
+                } else {
+                    *xyout = (realtype *)new_xyout;
+                }
+            }
             return tidx;
         }
 #undef datalen
