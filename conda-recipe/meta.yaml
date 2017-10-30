@@ -18,14 +18,14 @@ requirements:
   build:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.19*  # [not win]
-    - sundials
+    - sundials >=0.3.0
     - python
     - cython
     - numpy
   run:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.19*  # [not win]
-    - sundials
+    - sundials >=0.3.0
     - python
     - numpy
 
