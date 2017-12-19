@@ -227,7 +227,8 @@ namespace cvodes_anyode {
                     bool return_on_root=false,
                     int autorestart=0,
                     bool return_on_error=false,
-                    bool with_jtimes=false
+                    bool with_jtimes=false,
+                    int tidx=0
                     ){
         // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -272,7 +273,7 @@ namespace cvodes_anyode {
                           std::placeholders::_2))
 	                                 :
                 cvodes_cxx::get_dx_max_fn()
-            ), 0);
+            ), tidx);
 
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
