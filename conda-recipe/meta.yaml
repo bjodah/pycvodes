@@ -1,5 +1,5 @@
 {% set name = "pycvodes" %}
-{% set version = "0.8.0+git" %}
+{% set version = "0.10.0+git" %}
 {% set variant = "openblas" %}
 
 package:

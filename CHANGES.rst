@@ -1,3 +1,7 @@
+v0.9.1
+======
+- variable tidx exposed in simple_adaptive
+
 v0.9.0
 ======
 - adaptive integration now reallocs its own space (allows direct transfer of ownership to e.g. numpy arrays)
