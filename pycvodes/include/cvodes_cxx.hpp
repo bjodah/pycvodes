@@ -19,12 +19,26 @@
 
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sunmatrix/sunmatrix_band.h>
+#include <sunmatrix/sunmatrix_sparse.h>
+#include <sunlinsol/sunlinsol_lapackdense.h>
+#include <sunlinsol/sunlinsol_lapackband.h>
+#include <sunlinsol/sunlinsol_spgmr.h>
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
+#else
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
+#include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#define SUNTRUE TRUE
+#define SUNFALSE FALSE
+#endif
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
-#include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
 
@@ -110,6 +124,12 @@ namespace cvodes_cxx {
 
     class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
         FILE *errfp = nullptr;
+#if SUNDIALS_VERSION_MAJOR >= 3
+        SUNMatrix A_ = nullptr;
+        SUNLinearSolver LS_ = nullptr;
+        N_Vector y_ = nullptr;
+        IterLinSolEnum solver_;
+#endif
     public:
         void *mem {nullptr};
         long int ny {0};
@@ -128,17 +148,33 @@ namespace cvodes_cxx {
                 CVodeFree(&(this->mem));
             if (this->errfp)
                 fclose(errfp);
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (this->y_)
+                N_VDestroy(this->y_);
+            if (this->LS_)
+                SUNLinSolFree(this->LS_);
+            if (this->A_)
+                SUNMatDestroy(this->A_);
+#endif
         }
         // init
         void init(CVRhsFn cb, realtype t0, N_Vector y) {
-            int status = CVodeInit(this->mem, cb, t0, y);
+            this->ny = NV_LENGTH_S(y);
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (y_)
+                throw std::runtime_error("y_ already allocated");
+            y_ = N_VNew_Serial(NV_LENGTH_S(y));
+            std::memcpy(NV_DATA_S(y_), NV_DATA_S(y), ny*sizeof(realtype));
+#else
+            auto y_ = y;
+#endif
+            int status = CVodeInit(this->mem, cb, t0, y_);
             if (status == CV_ILL_INPUT)
                 throw std::runtime_error("CVodeInit failed (CV_ILL_INPUT).");
             else if (status == CV_MEM_FAIL)
                 throw std::bad_alloc(); // "CVodeInit failed (allocation failed).";
             else
                 check_flag(status);
-            this->ny = NV_LENGTH_S(y);
         }
         void init(CVRhsFn cb, realtype t0, SVector &y) {
             this->init(cb, t0, y.n_vec);
@@ -152,7 +188,12 @@ namespace cvodes_cxx {
 
         // reinit
         void reinit(realtype t0, N_Vector y){
-            CVodeReInit(this->mem, t0, y);
+#if SUNDIALS_VERSION_MAJOR >= 3
+            std::memcpy(NV_DATA_S(y_), NV_DATA_S(y), NV_LENGTH_S(y)*sizeof(realtype));
+#else
+            auto y_ = y;
+#endif
+            CVodeReInit(this->mem, t0, y_);
         }
         void reinit(realtype t0, SVector &y){
             reinit(t0, y.n_vec);
@@ -245,51 +286,143 @@ namespace cvodes_cxx {
         }
         // diagonal  solver
         void set_linear_solver_to_diag(){
-            int status = CVDiag(this->mem);
+            int status;
+            status = CVDiag(this->mem);
             if (status < 0)
                 throw std::runtime_error("CVDiag failed.");
         }
 
         // dense jacobian
         void set_linear_solver_to_dense(int ny){
-            int status = CVLapackDense(this->mem, ny);
+            int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (A_ == nullptr){
+                if (A_)
+                    throw std::runtime_error("matrix already set");
+                A_ = SUNDenseMatrix(ny, ny);
+                if (!A_)
+                    throw std::runtime_error("SUNDenseMatrix failed.");
+            }
+            if (LS_ == nullptr){
+                if (LS_)
+                    throw std::runtime_error("linear solver already set");
+                LS_ = SUNLapackDense(y_, A_);
+                if (!LS_)
+                    throw std::runtime_error("SUNDenseLinearSolver failed.");
+            }
+            status = CVDlsSetLinearSolver(this->mem, LS_, A_);
+            if (status < 0)
+                throw std::runtime_error("CVDlsSetLinearSolver failed.");
+#else
+            status = CVLapackDense(this->mem, ny);
             if (status != CVDLS_SUCCESS)
                 throw std::runtime_error("CVLapackDense failed");
+#endif
         }
-        void set_dense_jac_fn(CVDlsDenseJacFn djac){
-            int status = CVDlsSetDenseJacFn(this->mem, djac);
+        void set_dense_jac_fn(
+#if SUNDIALS_VERSION_MAJOR >= 3
+                              CVDlsJacFn
+#else
+                              CVDlsDenseJacFn
+#endif
+                              djac
+                              ){
+            int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            status = CVDlsSetJacFn(this->mem, djac);
+            if (status < 0)
+                throw std::runtime_error("CVDlsSetJacFn failed.");
+#else
+            status = CVDlsSetDenseJacFn(this->mem, djac);
             if (status < 0)
                 throw std::runtime_error("CVDlsSetDenseJacFn failed.");
+#endif
         }
 
         // banded jacobian
         void set_linear_solver_to_banded(int N, int mupper, int mlower){
-            int status = CVLapackBand(this->mem, N, mupper, mlower);
+            int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (A_ == nullptr){
+                if (A_)
+                    throw std::runtime_error("matrix already set");
+                A_ = SUNBandMatrix(ny, mupper, mlower, std::min(N-1, mlower+mupper));
+                if (!A_)
+                    throw std::runtime_error("SUNDenseMatrix failed.");
+            }
+            if (LS_ == nullptr){
+                if (LS_)
+                    throw std::runtime_error("linear solver already set");
+                LS_ = SUNLapackBand(y_, A_);
+                if (!LS_)
+                    throw std::runtime_error("SUNDenseLinearSolver failed.");
+            }
+            status = CVDlsSetLinearSolver(this->mem, LS_, A_);
+            if (status < 0)
+                throw std::runtime_error("CVDlsSetLinearSolver failed.");
+#else
+            status = CVLapackBand(this->mem, N, mupper, mlower);
             if (status != CVDLS_SUCCESS)
                 throw std::runtime_error("CVLapackBand failed");
+#endif
         }
-        void set_band_jac_fn(CVDlsBandJacFn djac){
-            int status = CVDlsSetBandJacFn(this->mem, djac);
+        void set_band_jac_fn(
+#if SUNDIALS_VERSION_MAJOR >= 3
+                             CVDlsJacFn
+#else
+                             CVDlsBandJacFn
+#endif
+                             djac){
+            int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (A_ == nullptr or LS_ == nullptr)
+                throw std::runtime_error("set_linear_solver_to_banded not called?");
+            status = CVDlsSetJacFn(this->mem, djac);
+            if (status < 0)
+                throw std::runtime_error("CVDlsSetJacFn failed.");
+#else
+            status = CVDlsSetBandJacFn(this->mem, djac);
             if (status < 0)
                 throw std::runtime_error("CVDlsSetBandJacFn failed.");
+#endif
         }
 
         // Iterative Linear solvers
         void set_linear_solver_to_iterative(IterLinSolEnum solver, int maxl=0, PrecType ptyp=PrecType::Left){
             int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (LS_)
+                throw std::runtime_error("linear solver already set.");
+#endif
             switch (solver) {
             case IterLinSolEnum::GMRES:
+#if SUNDIALS_VERSION_MAJOR >= 3
+                LS_ = SUNSPGMR(y_, static_cast<int>(ptyp), maxl);
+#else
                 flag = CVSpgmr(this->mem, static_cast<int>(ptyp), maxl);
+#endif
                 break;
             case IterLinSolEnum::BICGSTAB:
+#if SUNDIALS_VERSION_MAJOR >= 3
+                LS_ = SUNSPBCGS(y_, static_cast<int>(ptyp), maxl);
+#else
                 flag = CVSpbcg(this->mem, static_cast<int>(ptyp), maxl);
                 break;
+#endif
             case IterLinSolEnum::TFQMR:
+#if SUNDIALS_VERSION_MAJOR >= 3
+                LS_ = SUNSPTFQMR(y_, static_cast<int>(ptyp), maxl);
+#else
                 flag = CVSptfqmr(this->mem, static_cast<int>(ptyp), maxl);
                 break;
+#endif
             default:
                 throw std::runtime_error("unknown solver kind.");
             }
+#if SUNDIALS_VERSION_MAJOR >= 3
+            flag = CVSpilsSetLinearSolver(this->mem, LS_);
+            solver_ = solver;
+#endif
             switch (flag){
             case CVSPILS_SUCCESS:
                 break;
@@ -313,10 +446,21 @@ namespace cvodes_cxx {
             if ((check_ill_input) && (flag == CVSPILS_ILL_INPUT))
                 throw std::runtime_error("Bad input.");
         }
-        void set_jac_times_vec_fn(CVSpilsJacTimesVecFn jac_times_vec_fn){
-            int flag = CVSpilsSetJacTimesVecFn(this->mem, jac_times_vec_fn);
+        void set_jac_times_vec_fn(CVSpilsJacTimesVecFn jtimes){
+#if SUNDIALS_VERSION_MAJOR >= 3
+            int flag = CVSpilsSetJacTimes(this->mem, NULL, jtimes);
+#else
+            int flag = CVSpilsSetJacTimesVecFn(this->mem, jtimes);
+#endif
             this->cvspils_check_flag(flag);
         }
+#if SUNDIALS_VERSION_MAJOR >=3
+        void set_jac_times_vec_fn(CVSpilsJacTimesSetupFn jtsetup,
+                                  CVSpilsJacTimesVecFn jtimes){
+            int flag = CVSpilsSetJacTimes(this->mem, jtsetup, jtimes);
+            this->cvspils_check_flag(flag);
+        }
+#endif
         void set_preconditioner(CVSpilsPrecSetupFn setup_fn, CVSpilsPrecSolveFn solve_fn){
             int flag = CVSpilsSetPreconditioner(this->mem, setup_fn, solve_fn);
             this->cvspils_check_flag(flag);
@@ -326,15 +470,51 @@ namespace cvodes_cxx {
             this->cvspils_check_flag(flag, true);
         }
         void set_prec_type(PrecType pretyp){
-            int flag = CVSpilsSetPrecType(this->mem, (int)pretyp);
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            switch(solver_){
+            case IterLinSolEnum::GMRES:
+                flag = SUNSPGMRSetPrecType(LS_, (int)pretyp); break;
+            case IterLinSolEnum::BICGSTAB:
+                flag = SUNSPBCGSSetPrecType(LS_, (int)pretyp); break;
+            case IterLinSolEnum::TFQMR:
+                flag = SUNSPTFQMRSetPrecType(LS_, (int)pretyp); break;
+            default:
+                throw std::runtime_error("unknown solver kind.");
+            }
+#else
+            flag = CVSpilsSetPrecType(this->mem, (int)pretyp);
+#endif
             this->cvspils_check_flag(flag, true);
         }
         void set_gram_schmidt_type(GramSchmidtType gs_type){
-            int flag = CVSpilsSetGSType(this->mem, (int)gs_type);
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (solver_ == IterLinSolEnum::GMRES)
+                flag = SUNSPGMRSetGSType(LS_, (int)gs_type);
+            else
+                throw std::runtime_error("Setting Gram-Schmidt type only makes sense for GMRES");
+#else
+            flag = CVSpilsSetGSType(this->mem, (int)gs_type);
+#endif
             this->cvspils_check_flag(flag, true);
         }
         void set_krylov_max_len(int maxl){
-            int flag = CVSpilsSetMaxl(this->mem, maxl);
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            switch(solver_){
+            case IterLinSolEnum::GMRES:
+                throw std::runtime_error("GMRES has no max length option");
+            case IterLinSolEnum::BICGSTAB:
+                flag = SUNSPBCGSSetMaxl(LS_, maxl); break;
+            case IterLinSolEnum::TFQMR:
+                flag = SUNSPTFQMRSetMaxl(LS_, maxl); break;
+            default:
+                throw std::runtime_error("unknown solver kind.");
+            }
+#else
+            flag = CVSpilsSetMaxl(this->mem, maxl);
+#endif
             this->cvspils_check_flag(flag);
         }
         int get_current_order() {

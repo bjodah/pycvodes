@@ -4,10 +4,6 @@ build:
     - PYCVODES_LAPACK=lapack,blas
   commands:
     - ./scripts/ci.sh pycvodes
-    - cd tests/; make; cd -
-    - cd tests/; make EXTRA_FLAGS=-DNDEBUG; cd -
-    - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=address -B; cd -
-    - cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=undefined -B; cd -
     - (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - python3 -m pip install --user -e .[docs]
@@ -16,6 +12,13 @@ build:
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
+    - apt-get remove libsundials*
+    - python2 -m pip uninstall --yes pycvodes
+    - python3 -m pip uninstall --yes pycvodes
+    - rm -r /usr/local/lib/python*/dist-packages/pycvodes*
+    - git clean -xfd
+    - ./scripts/.ci/download_and_install_sundials-3.1.sh
+    - LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CPLUS_INCLUDE_PATH=/usr/local/include ./scripts/ci.sh pycvodes
 
 deploy:
 

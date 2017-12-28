@@ -25,10 +25,6 @@ def _path_under_setup(*args):
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 config_py_path = _path_under_setup(pkg_name, '_config.py')
-env = None  # silence pyflakes, 'env' is actually set on the next line
-exec(open(config_py_path).read())
-for k, v in list(env.items()):
-    env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
 
 
 USE_CYTHON = os.path.exists(_path_under_setup(pkg_name, '_cvodes.pyx'))
@@ -40,6 +36,11 @@ ext_modules = []
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
+    env = None  # silence pyflakes, 'env' is actually set on the next line
+    exec(open(config_py_path).read())
+    for k, v in list(env.items()):
+        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+
     ext = '.pyx' if USE_CYTHON else '.cpp'
     sources = [os.path.join(pkg_name, '_cvodes'+ext)]
     ext_modules = [Extension('%s._cvodes' % pkg_name, sources)]
@@ -136,10 +137,12 @@ if __name__ == '__main__':
             shutil.move(release_py_path, release_py_path+'__temp__')
             open(release_py_path, 'wt').write(
                 "__version__ = '{}'\n".format(__version__))
-        shutil.move(config_py_path, config_py_path+'__temp__')
-        open(config_py_path, 'wt').write("env = {}\n".format(pprint.pformat(env)))
+        if ext_modules:
+            shutil.move(config_py_path, config_py_path+'__temp__')
+            open(config_py_path, 'wt').write("env = {}\n".format(pprint.pformat(env)))
         setup(**setup_kwargs)
     finally:
         if TAGGED_RELEASE:
             shutil.move(release_py_path+'__temp__', release_py_path)
-        shutil.move(config_py_path+'__temp__', config_py_path)
+        if ext_modules:
+            shutil.move(config_py_path+'__temp__', config_py_path)

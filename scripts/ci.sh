@@ -18,3 +18,8 @@ PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
 git archive -o /tmp/$PKG_NAME.zip HEAD
 python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
+
+cd tests/; make; cd -
+cd tests/; make EXTRA_FLAGS=-DNDEBUG; cd -
+cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=address -B; cd -
+cd tests/; make CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=undefined -B; cd -
