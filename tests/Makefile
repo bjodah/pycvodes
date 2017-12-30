@@ -13,7 +13,7 @@ OPENMP_LIB ?= -lgomp
 
 .PHONY: test clean
 
-TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case test_cvodes_anyode_parallel
+TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case
 
 test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case test_cvodes_anyode_parallel
 	./test_cvodes_anyode --abortx 1
@@ -32,6 +32,10 @@ endif
 clean:
 	rm catch.hpp
 	rm $(TARGETS)
+ifneq ($(CXX),clang++-5.0)
+	rm test_cvodes_anyode_parallel
+endif
+
 
 test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS)
