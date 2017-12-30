@@ -3,7 +3,13 @@ pycvodes
 
 .. image:: http://hera.physchem.kth.se:9090/api/badges/bjodah/pycvodes/status.svg
    :target: http://hera.physchem.kth.se:9090/bjodah/pycvodes
-   :alt: Build status
+   :alt: Build status on private Drone server
+.. image:: https://circleci.com/gh/bjodah/pycvodes.svg?style=svg
+   :target: https://circleci.com/gh/bjodah/pycvodes
+   :alt: Build status on CircleCI
+.. image:: https://secure.travis-ci.org/bjodah/pycvodes.svg?branch=master
+   :target: http://travis-ci.org/bjodah/pycvodes
+   :alt: Build status on Travis-CI
 .. image:: https://img.shields.io/pypi/v/pycvodes.svg
    :target: https://pypi.python.org/pypi/pycvodes
    :alt: PyPI version

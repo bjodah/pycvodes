@@ -32,10 +32,7 @@ endif
 clean:
 	rm catch.hpp
 	rm $(TARGETS)
-ifneq ($(CXX),clang++-5.0)
-	rm test_cvodes_anyode_parallel
-endif
-
+	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
 test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS)
