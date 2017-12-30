@@ -26,7 +26,11 @@ for URL in "${SUNDIALS_URLS[@]}"; do
               -DLAPACK_ENABLE=ON \
               -DSUNDIALS_INDEX_TYPE=int32_t \
               ../sundials-*/
-        make install
+        make install >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            2>&1 echo "Sundials build/install failed."
+            exit 1
+        fi
         cd ..
         rm -r sundials*
         exit 0

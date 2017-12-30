@@ -21,9 +21,7 @@ test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd t
 	./test_cvodes_anyode_svd --abortx 1
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
-	./ test_cvodes_anyode_parallel --abortx 1
 	./test_tough_case --abortx 1
-
 ifeq ($(CXX),clang++-5.0)
 	@echo "skipping openmp when using clang"
 else
