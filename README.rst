@@ -3,7 +3,13 @@ pycvodes
 
 .. image:: http://hera.physchem.kth.se:9090/api/badges/bjodah/pycvodes/status.svg
    :target: http://hera.physchem.kth.se:9090/bjodah/pycvodes
-   :alt: Build status
+   :alt: Build status on private Drone server
+.. image:: https://circleci.com/gh/bjodah/pycvodes.svg?style=svg
+   :target: https://circleci.com/gh/bjodah/pycvodes
+   :alt: Build status on CircleCI
+.. image:: https://secure.travis-ci.org/bjodah/pycvodes.svg?branch=master
+   :target: http://travis-ci.org/bjodah/pycvodes
+   :alt: Build status on Travis-CI
 .. image:: https://img.shields.io/pypi/v/pycvodes.svg
    :target: https://pypi.python.org/pypi/pycvodes
    :alt: PyPI version
@@ -20,7 +26,7 @@ pycvodes
 `Python <http://www.python.org>`_ binding to the
 `Ordinary Differential Equation <https://en.wikipedia.org/wiki/Ordinary_differential_equation>`_
 integration routines from `cvodes <https://computation.llnl.gov/casc/sundials/description/description.html#descr_cvodes>`_ in the
-`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pcyvodes`` allows a user to numerically integrate
+`SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pycvodes`` allows a user to numerically integrate
 (systems of) differential equations. Note that routines for sensitivity analysis is not yet exposed in this binding (which makes
 the functionality essentially the same as cvode). 
 
@@ -65,6 +71,8 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
    >>> _config.env['LAPACK']  # doctest: +SKIP
    'lapack,blas'
 
+If you use ``pip`` to install ``pycvodes`` note that you will need to install sundials
+(and its development headers, with cvodes enabled) prior to installing pycvodes.
 
 Examples
 --------

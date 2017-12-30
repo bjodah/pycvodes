@@ -47,31 +47,67 @@ namespace cvodes_anyode {
     }
 
     template <class OdeSys>
-    int jac_dense_cb(long int N, realtype t,
-                     N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
-                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
+    int jac_dense_cb(
+#if SUNDIALS_VERSION_MAJOR < 3
+                     long int N,
+#endif
+                     realtype t,
+                     N_Vector y, N_Vector fy,
+#if SUNDIALS_VERSION_MAJOR < 3
+                     DlsMat Jac,
+#else
+                     SUNMatrix Jac,
+#endif
+                     void *user_data,
+                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3
+                     ){
         // callback of req. signature wrapping OdeSys method.
-        AnyODE::ignore(N); AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+#if SUNDIALS_VERSION_MAJOR < 3
+        AnyODE::ignore(N);
+#endif
+        AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.record_jac_xvals)
             odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
-        AnyODE::Status status = odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), DENSE_COL(Jac, 0), Jac->ldim);
+        AnyODE::Status status = odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy),
+#if SUNDIALS_VERSION_MAJOR < 3
+                                                      DENSE_COL(Jac, 0), Jac->ldim
+#else
+                                                      SM_DATA_D(Jac), odesys.get_ny()
+#endif
+                                                      );
         return handle_status_(status);
     }
 
     template <typename OdeSys>
-    int jac_band_cb(long int N, long int mupper, long int mlower, realtype t,
-                    N_Vector y, N_Vector fy, DlsMat Jac, void *user_data,
+    int jac_band_cb(
+#if SUNDIALS_VERSION_MAJOR < 3
+                    long int N, long int mupper, long int mlower,
+#endif
+                    realtype t,
+                    N_Vector y, N_Vector fy,
+#if SUNDIALS_VERSION_MAJOR < 3
+                    DlsMat Jac,
+#else
+                    SUNMatrix Jac,
+#endif
+                    void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
-        AnyODE::ignore(N); AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+        AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
         auto& odesys = *static_cast<OdeSys*>(user_data);
+#if SUNDIALS_VERSION_MAJOR < 3
         if (odesys.get_mupper() != mupper)
             throw std::runtime_error("mupper mismatch");
         if (odesys.get_mlower() != mlower)
             throw std::runtime_error("mlower mismatch");
+        auto Jac_ = Jac;
+        AnyODE::ignore(N);
+#else
+        auto Jac_ = SM_CONTENT_B(Jac);
+#endif
         if (odesys.record_jac_xvals)
             odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
-        AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac->data + Jac->s_mu - Jac->mu, Jac->ldim);
+        AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac_->data + Jac_->s_mu - Jac_->mu, Jac_->ldim);
         return handle_status_(status);
     }
 
@@ -91,9 +127,15 @@ namespace cvodes_anyode {
     template <typename OdeSys> // Section 4.6.9 Preconditioning in cvs_guide.pdf
     int jac_prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
                           N_Vector z, realtype gamma, realtype delta, int lr,
-                          void *user_data, N_Vector tmp){
+                          void *user_data
+#if SUNDIALS_VERSION_MAJOR < 3
+                          , N_Vector tmp
+#endif
+                          ){
         // callback of req. signature wrapping OdeSys method.
+#if SUNDIALS_VERSION_MAJOR < 3
         AnyODE::ignore(tmp);  // delta used for iterative methods
+#endif
         double * ewt {nullptr};
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (lr != 1)
@@ -105,14 +147,19 @@ namespace cvodes_anyode {
 
     template <typename OdeSys>
     int prec_setup_cb(realtype t, N_Vector y, N_Vector fy, booleantype jok,
-                      booleantype *jcurPtr, realtype gamma, void *user_data,
-                      N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
+                      booleantype *jcurPtr, realtype gamma, void *user_data
+#if SUNDIALS_VERSION_MAJOR < 3
+                      ,N_Vector tmp1, N_Vector tmp2, N_Vector tmp3
+#endif
+                      ){
         // callback of req. signature wrapping OdeSys method.
+#if SUNDIALS_VERSION_MAJOR < 3
         AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+#endif
         auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
         AnyODE::Status status = odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), jok, jac_recomputed, gamma);
-        (*jcurPtr) = (jac_recomputed) ? TRUE : FALSE;
+        (*jcurPtr) = (jac_recomputed) ? SUNTRUE : SUNFALSE;
         return handle_status_(status);
     }
 
