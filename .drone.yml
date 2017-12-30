@@ -18,7 +18,7 @@ build:
     - rm -r /usr/local/lib/python*/dist-packages/pycvodes*
     - git clean -xfd
     - ./scripts/.ci/download_and_install_sundials-3.1.sh
-    - LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CPLUS_INCLUDE_PATH=/usr/local/include ./scripts/ci.sh pycvodes
+    - LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CPLUS_INCLUDE_PATH=/usr/local/include EXTRA_LIBS="-lsundials_sunlinsollapackdense -lsundials_sunlinsollapackband" ./scripts/ci.sh pycvodes
 
 deploy:
 
