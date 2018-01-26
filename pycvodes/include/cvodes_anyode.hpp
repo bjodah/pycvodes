@@ -195,7 +195,9 @@ namespace cvodes_anyode {
             integr.root_init(nroots, roots_cb<OdeSys>);
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
-        }else{
+        } else if (atol.size() != (size_t)ny) {
+            throw std::runtime_error("atol of incorrect length");
+        } else {
             integr.set_tol(rtol, atol);
         }
         integr.set_init_step(dx0);
