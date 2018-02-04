@@ -32,7 +32,7 @@ else:
                            (os.environ.get('CPLUS_INCLUDE_PATH', ''), _spgmr_out))
 
 env = {
-    'LAPACK': 'lapack',
+    'LAPACK': 'blas,lapack',
     'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
         ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if _sun3 else ''
     ),
