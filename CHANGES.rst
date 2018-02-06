@@ -1,3 +1,7 @@
+v0.9.2
+======
+- Bump AnyODE version
+
 v0.9.1
 ======
 - variable tidx exposed in simple_adaptive
