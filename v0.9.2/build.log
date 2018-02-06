@@ -1,0 +1,28 @@
+sphinx-build -b html -d _build/doctrees   . _build/html
+Running Sphinx v1.6.6
+loading translations [en]... done
+loading pickled environment... not yet created
+building [mo]: targets for 0 po files that are out of date
+building [html]: targets for 2 source files that are out of date
+updating environment: 2 added, 0 changed, 0 removed
+reading sources... [ 50%] index
+reading sources... [100%] pycvodes
+
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... done
+preparing documents... done
+writing output... [ 50%] index
+writing output... [100%] pycvodes
+
+generating indices... genindex py-modindex
+highlighting module code... [100%] pycvodes
+
+writing additional pages... search
+copying static files... done
+copying extra files... done
+dumping search index in English (code: en) ... done
+dumping object inventory... done
+build succeeded, 4 warnings.
+
+Build finished. The HTML pages are in _build/html.
