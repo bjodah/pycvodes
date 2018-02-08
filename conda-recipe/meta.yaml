@@ -20,6 +20,8 @@ requirements:
     - openblas 0.2.19*  # [not win]
     - sundials <3.0.0
     - python
+    - setuptools
+    - pip
     - cython
     - numpy
   run:
