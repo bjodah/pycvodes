@@ -1,11 +1,11 @@
 #ifdef ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37
 
-#if ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 != 11
+#if ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 != 12
 #error "Multiple anyode.hpp files included with version mismatch"
 #endif
 
 #else
-#define ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 11
+#define ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 12
 
 
 #include <string>
@@ -39,6 +39,7 @@ namespace AnyODE {
         virtual int get_mlower() const { return -1; } // -1 denotes "not banded"
         virtual int get_mupper() const { return -1; } // -1 denotes "not banded"
         virtual int get_nroots() const { return 0; } // Do not look for roots by default;
+        virtual int get_nquads() const { return 0; } // Do not track quadratures by default;
         virtual Real_t get_dx0(Real_t /* t */,
                                const Real_t * const /* y */) {
             return default_dx0;
@@ -48,6 +49,10 @@ namespace AnyODE {
         }
         virtual Status rhs(Real_t t, const Real_t * const y, Real_t * const f) = 0;
         virtual Status roots(Real_t xval, const Real_t * const y, Real_t * const out) {
+            ignore(xval); ignore(y); ignore(out);
+            return Status::unrecoverable_error;
+        }
+        virtual Status quads(Real_t xval, const Real_t * const y, Real_t * const out) {
             ignore(xval); ignore(y); ignore(out);
             return Status::unrecoverable_error;
         }
