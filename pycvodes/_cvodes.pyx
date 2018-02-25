@@ -45,7 +45,8 @@ cdef _reshape_roots(cnp.ndarray[cnp.float64_t, ndim=1] roots, int ny):
 
 def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, double xend, atol,
              double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
-             double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
+             double dx_max=0.0, quads=None, roots=None, cb_kwargs=None, int lband=-1, int uband=-1,
+             int nquads=0, int nroots=0,
              str iter_type="undecided", int linear_solver=0, const int maxl=0,
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
@@ -58,9 +59,9 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
         vector[int] root_indices
         vector[double] atol_vec
         int td = nprealloc
-        double * xyout = <double*>malloc(td*(ny*(nderiv+1)+1)*sizeof(double))
-        cnp.ndarray[cnp.float64_t, ndim=2] xyout_arr
-        cnp.npy_intp xyout_dims[2]
+        double * xyqout = <double*>malloc(td*(1 + ny*(nderiv+1) + nquads)*sizeof(double))
+        cnp.ndarray[cnp.float64_t, ndim=2] xyqout_arr
+        cnp.npy_intp xyqout_dims[2]
         int nout
     if isinstance(atol, float):
         atol_vec.push_back(atol)
@@ -74,11 +75,14 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
     if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
-    xyout[0] = x0
+    xyqout[0] = x0
     for i in range(ny):
-        xyout[1+i] = y0[i]
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb,
+        xyqout[1+i] = y0[i]
+    for i in range(nquads):
+        xyqout[1+ny*(nderiv+1)+i] = 0.0;
+
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>quads, <PyObject *>roots,
+                          <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb,
                           <PyObject *>dx_max_cb)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
@@ -88,18 +92,18 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     odesys.record_steps = record_steps
 
     try:
-        nout = simple_adaptive[PyOdeSys](&xyout, &td,
+        nout = simple_adaptive[PyOdeSys](&xyqout, &td,
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
             xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
             eps_lin, nderiv, return_on_root, autorestart, return_on_error)
-        xyout_dims[0] = nout + 1
-        xyout_dims[1] = ny*(nderiv+1) + 1
-        xyout_arr = cnp.PyArray_SimpleNewFromData(2, xyout_dims,
-                                                  cnp.NPY_DOUBLE, <void *>xyout)
-        PyArray_ENABLEFLAGS(xyout_arr, cnp.NPY_OWNDATA)
-        xout = xyout_arr[:, 0]
-        yout = xyout_arr[:, 1:]
+        xyqout_dims[0] = nout + 1
+        xyqout_dims[1] = ny*(nderiv+1) + 1 + nquads
+        xyqout_arr = cnp.PyArray_SimpleNewFromData(2, xyqout_dims,
+                                                  cnp.NPY_DOUBLE, <void *>xyqout)
+        PyArray_ENABLEFLAGS(xyqout_arr, cnp.NPY_OWNDATA)
+        xout = xyqout_arr[:, 0]
+        yout = xyqout_arr[:, 1:1+ny*(nderiv+1)]
         if return_on_error:
             if return_on_root and root_indices[root_indices.size() - 1] == len(xout) - 1:
                 success = True
@@ -113,6 +117,8 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
         info['rtol'] = rtol
         if nroots > 0:
             info['root_indices'] = root_indices
+        if nquads > 0:
+            info['quads'] = xyqout_arr[:, 1+(1+nderiv)*ny:]
         yout_shape = (xout.size, ny) if nderiv == 0 else (xout.size, nderiv+1, ny)
         return xout, yout.reshape(yout_shape), info
     finally:
@@ -134,6 +140,8 @@ def predefined(rhs, jac,
         cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
         bool with_jacobian = jac is not None
         int nreached
+        int nquads = 0  # only supported in adaptive right now
+        quads = None    # only supported in adaptive right now
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] roots_output
@@ -151,8 +159,8 @@ def predefined(rhs, jac,
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
     if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
     if np.isnan(y0).any(): raise ValueError("NaN found in y0")
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac,  <PyObject *>quads, <PyObject *>roots,
+                          <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals

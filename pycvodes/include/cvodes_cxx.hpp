@@ -809,7 +809,6 @@ namespace cvodes_cxx {
                      get_dx_max_fn get_dx_max = get_dx_max_fn(),
                      int tidx=0
                      ){
-            std::cout << "ny= " << ny << ", nq=" << nq << std::endl;
             realtype cur_t;
             int status;
             SVector y {ny};

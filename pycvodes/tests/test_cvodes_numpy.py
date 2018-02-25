@@ -232,6 +232,27 @@ def test_roots_adaptive():
     assert np.min(np.abs(xout - 1)) < 1e-11
 
 
+def test_quads_adaptive():
+    k = 0.7
+
+    def f(t, y, fout):
+        fout[0] = -0.7*y[0]
+
+    def quads(t, y, out):
+        out[0] = t*y[0]
+        out[1] = y[0]**2
+
+    kwargs = dict(dx0=1e-12, atol=1e-12, rtol=1e-12, method='adams',
+                  quads=quads, nquads=2)
+    A, t0, duration = 42, 0, 4
+    t, yout, info = integrate_adaptive(f, None, [A], t0, t0 + duration, **kwargs)
+    assert np.allclose(yout[:, 0], 42*np.exp(-k*t))
+    q0 = A/k**2 + (-A*k**2*t - A*k)*np.exp(-k*t)/k**3
+    q1 = (1.0/2.0)*A**2/k - 1.0/2.0*A**2*np.exp(-2*k*t)/k
+    assert np.allclose(info['quads'][:, 0], q0)
+    assert np.allclose(info['quads'][:, 1], q1)
+
+
 def test_roots_predefined():
     def f(t, y, fout):
         fout[0] = y[0]
