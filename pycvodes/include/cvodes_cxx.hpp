@@ -954,8 +954,8 @@ namespace cvodes_cxx {
 #undef row
         int predefined(const long int nt,
                        const realtype * const tout,
-                       const realtype * const y0,
-                       realtype * const yout,
+                       const realtype * const yq0,
+                       realtype * const yqout,
                        const unsigned nderiv,
                        std::vector<int>& root_indices,
                        std::vector<realtype>& root_out,
@@ -967,27 +967,34 @@ namespace cvodes_cxx {
             realtype cur_t=tout[0];
             int status;
             SVector y {ny};
+            SVector yQ {nq};
             SVector work {ny};
             long int mxsteps = get_max_num_steps();
             for (int i=0; i<ny; ++i)
-                y[i] = y0[i];
+                y[i] = yq0[i];
             this->reinit(tout[0], y);
+            if (nq){
+                auto yQ0 = SVectorV(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
+                this->quad_reinit(yQ0);
+            }
             if (record_order)
                 orders_seen.push_back(get_current_order()); // len(orders_seen) == len(xout)
             if (record_fpe){
                 std::feclearexcept(FE_ALL_EXCEPT);
                 fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
             }
-            y.dump(yout);
+            y.dump(yqout);
             if (nderiv >= 1){
                 this->call_rhs(tout[0], y, work);
-                work.dump(&yout[ny]);
+                work.dump(&yqout[ny]);
             }
             for (unsigned di=1; di<nderiv; ++di){
                 for (int i=0; i<ny; ++i)  // too expensive
-                    yout[ny*(di+1) + i] = 0;
+                    yqout[ny*(di+1) + i] = 0;
             }
-
+            for (int i=0; i<nq; ++i){
+                yqout[ny*(nderiv+1) + i] = yq0[ny+i];
+            }
             for(iout=1; (iout < nt); iout++) {
                 if (get_dx_max)
                     this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
@@ -999,7 +1006,7 @@ namespace cvodes_cxx {
                         fpes_seen.push_back(std::fetestexcept(FE_ALL_EXCEPT));
                         std::feclearexcept(FE_ALL_EXCEPT);
                     }
-                    y.dump(&yout[ny*(iout*(nderiv+1))]);
+                    y.dump(&yqout[iout*(ny*(nderiv+1) + nq)]);
                     // Derivatives for interpolation
                     for (unsigned di=0; di<nderiv; ++di){
                         if (this->get_n_steps() < 2*(nderiv+1))
@@ -1007,8 +1014,12 @@ namespace cvodes_cxx {
                             work.zero_out();
                         else
                             this->get_dky(tout[iout], di+1, work);
-                        work.dump(&yout[ny*(di+1+(iout*(nderiv+1)))]);
+                        work.dump(&yqout[iout*(ny*(nderiv+1) + nq) + (di+1)*ny]);
                     }
+                    if (nq)
+                        get_quad_dky(cur_t, 0, yQ.n_vec);
+                    for (int i=0; i<nq; ++i)
+                        yqout[iout*(ny*(nderiv+1) + nq) + (nderiv+1)*ny + i] = yQ[i];
                 } else if (status == CV_ROOT_RETURN) {
                     root_out.push_back(cur_t);
                     for (int i=0; i<ny; ++i)
@@ -1033,8 +1044,8 @@ namespace cvodes_cxx {
                         std::vector<int> root_indices_;
                         std::vector<realtype> root_out_;
                         int n_reached = this->predefined(nleft, &tout_[0],
-                                                         yout + (iout-1)*(nderiv+1)*ny,
-                                                         yout + (iout-1)*(nderiv+1)*ny,
+                                                         yqout + (iout-1)*((nderiv+1)*ny+nq),
+                                                         yqout + (iout-1)*((nderiv+1)*ny+nq),
                                                          nderiv, root_indices_, root_out_,
                                                          autorestart-1,
                                                          return_on_error,
