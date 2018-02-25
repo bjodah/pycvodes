@@ -219,6 +219,7 @@ namespace cvodes_cxx {
         // Quadrature integartion
         void quad_init(CVQuadRhsFn fQ, N_Vector yQ0){
             int flag = CVodeQuadInit(this->mem, fQ, yQ0);
+            this->nq = NV_LENGTH_S(yQ0);
             if (flag == CV_MEM_FAIL)
                 throw std::bad_alloc(); // "CVodeQuadInit failed (allocation failed)."
             else
@@ -230,7 +231,6 @@ namespace cvodes_cxx {
         }
         void quad_reinit(const N_Vector yQ0){
             int flag = CVodeQuadReInit(this->mem, yQ0);
-            this->nq = NV_LENGTH_S(yQ0);
             if (flag == CV_MEM_FAIL)
                 throw std::bad_alloc(); // "CVodeQuadInit failed (allocation failed)."
             else if (flag == CV_NO_QUAD)
@@ -298,7 +298,41 @@ namespace cvodes_cxx {
             SVectorV atol_(atol.size(), atol.data());
             set_tol(rtol, atol_.n_vec);
         }
-
+        void set_quad_err_con(bool errconQ){ // quad_init must have been called
+            int flag = CVodeSetQuadErrCon(this->mem, errconQ ? SUNTRUE : SUNFALSE);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+        }
+        void set_quad_tol(realtype reltolQ, realtype abstolQ){
+            int flag = CVodeQuadSStolerances(this->mem, reltolQ, abstolQ);
+            switch(flag){
+            case CV_ILL_INPUT:
+                throw std::runtime_error("One of the input tolerances was negative");
+            case CV_NO_QUAD:
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            default:
+                check_flag(flag);
+            }
+        }
+        void set_quad_tol(realtype reltolQ, const N_Vector abstolQ){
+            int flag = CVodeQuadSVtolerances(this->mem, reltolQ, abstolQ);
+            switch(flag){
+            case CV_ILL_INPUT:
+                throw std::runtime_error("One of the input tolerances was negative");
+            case CV_NO_QUAD:
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            default:
+                check_flag(flag);
+            }
+        }
+        void set_quad_tol(realtype reltolQ, SVectorV &abstolQ){
+            set_quad_tol(reltolQ, abstolQ.n_vec);
+        }
+        void set_quad_tol(realtype reltolQ, std::vector<realtype> &abstolQ){
+            SVectorV atol_(abstolQ.size(), abstolQ.data());
+            set_quad_tol(reltolQ, atol_.n_vec);
+        }
         // set stop time
         void set_stop_time(realtype tend){
             int status = CVodeSetStopTime(this->mem, tend);
@@ -635,12 +669,27 @@ namespace cvodes_cxx {
             check_flag(flag);
             return res;
         }
-
         long int get_n_root_evals() const {
             long int res=0;
             int flag = CVodeGetNumGEvals(this->mem, &res);
             check_flag(flag);
             return res;
+        }
+        long int get_quad_num_rhs_evals() const {
+            long int nfQevals = 0;
+            int flag = CVodeGetQuadNumRhsEvals(this->mem, &nfQevals);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+            return nfQevals;
+        }
+        long int get_quad_num_err_test_fails() const {
+            long int nQetfails = 0;
+            int flag = CVodeGetQuadNumErrTestFails(this->mem, &nQetfails);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+            return nQetfails;
         }
         long int get_n_lin_solv_setups() const {
             long int res=0;
@@ -760,6 +809,7 @@ namespace cvodes_cxx {
                      get_dx_max_fn get_dx_max = get_dx_max_fn(),
                      int tidx=0
                      ){
+            std::cout << "ny= " << ny << ", nq=" << nq << std::endl;
             realtype cur_t;
             int status;
             SVector y {ny};

@@ -206,10 +206,18 @@ namespace cvodes_anyode {
         if (nq > 0){
             std::vector<realtype> yQ0(nq, 0);
             integr.quad_init(quads_cb<OdeSys>, yQ0);
+            if (atol.size() == (size_t)(ny + nq)){
+                sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny);
+                integr.set_quad_err_con(true);
+                integr.set_quad_tol(rtol, quad_atol);
+            } else if (atol.size() == 1) {
+                integr.set_quad_err_con(true);
+                integr.set_quad_tol(rtol, atol[0]);
+            }
         }
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
-        } else if (atol.size() != (size_t)ny) {
+        } else if (atol.size() != (size_t)ny and atol.size() != (size_t)(ny+nq)) {
             throw std::runtime_error("atol of incorrect length");
         } else {
             integr.set_tol(rtol, atol);
@@ -359,7 +367,7 @@ namespace cvodes_anyode {
 
     template <class OdeSys>
     int simple_predefined(OdeSys * const odesys,
-                          const std::vector<realtype> atol,
+                          std::vector<realtype> atol,
                           const realtype rtol,
                           const LMM lmm,
                           const realtype * const y0,

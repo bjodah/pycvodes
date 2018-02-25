@@ -19,8 +19,8 @@ int rhs_cb3(double /* t */, N_Vector y, N_Vector f, void * /* user_data */){
 }
 
 
-TEST_CASE( "methods", "[CVodeIntegrator]" ) {
-    auto intgr = cvodes_cxx::CVodeIntegrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+TEST_CASE( "methods", "[Integrator]" ) {
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
     std::vector<double> y(1, 1.0);
     double t, yref;
     SVector yout(1);
@@ -37,9 +37,9 @@ double get_dx_max(double /* x */, const double * const /* y */){
     return 1e-3;
 }
 
-TEST_CASE( "adaptive", "[CVodeIntegrator]" ) {
+TEST_CASE( "adaptive", "[Integrator]" ) {
     const int ny = 1;
-    auto intgr = cvodes_cxx::CVodeIntegrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
     std::vector<int> root_indices;
     int td = 1;  // trailing dimension
     double * xyout = (double*)malloc(td*(ny+1)*sizeof(double));
@@ -75,9 +75,9 @@ double get_dx_max2(double /* x */, const double * const /* y */){
 }
 
 
-TEST_CASE( "predefined", "[CVodeIntegrator]" ) {
+TEST_CASE( "predefined", "[Integrator]" ) {
     const int ny = 1;
-    auto intgr = cvodes_cxx::CVodeIntegrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
     std::vector<double> y(1, 1.0);
     std::vector<int> root_indices;
     bool return_on_error=false;
@@ -103,9 +103,9 @@ TEST_CASE( "predefined", "[CVodeIntegrator]" ) {
     }
 }
 
-TEST_CASE( "predefined_autorestart", "[CVodeIntegrator]" ) {
+TEST_CASE( "predefined_autorestart", "[Integrator]" ) {
     const int ny = 3;
-    auto intgr = cvodes_cxx::CVodeIntegrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
     std::vector<double> y(ny, 1.0);
     std::vector<int> root_indices;
     bool return_on_error=false;

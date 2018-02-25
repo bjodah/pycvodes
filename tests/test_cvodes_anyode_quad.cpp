@@ -39,11 +39,11 @@ struct OdeSys : public AnyODE::OdeSysBase<double> {
 };
 
 double integral_A_t_exp_minus_k_t(double A, double k, double t){
-    return A/(k*k)*(1 - (A*t/k + A)*exp(-k*t));
+    return A/pow(k, 2) + (-A*pow(k, 2)*t - A*k)*exp(-k*t)/pow(k, 3);
 }
 
 double integral_A_exp_minus_k_t__squared(double A, double k, double t){
-    return A*A/(2*k)*(1 - exp(-2*k*t));
+    return (1.0L/2.0L)*pow(A, 2)/k - 1.0L/2.0L*pow(A, 2)*exp(-2*k*t)/k;
 }
 
 TEST_CASE( "quadrature", "[simple_adaptive]" ) {
@@ -74,18 +74,17 @@ TEST_CASE( "quadrature", "[simple_adaptive]" ) {
     int autorestart=2;
 
     auto nout = cvodes_anyode::simple_adaptive(
-        &xyqout, &td, &odesys, {1e-8}, 1e-8, cvodes_cxx::LMM::BDF, tend, root_indices,
+        &xyqout, &td, &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, tend, root_indices,
         mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
         maxl, eps_lin, nderiv, return_on_root, autorestart);
 
     for (int i=0; i < nout; ++i){
         double t = xyqout[i*4];
-        REQUIRE( std::abs(xyqout[i*4+1] - 42*exp(-k*t)) < 1e-8 );
-        double q0 = integral_A_t_exp_minus_k_t(A, k, t);
-        double q1 = integral_A_exp_minus_k_t__squared(A, k, t);
-        std::cout << i << "\n";
-        REQUIRE( std::abs(xyqout[i*4+2] - q0) < 1e-8 );
-        REQUIRE( std::abs(xyqout[i*4+3] - q1) < 1e-8 );
+        REQUIRE( std::abs(xyqout[i*4+1] - 42*exp(-k*t)) < 1e-6 );
+        double q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
+        double q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
+        REQUIRE( std::abs(xyqout[i*4+2] - q0) < 1e-4 );
+        REQUIRE( std::abs(xyqout[i*4+3] - q1) < 1e-4 );
     }
     REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
     REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
