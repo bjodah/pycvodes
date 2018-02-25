@@ -43,7 +43,7 @@ cdef _reshape_roots(cnp.ndarray[cnp.float64_t, ndim=1] roots, int ny):
     return out[:, 0], out[:, 1:]
 
 
-def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, double xend, atol,
+def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, double xend, atol,
              double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
              double dx_max=0.0, quads=None, roots=None, cb_kwargs=None, int lband=-1, int uband=-1,
              int nquads=0, int nroots=0,
@@ -53,7 +53,8 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
              bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500):
     cdef:
-        int ny = y0.shape[y0.ndim - 1]
+        int nyq = yq0.shape[yq0.ndim - 1]
+        int ny = nyq - nquads
         bool with_jacobian = jac is not None
         PyOdeSys * odesys
         vector[int] root_indices
@@ -68,16 +69,18 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
     else:
         for at in atol:
             atol_vec.push_back(at)
+    rhs(0, yq0[..., :ny], np.empty(ny))  # fail early if rhs does not work
+
 
     if method.lower() in requires_jac and jac is None:
         warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     if np.isinf([x0, xend]).any(): raise ValueError("+/-Inf found in x0/xend")
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
-    if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
-    if np.isnan(y0).any(): raise ValueError("NaN found in y0")
+    if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
+    if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
     xyqout[0] = x0
     for i in range(ny):
-        xyqout[1+i] = y0[i]
+        xyqout[1+i] = yq0[i]
     for i in range(nquads):
         xyqout[1+ny*(nderiv+1)+i] = 0.0;
 
@@ -126,26 +129,27 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] y0, double x0, doubl
 
 
 def predefined(rhs, jac,
-               cnp.ndarray[cnp.float64_t, mode='c'] y0,
+               cnp.ndarray[cnp.float64_t, mode='c'] yq0,
                cnp.ndarray[cnp.float64_t, ndim=1] xout, atol,
                double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
-               double dx_max=0.0, roots=None, cb_kwargs=None, int lband=-1, int uband=-1, int nroots=0,
-               str iter_type="undecided", int linear_solver=0, const int maxl=0,
+               double dx_max=0.0, quads=None, roots=None, cb_kwargs=None, int lband=-1, int uband=-1,
+               int nquads=0, int nroots=0, str iter_type="undecided", int linear_solver=0, const int maxl=0,
                const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
                bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False):
     cdef:
-        int ny = y0.shape[y0.ndim - 1]
-        cnp.ndarray[cnp.float64_t, ndim=3] yout = np.empty((xout.size, nderiv+1, ny))
+        int nyq = yq0.shape[yq0.ndim - 1]
+        int ny = nyq - nquads
+        cnp.ndarray[cnp.float64_t, ndim=3] yqout = np.empty((xout.size, nderiv+1, nyq))
         bool with_jacobian = jac is not None
         int nreached
-        int nquads = 0  # only supported in adaptive right now
-        quads = None    # only supported in adaptive right now
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] roots_output
         vector[double] atol_vec
+    rhs(0, yq0[..., :ny], np.empty(ny))  # fail early if rhs does not work
+
 
     if isinstance(atol, float):
         atol_vec.push_back(atol)
@@ -157,9 +161,9 @@ def predefined(rhs, jac,
         warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
     if np.isinf(xout).any(): raise ValueError("+/-Inf found in xout")
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
-    if np.isinf(y0).any(): raise ValueError("+/-Inf found in y0")
-    if np.isnan(y0).any(): raise ValueError("NaN found in y0")
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac,  <PyObject *>quads, <PyObject *>roots,
+    if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
+    if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>quads, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
@@ -170,17 +174,20 @@ def predefined(rhs, jac,
 
     try:
         nreached = simple_predefined[PyOdeSys](
-            odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &y0[0],
-            xout.size, &xout[0], <double *>yout.data, root_indices, roots_output, nsteps,
+            odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &yq0[0],
+            xout.size, &xout[0], <double *>yqout.data, root_indices, roots_output, nsteps,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error)
         info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size else True)
         info['nreached'] = nreached
         info['atol'] = atol_vec
         info['rtol'] = rtol
+        if nquads > 0:
+            info['quads'] = yqout[:, 0, ny:]
         if nroots > 0:
             info['root_indices'] = root_indices
             info['roots_output'] = _reshape_roots(np.asarray(roots_output), ny)
+        yout = yqout[:, :, :ny]
         return yout.reshape((xout.size, ny)) if nderiv == 0 else yout, info
     finally:
         del odesys

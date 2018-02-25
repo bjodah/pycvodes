@@ -46,8 +46,7 @@ double integral_A_exp_minus_k_t__squared(double A, double k, double t){
     return (1.0L/2.0L)*pow(A, 2)/k - 1.0L/2.0L*pow(A, 2)*exp(-2*k*t)/k;
 }
 
-TEST_CASE( "quadrature", "[simple_adaptive]" ) {
-    std::vector<double> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
+TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     auto odesys = OdeSys();
     int td = 1;
     double * xyqout = (double*)malloc(td*(odesys.get_ny()+odesys.get_nquads()+1)*sizeof(double));
@@ -91,4 +90,38 @@ TEST_CASE( "quadrature", "[simple_adaptive]" ) {
     REQUIRE( nout > 1 );
     REQUIRE( nout < 997 );
     free(xyqout);
+}
+
+TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
+    auto odesys = OdeSys();
+    int nt = 37;
+    double t0=0, tend=4.0;
+    std::vector<double> tout(nt);
+    std::vector<double> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
+    for (int i=0; i<nt; ++i){
+        tout[i] = t0 + i*(tend - t0)/(nt-1);
+    }
+    double A = 42.0;
+    double k = 0.7;
+    yqout[0] = A; // y0
+    yqout[1] = 2.0; // q0
+    yqout[2] = 3.0; // q1
+    std::vector<int> root_indices;
+    std::vector<double> root_out;
+
+    auto nout = cvodes_anyode::simple_predefined(
+        &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
+        yqout.data(), root_indices, root_out);
+    for (int i=0; i < nt; ++i){
+        double t = tout[i];
+        REQUIRE( std::abs(yqout[i*3] - 42*exp(-k*t)) < 1e-6 );
+        double q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
+        double q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
+        REQUIRE( std::abs(yqout[i*3+1] - q0) < 1e-4 );
+        REQUIRE( std::abs(yqout[i*3+2] - q1) < 1e-4 );
+    }
+    REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
+    REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
+    REQUIRE( nout == nt );
+
 }
