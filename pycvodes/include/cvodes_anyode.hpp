@@ -8,7 +8,7 @@
 
 namespace cvodes_anyode {
 
-    using cvodes_cxx::CVodeIntegrator;
+    using cvodes_cxx::Integrator;
     using cvodes_cxx::LMM;
     using cvodes_cxx::IterType;
     using cvodes_cxx::IterLinSolEnum;
@@ -43,6 +43,15 @@ namespace cvodes_anyode {
         AnyODE::Status status = odesys.roots(t, NV_DATA_S(y), gout);
         if (status == AnyODE::Status::recoverable_error)
             throw std::runtime_error("There are only unrecoverable errors for roots().");
+        return handle_status_(status);
+    }
+
+    template<class OdeSys>
+    int quads_cb(realtype t, N_Vector y, N_Vector yQdot, void *user_data){
+        auto& odesys = *static_cast<OdeSys*>(user_data);
+        AnyODE::Status status = odesys.quads(t, NV_DATA_S(y), NV_DATA_S(yQdot));
+        if (status == AnyODE::Status::recoverable_error)
+            throw std::runtime_error("There are only unrecoverable errors for quads().");
         return handle_status_(status);
     }
 
@@ -164,27 +173,28 @@ namespace cvodes_anyode {
     }
 
     template <class OdeSys>
-    CVodeIntegrator get_integrator(OdeSys * odesys,
-                                   const std::vector<realtype> atol,
-                                   const realtype rtol,
-                                   const LMM lmm,
-                                   const realtype * const y0,
-                                   const realtype t0,
-                                   const long int mxsteps=0,
-                                   const realtype dx0=0.0,
-                                   const realtype dx_min=0.0,
-                                   const realtype dx_max=0.0,
-                                   const bool with_jacobian=false,
-                                   const IterType iter_type=IterType::Newton,
-                                   const int linear_solver=0,
-                                   const int maxl=0,
-                                   const realtype eps_lin=0.0,
-                                   const bool with_jtimes=false
-                                   )
+    Integrator get_integrator(OdeSys * odesys,
+                              std::vector<realtype> &atol,
+                              const realtype rtol,
+                              const LMM lmm,
+                              const realtype * const y0,
+                              const realtype t0,
+                              const long int mxsteps=0,
+                              const realtype dx0=0.0,
+                              const realtype dx_min=0.0,
+                              const realtype dx_max=0.0,
+                              const bool with_jacobian=false,
+                              const IterType iter_type=IterType::Newton,
+                              const int linear_solver=0,
+                              const int maxl=0,
+                              const realtype eps_lin=0.0,
+                              const bool with_jtimes=false
+        )
     {
         const int ny = odesys->get_ny();
         const int nroots = odesys->get_nroots();
-        CVodeIntegrator integr {lmm, iter_type};
+        const int nq = odesys->get_nquads();
+        Integrator integr {lmm, iter_type};
         integr.autonomous_exprs = odesys->autonomous_exprs;
         integr.record_order = odesys->record_order;
         integr.record_fpe = odesys->record_fpe;
@@ -193,9 +203,21 @@ namespace cvodes_anyode {
         integr.init(rhs_cb<OdeSys>, t0, y0, ny);
         if (nroots > 0)
             integr.root_init(nroots, roots_cb<OdeSys>);
+        if (nq > 0){
+            std::vector<realtype> yQ0(nq, 0);
+            integr.quad_init(quads_cb<OdeSys>, yQ0);
+            if (atol.size() == (size_t)(ny + nq)){
+                sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny);
+                integr.set_quad_err_con(true);
+                integr.set_quad_tol(rtol, quad_atol);
+            } else if (atol.size() == 1) {
+                integr.set_quad_err_con(true);
+                integr.set_quad_tol(rtol, atol[0]);
+            }
+        }
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
-        } else if (atol.size() != (size_t)ny) {
+        } else if (atol.size() != (size_t)ny and atol.size() != (size_t)(ny+nq)) {
             throw std::runtime_error("atol of incorrect length");
         } else {
             integr.set_tol(rtol, atol);
@@ -255,10 +277,10 @@ namespace cvodes_anyode {
 
     template <class OdeSys>
     int
-    simple_adaptive(realtype ** xyout,
-                    int * td,  // trailing dimension of xyout ( == len(x) )
+    simple_adaptive(realtype ** xyqout,
+                    int * td,  // trailing dimension of xyqout ( == len(x) )
                     OdeSys * const odesys,
-                    const std::vector<realtype> atol,
+                    std::vector<realtype> atol,
                     const realtype rtol,
                     const LMM lmm,
                     const realtype xend,
@@ -292,12 +314,13 @@ namespace cvodes_anyode {
             iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
         if (linear_solver == 0)
             linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
-        realtype x0 = (*xyout)[0];
-        realtype * y0 = (*xyout) + 1;
+        realtype x0 = (*xyqout)[0];
+        realtype * y0 = (*xyqout) + 1;
         if (dx0 == 0.0)
             dx0 = odesys->get_dx0(x0, y0);
-        auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
-                                             with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
+        auto integr = get_integrator<OdeSys>(
+            odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
+            with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
         odesys->integrator = static_cast<void*>(&integr);
 
         odesys->last_integration_info.clear();
@@ -313,7 +336,7 @@ namespace cvodes_anyode {
         auto t_start = std::chrono::high_resolution_clock::now();
 
         int result = integr.adaptive(
-            xyout, td, xend, nderiv, root_indices, return_on_root, autorestart,
+            xyqout, td, xend, nderiv, root_indices, return_on_root, autorestart,
             return_on_error, (
                 (odesys->use_get_dx_max) ?
                      static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(
@@ -344,7 +367,7 @@ namespace cvodes_anyode {
 
     template <class OdeSys>
     int simple_predefined(OdeSys * const odesys,
-                          const std::vector<realtype> atol,
+                          std::vector<realtype> atol,
                           const realtype rtol,
                           const LMM lmm,
                           const realtype * const y0,

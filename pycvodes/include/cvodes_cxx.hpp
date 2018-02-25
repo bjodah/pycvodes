@@ -80,6 +80,7 @@ namespace cvodes_cxx {
     }};
     //using sundials_cxx::nvector_serial::N_Vector; // native sundials vector
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
+    using SVectorV = sundials_cxx::nvector_serial::VectorView; // view of serial vector
     //using get_dx_max_fn = double(double, const double * const) *;
     using get_dx_max_fn = std::function<double(double, const double * const)>;
     // Wrapper for Revision 4306 of cvodes.c
@@ -122,7 +123,7 @@ namespace cvodes_cxx {
         }
     }
 
-    class CVodeIntegrator{ // Thin wrapper class of CVode in CVODES
+    class Integrator{ // Thin wrapper class of CVode in CVODES
         FILE *errfp = nullptr;
 #if SUNDIALS_VERSION_MAJOR >= 3
         SUNMatrix A_ = nullptr;
@@ -133,17 +134,18 @@ namespace cvodes_cxx {
     public:
         void *mem {nullptr};
         long int ny {0};
+        int nq {0};
         int verbosity = 50;  // "50%" -- plenty of room for future tuning.
         bool autonomous_exprs = false;
         bool record_order = false, record_fpe = false, record_steps = false;
         std::vector<int> orders_seen, fpes_seen;
         std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
-        CVodeIntegrator(const LMM lmm, const IterType iter) {
+        Integrator(const LMM lmm, const IterType iter) {
             this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
             if (!this->mem)
                 throw std::bad_alloc(); // "CVodeCreate failed (allocation failed)."
         }
-        ~CVodeIntegrator(){
+        ~Integrator(){
             if (this->mem)
                 CVodeFree(&(this->mem));
             if (this->errfp)
@@ -214,7 +216,35 @@ namespace cvodes_cxx {
             else
                 check_flag(status);
         }
-
+        // Quadrature integartion
+        void quad_init(CVQuadRhsFn fQ, N_Vector yQ0){
+            int flag = CVodeQuadInit(this->mem, fQ, yQ0);
+            this->nq = NV_LENGTH_S(yQ0);
+            if (flag == CV_MEM_FAIL)
+                throw std::bad_alloc(); // "CVodeQuadInit failed (allocation failed)."
+            else
+                check_flag(flag);
+        }
+        void quad_init(CVQuadRhsFn fQ, std::vector<double>& yQ0){
+            SVectorV yQ0_(yQ0.size(), yQ0.data());
+            quad_init(fQ, yQ0_.n_vec);
+        }
+        void quad_reinit(const N_Vector yQ0){
+            int flag = CVodeQuadReInit(this->mem, yQ0);
+            if (flag == CV_MEM_FAIL)
+                throw std::bad_alloc(); // "CVodeQuadInit failed (allocation failed)."
+            else if (flag == CV_NO_QUAD)
+                throw std::runtime_error("CVodeQuadReInit failed (CV_NO_QUAD).");
+            else
+                check_flag(flag);
+        }
+        void quad_reinit(SVectorV& yQ0){
+            quad_reinit(yQ0.n_vec);
+        };
+        void quad_reinit(std::vector<double>& yQ0){
+            SVectorV yQ0_(yQ0.size(), yQ0.data());
+            quad_reinit(yQ0_.n_vec);
+        }
         // Main solver optional input functions
         void set_err_file(FILE * errfp){
             int status = CVodeSetErrFile(this->mem, errfp);
@@ -264,11 +294,45 @@ namespace cvodes_cxx {
             if (status < 0)
                 throw std::runtime_error("CVodeSVtolerances failed.");
         }
-        void set_tol(realtype rtol, std::vector<realtype> atol){
-            SVector atol_(atol.size(), &atol[0]);
+        void set_tol(realtype rtol, std::vector<realtype> &atol){
+            SVectorV atol_(atol.size(), atol.data());
             set_tol(rtol, atol_.n_vec);
         }
-
+        void set_quad_err_con(bool errconQ){ // quad_init must have been called
+            int flag = CVodeSetQuadErrCon(this->mem, errconQ ? SUNTRUE : SUNFALSE);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+        }
+        void set_quad_tol(realtype reltolQ, realtype abstolQ){
+            int flag = CVodeQuadSStolerances(this->mem, reltolQ, abstolQ);
+            switch(flag){
+            case CV_ILL_INPUT:
+                throw std::runtime_error("One of the input tolerances was negative");
+            case CV_NO_QUAD:
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            default:
+                check_flag(flag);
+            }
+        }
+        void set_quad_tol(realtype reltolQ, const N_Vector abstolQ){
+            int flag = CVodeQuadSVtolerances(this->mem, reltolQ, abstolQ);
+            switch(flag){
+            case CV_ILL_INPUT:
+                throw std::runtime_error("One of the input tolerances was negative");
+            case CV_NO_QUAD:
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            default:
+                check_flag(flag);
+            }
+        }
+        void set_quad_tol(realtype reltolQ, SVectorV &abstolQ){
+            set_quad_tol(reltolQ, abstolQ.n_vec);
+        }
+        void set_quad_tol(realtype reltolQ, std::vector<realtype> &abstolQ){
+            SVectorV atol_(abstolQ.size(), abstolQ.data());
+            set_quad_tol(reltolQ, atol_.n_vec);
+        }
         // set stop time
         void set_stop_time(realtype tend){
             int status = CVodeSetStopTime(this->mem, tend);
@@ -599,20 +663,34 @@ namespace cvodes_cxx {
             return res;
         }
 
-        long int get_n_root_evals() const {
-            long int res=0;
-            int flag = CVodeGetNumGEvals(this->mem, &res);
-            check_flag(flag);
-            return res;
-        }
-
         long int get_n_rhs_evals() const {
             long int res=0;
             int flag = CVodeGetNumRhsEvals(this->mem, &res);
             check_flag(flag);
             return res;
         }
-
+        long int get_n_root_evals() const {
+            long int res=0;
+            int flag = CVodeGetNumGEvals(this->mem, &res);
+            check_flag(flag);
+            return res;
+        }
+        long int get_quad_num_rhs_evals() const {
+            long int nfQevals = 0;
+            int flag = CVodeGetQuadNumRhsEvals(this->mem, &nfQevals);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+            return nfQevals;
+        }
+        long int get_quad_num_err_test_fails() const {
+            long int nQetfails = 0;
+            int flag = CVodeGetQuadNumErrTestFails(this->mem, &nQetfails);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("Quadrature integation has not been initialized");
+            check_flag(flag);
+            return nQetfails;
+        }
         long int get_n_lin_solv_setups() const {
             long int res=0;
             int flag = CVodeGetNumLinSolvSetups(this->mem, &res);
@@ -664,27 +742,45 @@ namespace cvodes_cxx {
             cvdls_check_flag(flag);
             return res;
         }
-
+        int step(realtype tout, SVector &yout, realtype *tret, Task task){
+            return CVode(this->mem, tout, yout.n_vec, tret, static_cast<int>(task));
+        }
         void get_dky(realtype t, int k, SVector &dky) const {
             int flag = CVodeGetDky(this->mem, t, k, dky.n_vec);
             switch(flag){
-            case CV_SUCCESS:
-                // CVodeGetDky succeeded.
-                break;
             case CV_BAD_K:
                 throw std::runtime_error("CVodeGetDky failed with (invalid k)");
             case CV_BAD_T:
                 throw std::runtime_error("CVodeGetDky failed with (invalid t)");
             case CV_BAD_DKY:
                 throw std::runtime_error("CVodeGetDky failed with (dky.n_vec was NULL)");
-            case CV_MEM_NULL:
-                throw std::runtime_error("CVodeGetDky failed with (cvode_mem was NULL)");
             default:
-                throw std::runtime_error("Undhandled flag in get_dky()");
+                check_flag(flag);
             }
         }
-        int step(realtype tout, SVector &yout, realtype *tret, Task task){
-            return CVode(this->mem, tout, yout.n_vec, tret, static_cast<int>(task));
+        void get_quad(realtype * const tret, N_Vector yQ){
+            int flag = CVodeGetQuad(this->mem, tret, yQ);
+            if (flag == CV_NO_QUAD)
+                throw std::runtime_error("CVodeGetQuad failed (quadrature integration not initialized)");
+            else if (flag == CV_BAD_DKY)
+                throw std::runtime_error("CVodeGetQuad failed (yQ is NULL)");
+            else
+                check_flag(flag);
+        }
+        void get_quad_dky(realtype t, int k, N_Vector dkyQ){
+            int flag = CVodeGetQuadDky(this->mem, t, k, dkyQ);
+            switch(flag){
+            case CV_NO_QUAD:
+                throw std::runtime_error("CVodeGetQuadDky failed (CV_NO_QUAD)");
+            case CV_BAD_DKY:
+                throw std::runtime_error("CVodeGetQuadDky failed (BAD_DKY)");
+            case CV_BAD_K:
+                throw std::runtime_error("CVodeGetQuadDky failed (BAD_K)");
+            case CV_BAD_T:
+                throw std::runtime_error("CVodeGetQuadDky failed (BAD_T)");
+            default:
+                check_flag(flag);
+            }
         }
         void call_rhs(realtype t, SVector y, SVector &ydot){
             CVodeMem cv_mem = (CVodeMem) this->mem;
@@ -697,11 +793,13 @@ namespace cvodes_cxx {
                                      << get_current_time() << ", h=" << get_current_step() << "): " <<
                                      CVodeGetReturnFlagName(flag));
         }
-#define xout(ti) (*xyout)[(ny*(nderiv+1)+1)*(ti)]
-#define yout(ti, di, yi) (*xyout)[(ny*(nderiv+1)+1)*(ti) + ny*(di) + yi + 1]
-#define datalen(nt, nd, ny) (((ny)*((nd)+1) + 1)*(nt)*sizeof(realtype))
-        int adaptive(realtype ** xyout, // allocated using malloc (may be realloc:ed)
-                     int * const td, // trailing dimension of xyout
+#define row(ti) (1 + ny*(nderiv+1) + nq)*(ti)
+#define datalen(nt, nd, ny, nq) ((1 + (ny)*((nd)+1) + nq)*(nt)*sizeof(realtype))
+#define xout(ti) (*xyqout)[row(ti)]
+#define yout(ti, di, yi) (*xyqout)[row(ti) + 1 + ny*(di) + yi]
+#define qout(ti, qi) (*xyqout)[row(ti) + 1 + ny*(nderiv+1) + qi]
+        int adaptive(realtype ** xyqout, // allocated using malloc (may be realloc:ed)
+                     int * const td, // trailing dimension of xyqout
                      const realtype xend,
                      const unsigned nderiv,
                      std::vector<int>& root_indices,
@@ -714,14 +812,15 @@ namespace cvodes_cxx {
             realtype cur_t;
             int status;
             SVector y {ny};
+            SVector yQ {nq};
             SVector work {ny};
             long int mxsteps = get_max_num_steps();
             if (*td < 1)
                 throw std::logic_error("Expected td >= 1");
-            if (xyout == nullptr)
-                throw std::logic_error("xyout cannot be a nullptr");
-            if (*xyout == nullptr)
-                throw std::logic_error("xyout cannot point to a nullptr");
+            if (xyqout == nullptr)
+                throw std::logic_error("xyqout cannot be a nullptr");
+            if (*xyqout == nullptr)
+                throw std::logic_error("xyqout cannot point to a nullptr");
             if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
             if (record_steps)
                 steps_seen.push_back(get_current_step());
@@ -734,6 +833,10 @@ namespace cvodes_cxx {
             for (int i=0; i<ny; ++i)
                 y[i] = yout(tidx, 0, i);
             this->reinit(xout(tidx), y);
+            if (nq){
+                auto yQ0 = SVectorV(nq, &qout(tidx, 0));
+                this->quad_reinit(yQ0);
+            }
             if (nderiv >= 1){
                 this->call_rhs(xout(tidx), y, work);
                 for (int i=0; i<ny; ++i)
@@ -751,11 +854,11 @@ namespace cvodes_cxx {
                 if (tidx >= *td){
                     (*td) *= 2;
                     {
-                        void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
-                        if (new_xyout == nullptr){
+                        void * new_xyqout = realloc(*xyqout, datalen(*td, nderiv, ny, nq));
+                        if (new_xyqout == nullptr){
                             throw std::bad_alloc();
                         } else {
-                            *xyout = (realtype *)new_xyout;
+                            *xyqout = (realtype *)new_xyqout;
                         }
                     }
                 }
@@ -793,7 +896,7 @@ namespace cvodes_cxx {
                             const double last_x = xout(tidx - step_back);
                             if (autonomous_exprs)
                                 xout(tidx - step_back) = 0; // allows for smaller step sizes
-                            auto inner = this->adaptive(xyout, td, xend - last_x, nderiv, root_indices,
+                            auto inner = this->adaptive(xyqout, td, xend - last_x, nderiv, root_indices,
                                                         return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
                             if (autonomous_exprs){
                                 for (int i=tidx - step_back; i<=inner; ++i)
@@ -826,17 +929,21 @@ namespace cvodes_cxx {
                     for (int i=0; i<ny; ++i)
                         yout(tidx, di, i) = work[i];
                 }
+                if (nq)
+                    get_quad_dky(cur_t, 0, yQ.n_vec);
+                for (int i=0; i<nq; ++i)
+                    qout(tidx, i) = yQ[i];
                 if (return_on_root && status == CV_ROOT_RETURN)
                     break;
             } while (status != CV_TSTOP_RETURN);
 
-            if (*td > tidx + 1) { // Shrink xyout:
+            if (*td > tidx + 1) { // Shrink xyqout:
                 *td = tidx + 1;
-                void * new_xyout = realloc(*xyout, datalen(*td, nderiv, ny));
-                if (new_xyout == nullptr){
+                void * new_xyqout = realloc(*xyqout, datalen(*td, nderiv, ny, nq));
+                if (new_xyqout == nullptr){
                     throw std::bad_alloc();
                 } else {
-                    *xyout = (realtype *)new_xyout;
+                    *xyqout = (realtype *)new_xyqout;
                 }
             }
             return tidx;
@@ -844,6 +951,7 @@ namespace cvodes_cxx {
 #undef datalen
 #undef xout
 #undef yout
+#undef row
         int predefined(const long int nt,
                        const realtype * const tout,
                        const realtype * const y0,
@@ -945,7 +1053,7 @@ namespace cvodes_cxx {
     };
 
     void set_integration_info(std::unordered_map<std::string, int>& info,
-                              const CVodeIntegrator& integrator,
+                              const Integrator& integrator,
                               IterType iter_type, int linear_solver){
         info["n_steps"] = integrator.get_n_steps();
         info["n_root_evals"] = integrator.get_n_root_evals();

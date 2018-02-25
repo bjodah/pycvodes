@@ -13,11 +13,12 @@ OPENMP_LIB ?= -lgomp
 
 .PHONY: test clean
 
-TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case
+TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case
 
-test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case test_cvodes_anyode_parallel
+test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case test_cvodes_anyode_parallel
 	./test_cvodes_anyode --abortx 1
 	./test_cvodes_anyode_autorestart --abortx 1
+	./test_cvodes_anyode_quad --abortx 1
 	./test_cvodes_anyode_svd --abortx 1
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1

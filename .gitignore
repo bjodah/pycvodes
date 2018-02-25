@@ -13,13 +13,4 @@ pycvodes/_cvodes.cpp
 htmlcov/
 **/.ipynb_checkpoints/
 **.egg-info/
-tests/catch.hpp
-tests/test_cvodes_anyode
-tests/test_cvodes_cxx
-tests/test_sundials_cxx
-tests/test_cvodes_anyode_parallel
-tests/_cvodes_anyode.cpp
-tests/test_cvodes_anyode_autorestart
-tests/test_cvodes_anyode_svd
-tests/test_tough_case
 .eggs/
