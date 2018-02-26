@@ -209,7 +209,7 @@ namespace cvodes_anyode {
             if (atol.size() == (size_t)(ny + nq)){
                 sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny);
                 integr.set_quad_err_con(true);
-                integr.set_quad_tol(rtol, quad_atol);
+                integr.set_quad_tol(rtol, quad_atol.n_vec);
             } else if (atol.size() == 1) {
                 integr.set_quad_err_con(true);
                 integr.set_quad_tol(rtol, atol[0]);
