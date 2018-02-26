@@ -226,7 +226,7 @@ namespace cvodes_cxx {
                 check_flag(flag);
         }
         void quad_init(CVQuadRhsFn fQ, std::vector<double>& yQ0){
-            SVectorV yQ0_(yQ0.size(), yQ0.data());
+            SVector yQ0_(yQ0.size(), yQ0.data());
             quad_init(fQ, yQ0_.n_vec);
         }
         void quad_reinit(const N_Vector yQ0){
@@ -238,11 +238,11 @@ namespace cvodes_cxx {
             else
                 check_flag(flag);
         }
-        void quad_reinit(SVectorV& yQ0){
+        void quad_reinit(SVector& yQ0){
             quad_reinit(yQ0.n_vec);
         };
         void quad_reinit(std::vector<double>& yQ0){
-            SVectorV yQ0_(yQ0.size(), yQ0.data());
+            SVector yQ0_(yQ0.size(), yQ0.data());
             quad_reinit(yQ0_.n_vec);
         }
         // Main solver optional input functions
@@ -295,7 +295,7 @@ namespace cvodes_cxx {
                 throw std::runtime_error("CVodeSVtolerances failed.");
         }
         void set_tol(realtype rtol, std::vector<realtype> &atol){
-            SVectorV atol_(atol.size(), atol.data());
+            SVector atol_(atol.size(), atol.data());
             set_tol(rtol, atol_.n_vec);
         }
         void set_quad_err_con(bool errconQ){ // quad_init must have been called
@@ -326,11 +326,11 @@ namespace cvodes_cxx {
                 check_flag(flag);
             }
         }
-        void set_quad_tol(realtype reltolQ, SVectorV &abstolQ){
-            set_quad_tol(reltolQ, abstolQ.n_vec);
-        }
+        // void set_quad_tol(realtype reltolQ, SVectorV &abstolQ){
+        //     set_quad_tol(reltolQ, abstolQ.n_vec);
+        // }
         void set_quad_tol(realtype reltolQ, std::vector<realtype> &abstolQ){
-            SVectorV atol_(abstolQ.size(), abstolQ.data());
+            SVector atol_(abstolQ.size(), abstolQ.data());
             set_quad_tol(reltolQ, atol_.n_vec);
         }
         // set stop time
@@ -834,7 +834,7 @@ namespace cvodes_cxx {
                 y[i] = yout(tidx, 0, i);
             this->reinit(xout(tidx), y);
             if (nq){
-                auto yQ0 = SVectorV(nq, &qout(tidx, 0));
+                auto yQ0 = SVector(nq, &qout(tidx, 0));
                 this->quad_reinit(yQ0);
             }
             if (nderiv >= 1){
@@ -974,7 +974,7 @@ namespace cvodes_cxx {
                 y[i] = yq0[i];
             this->reinit(tout[0], y);
             if (nq){
-                auto yQ0 = SVectorV(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
+                auto yQ0 = SVector(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
                 this->quad_reinit(yQ0);
             }
             if (record_order)

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <functional>
+#include <memory>
 
 #include "anyode/anyode.hpp"
 #include "cvodes_cxx.hpp"
@@ -173,28 +174,29 @@ namespace cvodes_anyode {
     }
 
     template <class OdeSys>
-    Integrator get_integrator(OdeSys * odesys,
-                              std::vector<realtype> &atol,
-                              const realtype rtol,
-                              const LMM lmm,
-                              const realtype * const yq0,
-                              const realtype t0,
-                              const long int mxsteps=0,
-                              const realtype dx0=0.0,
-                              const realtype dx_min=0.0,
-                              const realtype dx_max=0.0,
-                              const bool with_jacobian=false,
-                              const IterType iter_type=IterType::Newton,
-                              const int linear_solver=0,
-                              const int maxl=0,
-                              const realtype eps_lin=0.0,
-                              const bool with_jtimes=false
+    auto get_integrator(OdeSys * odesys,
+                        std::vector<realtype> &atol,
+                        const realtype rtol,
+                        const LMM lmm,
+                        const realtype * const yq0,
+                        const realtype t0,
+                        const long int mxsteps=0,
+                        const realtype dx0=0.0,
+                        const realtype dx_min=0.0,
+                        const realtype dx_max=0.0,
+                        const bool with_jacobian=false,
+                        const IterType iter_type=IterType::Newton,
+                        const int linear_solver=0,
+                        const int maxl=0,
+                        const realtype eps_lin=0.0,
+                        const bool with_jtimes=false
         )
     {
         const int ny = odesys->get_ny();
         const int nroots = odesys->get_nroots();
         const int nq = odesys->get_nquads();
-        Integrator integr {lmm, iter_type};
+        auto integr_ptr = std::make_unique<Integrator>(lmm, iter_type);
+        auto &integr = *integr_ptr;
         integr.autonomous_exprs = odesys->autonomous_exprs;
         integr.record_order = odesys->record_order;
         integr.record_fpe = odesys->record_fpe;
@@ -209,7 +211,7 @@ namespace cvodes_anyode {
             if (atol.size() == (size_t)(ny + nq)){
                 sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny);
                 integr.set_quad_err_con(true);
-                integr.set_quad_tol(rtol, quad_atol);
+                integr.set_quad_tol(rtol, quad_atol.n_vec);
             } else if (atol.size() == 1) {
                 integr.set_quad_err_con(true);
                 integr.set_quad_tol(rtol, atol[0]);
@@ -272,7 +274,7 @@ namespace cvodes_anyode {
                     throw std::runtime_error("Unknown linear_solver.");
             }
         }
-        return integr;
+        return integr_ptr;
     }
 
     template <class OdeSys>
@@ -321,7 +323,8 @@ namespace cvodes_anyode {
         auto integr = get_integrator<OdeSys>(
             odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
             with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
-        odesys->integrator = static_cast<void*>(&integr);
+
+        odesys->integrator = static_cast<void*>(integr.get());
 
         odesys->last_integration_info.clear();
         odesys->last_integration_info_dbl.clear();
@@ -335,7 +338,7 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        int result = integr.adaptive(
+        int result = integr->adaptive(
             xyqout, td, xend, nderiv, root_indices, return_on_root, autorestart,
             return_on_error, (
                 (odesys->use_get_dx_max) ?
@@ -352,13 +355,13 @@ namespace cvodes_anyode {
                 std::chrono::high_resolution_clock::now() - t_start).count();
 
         if (odesys->record_order)
-            odesys->last_integration_info_vecint["orders"] = integr.orders_seen;
+            odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
         if (odesys->record_fpe)
-            odesys->last_integration_info_vecint["fpes"] = integr.fpes_seen;
+            odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
         if (odesys->record_steps)
-            odesys->last_integration_info_vecdbl["steps"] = integr.steps_seen;
+            odesys->last_integration_info_vecdbl["steps"] = integr->steps_seen;
 
-        cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
+        cvodes_cxx::set_integration_info(odesys->last_integration_info, *integr,
                                          iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
@@ -407,7 +410,7 @@ namespace cvodes_anyode {
             dx0 = odesys->get_dx0(xout[0], yq0);
         auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, yq0, xout[0], mxsteps, dx0, dx_min, dx_max,
                                              with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
-        odesys->integrator = static_cast<void*>(&integr);
+        odesys->integrator = static_cast<void*>(integr.get());
 
         odesys->last_integration_info.clear();
         odesys->last_integration_info_dbl.clear();
@@ -420,7 +423,7 @@ namespace cvodes_anyode {
         std::time_t cput0 = std::clock();
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        auto nreached = integr.predefined(
+        auto nreached = integr->predefined(
 	    nout, xout, yq0, yqout, nderiv, root_indices, root_out, autorestart, return_on_error,
             ((odesys->use_get_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
 	     : cvodes_cxx::get_dx_max_fn()));
@@ -430,11 +433,11 @@ namespace cvodes_anyode {
                 std::chrono::high_resolution_clock::now() - t_start).count();
 
         if (odesys->record_order)
-            odesys->last_integration_info_vecint["orders"] = integr.orders_seen;
+            odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
         if (odesys->record_fpe)
-            odesys->last_integration_info_vecint["fpes"] = integr.fpes_seen;
+            odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
 
-        cvodes_cxx::set_integration_info(odesys->last_integration_info, integr,
+        cvodes_cxx::set_integration_info(odesys->last_integration_info, *integr,
                                          iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;

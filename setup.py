@@ -51,7 +51,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
             os.path.join('external', 'anyode', 'cython_def')
         ])
     ext_modules[0].language = 'c++'
-    ext_modules[0].extra_compile_args = ['-std=c++11']
+    ext_modules[0].extra_compile_args = ['-std=c++14']
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
     ext_modules[0].libraries += env['LAPACK'].split(',') + env['SUNDIALS_LIBS'].split(',')
