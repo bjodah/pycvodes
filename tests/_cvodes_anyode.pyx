@@ -1,6 +1,6 @@
 # -*- coding: utf-8; mode: cython -*-
 # distutils: language = c++
-# distutils: extra_compile_args = ['-std=c++11']
+# distutils: extra_compile_args = ['-std=c++14']
 
 from libc.stdlib cimport malloc
 from libcpp.vector cimport vector
