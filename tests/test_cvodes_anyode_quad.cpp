@@ -76,6 +76,7 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
         &xyqout, &td, &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, tend, root_indices,
         mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
         maxl, eps_lin, nderiv, return_on_root, autorestart);
+    REQUIRE((nout + 1) == td);
 
     for (int i=0; i < nout; ++i){
         double t = xyqout[i*4];
@@ -112,6 +113,8 @@ TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
     auto nout = cvodes_anyode::simple_predefined(
         &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
         yqout.data(), root_indices, root_out);
+    REQUIRE(nout == nt);
+
     for (int i=0; i < nt; ++i){
         double t = tout[i];
         REQUIRE( std::abs(yqout[i*3] - 42*exp(-k*t)) < 1e-6 );
@@ -122,6 +125,4 @@ TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
     }
     REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
     REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
-    REQUIRE( nout == nt );
-
 }
