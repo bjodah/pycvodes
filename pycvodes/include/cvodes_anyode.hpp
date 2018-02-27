@@ -219,10 +219,14 @@ namespace cvodes_anyode {
         }
         if (atol.size() == 1){
             integr.set_tol(rtol, atol[0]);
-        } else if (atol.size() != (size_t)ny and atol.size() != (size_t)(ny+nq)) {
-            throw std::runtime_error("atol of incorrect length");
-        } else {
+        } else if (atol.size() == (size_t)ny) {
             integr.set_tol(rtol, atol);
+        } else if (atol.size() == (size_t)(ny+nq)) {
+            sundials_cxx::nvector_serial::VectorView atol_(ny, atol.data());
+            integr.set_tol(rtol, atol_.n_vec);
+        } else {
+            throw std::runtime_error("atol of incorrect length");
+
         }
         integr.set_init_step(dx0);
         if (dx_min != 0.0)

@@ -290,6 +290,8 @@ namespace cvodes_cxx {
                 throw std::runtime_error("CVodeSStolerances failed.");
         }
         void set_tol(realtype rtol, N_Vector atol){
+            if (NV_LENGTH_S(atol) != ny)
+                throw std::runtime_error("atol of incorrect length");
             int status = CVodeSVtolerances(this->mem, rtol, atol);
             if (status < 0)
                 throw std::runtime_error("CVodeSVtolerances failed.");
@@ -316,6 +318,8 @@ namespace cvodes_cxx {
             }
         }
         void set_quad_tol(realtype reltolQ, const N_Vector abstolQ){
+            if (NV_LENGTH_S(abstolQ) != nq)
+                throw std::runtime_error("abstolQ of incorrect length");
             int flag = CVodeQuadSVtolerances(this->mem, reltolQ, abstolQ);
             switch(flag){
             case CV_ILL_INPUT:

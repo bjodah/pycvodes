@@ -73,7 +73,7 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     int autorestart=2;
 
     auto nout = cvodes_anyode::simple_adaptive(
-        &xyqout, &td, &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, tend, root_indices,
+        &xyqout, &td, &odesys, {1e-10, 1e-11, 1e-10}, 1e-10, cvodes_cxx::LMM::BDF, tend, root_indices,
         mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
         maxl, eps_lin, nderiv, return_on_root, autorestart);
     REQUIRE((nout + 1) == td);
@@ -111,7 +111,7 @@ TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
     std::vector<double> root_out;
 
     auto nout = cvodes_anyode::simple_predefined(
-        &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
+        &odesys, {1e-10, 1e-11, 1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
         yqout.data(), root_indices, root_out);
     REQUIRE(nout == nt);
 
