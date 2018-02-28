@@ -26,6 +26,6 @@ install:
 build: off
 
 test_script:
-    - "conda install --yes --quiet pytest"
+    - "conda install --yes --quiet conda-build pytest"
     - "conda build conda-recipe"
     - "pytest --pyargs pycvodes -ra"
