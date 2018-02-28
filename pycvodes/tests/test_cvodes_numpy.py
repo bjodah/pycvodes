@@ -105,10 +105,14 @@ def test_integrate_predefined(method, forgiveness, banded):
                            atol=forgiveness*atol)
         assert nfo['atol'] == [1e-8, 3e-9, 2e-9] and nfo['rtol'] == 1e-8
         assert nfo['nfev'] > 0
-        assert nfo['time_cpu'] > 1e-9
-        assert nfo['time_wall'] > 1e-9
+        if os.name == 'posix':
+            assert nfo['time_cpu'] > 1e-9
+            assert nfo['time_wall'] > 1e-9
+            assert nfo['time_rhs'] > 1e-9
         if method in requires_jac and j is not None:
             assert nfo['njev'] > 0
+            if os.name == 'posix':
+                assert nfo['time_jac'] > 1e-9
 
 
 def test_integrate_adaptive_tstop0():

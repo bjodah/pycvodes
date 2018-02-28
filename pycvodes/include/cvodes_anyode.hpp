@@ -31,28 +31,37 @@ namespace cvodes_anyode {
 
     template<class OdeSys>
     int rhs_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.record_rhs_xvals)
             odesys.last_integration_info_vecdbl["rhs_xvals"].push_back(t);
         AnyODE::Status status = odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
+        static_cast<Integrator*>(odesys.integrator)->time_rhs += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
     template<class OdeSys>
     int roots_cb(realtype t, N_Vector y, realtype *gout, void *user_data){
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         AnyODE::Status status = odesys.roots(t, NV_DATA_S(y), gout);
         if (status == AnyODE::Status::recoverable_error)
             throw std::runtime_error("There are only unrecoverable errors for roots().");
+        static_cast<Integrator*>(odesys.integrator)->time_roots += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
     template<class OdeSys>
     int quads_cb(realtype t, N_Vector y, N_Vector yQdot, void *user_data){
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         AnyODE::Status status = odesys.quads(t, NV_DATA_S(y), NV_DATA_S(yQdot));
         if (status == AnyODE::Status::recoverable_error)
             throw std::runtime_error("There are only unrecoverable errors for quads().");
+        static_cast<Integrator*>(odesys.integrator)->time_quads += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -76,6 +85,7 @@ namespace cvodes_anyode {
         AnyODE::ignore(N);
 #endif
         AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (odesys.record_jac_xvals)
             odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
@@ -86,6 +96,9 @@ namespace cvodes_anyode {
                                                       SM_DATA_D(Jac), odesys.get_ny()
 #endif
                                                       );
+
+        static_cast<Integrator*>(odesys.integrator)->time_jac += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -104,6 +117,7 @@ namespace cvodes_anyode {
                     void *user_data,
                     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3){
         AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
 #if SUNDIALS_VERSION_MAJOR < 3
         if (odesys.get_mupper() != mupper)
@@ -118,6 +132,8 @@ namespace cvodes_anyode {
         if (odesys.record_jac_xvals)
             odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
         AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac_->data + Jac_->s_mu - Jac_->mu, Jac_->ldim);
+        static_cast<Integrator*>(odesys.integrator)->time_jac += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -127,10 +143,13 @@ namespace cvodes_anyode {
                          N_Vector fy, void *user_data, N_Vector tmp){
         // callback of req. signature wrapping OdeSys method.
         AnyODE::ignore(tmp);
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         AnyODE::Status status = odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
         if (status == AnyODE::Status::recoverable_error)
             throw std::runtime_error("There are only unrecoverable errors for JacTimesVec().");
+        static_cast<Integrator*>(odesys.integrator)->time_jtimes += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -146,12 +165,15 @@ namespace cvodes_anyode {
 #if SUNDIALS_VERSION_MAJOR < 3
         AnyODE::ignore(tmp);  // delta used for iterative methods
 #endif
+        auto t_start = std::chrono::high_resolution_clock::now();
         double * ewt {nullptr};
         auto& odesys = *static_cast<OdeSys*>(user_data);
         if (lr != 1)
             throw std::runtime_error("Only left preconditioning implemented.");
         AnyODE::Status status =  odesys.prec_solve_left(t, NV_DATA_S(y), NV_DATA_S(fy), NV_DATA_S(r),
                                                         NV_DATA_S(z), gamma, delta, ewt);
+        static_cast<Integrator*>(odesys.integrator)->time_prec += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -166,10 +188,13 @@ namespace cvodes_anyode {
 #if SUNDIALS_VERSION_MAJOR < 3
         AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
 #endif
+        auto t_start = std::chrono::high_resolution_clock::now();
         auto& odesys = *static_cast<OdeSys*>(user_data);
         bool jac_recomputed = false;
         AnyODE::Status status = odesys.prec_setup(t, NV_DATA_S(y), NV_DATA_S(fy), jok, jac_recomputed, gamma);
         (*jcurPtr) = (jac_recomputed) ? SUNTRUE : SUNFALSE;
+        static_cast<Integrator*>(odesys.integrator)->time_prec += std::chrono::duration<double>(
+            std::chrono::high_resolution_clock::now() - t_start).count();
         return handle_status_(status);
     }
 
@@ -357,7 +382,12 @@ namespace cvodes_anyode {
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
                 std::chrono::high_resolution_clock::now() - t_start).count();
-
+        odesys->last_integration_info_dbl["time_rhs"] = integr->time_rhs;
+        odesys->last_integration_info_dbl["time_quads"] = integr->time_quads;
+        odesys->last_integration_info_dbl["time_roots"] = integr->time_roots;
+        odesys->last_integration_info_dbl["time_jac"] = integr->time_jac;
+        odesys->last_integration_info_dbl["time_jtimes"] = integr->time_jtimes;
+        odesys->last_integration_info_dbl["time_prec"] = integr->time_prec;
         if (odesys->record_order)
             odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
         if (odesys->record_fpe)
@@ -435,7 +465,12 @@ namespace cvodes_anyode {
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
                 std::chrono::high_resolution_clock::now() - t_start).count();
-
+        odesys->last_integration_info_dbl["time_rhs"] = integr->time_rhs;
+        odesys->last_integration_info_dbl["time_quads"] = integr->time_quads;
+        odesys->last_integration_info_dbl["time_roots"] = integr->time_roots;
+        odesys->last_integration_info_dbl["time_jac"] = integr->time_jac;
+        odesys->last_integration_info_dbl["time_jtimes"] = integr->time_jtimes;
+        odesys->last_integration_info_dbl["time_prec"] = integr->time_prec;
         if (odesys->record_order)
             odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
         if (odesys->record_fpe)
