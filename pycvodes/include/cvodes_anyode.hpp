@@ -135,7 +135,7 @@ namespace cvodes_anyode {
     }
 
     template <typename OdeSys> // Section 4.6.9 Preconditioning in cvs_guide.pdf
-    int jac_prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
+    int prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
                           N_Vector z, realtype gamma, realtype delta, int lr,
                           void *user_data
 #if SUNDIALS_VERSION_MAJOR < 3
@@ -269,7 +269,7 @@ namespace cvodes_anyode {
                 integr.set_iter_eps_lin(eps_lin);
                 if (with_jtimes)
                     integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
-                integr.set_preconditioner(prec_setup_cb<OdeSys>, jac_prec_solve_cb<OdeSys>);
+                integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
                 if (linear_solver == 10 || linear_solver == 11) // GMRES
                     integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
                 else if (linear_solver == 20 or linear_solver == 30) // BiCGStab, TFQMR
