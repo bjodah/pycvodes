@@ -138,6 +138,7 @@ namespace cvodes_cxx {
         int verbosity = 50;  // "50%" -- plenty of room for future tuning.
         bool autonomous_exprs = false;
         bool record_order = false, record_fpe = false, record_steps = false;
+        double time_rhs {0}, time_jac {0}, time_roots {0}, time_quads {0}, time_prec {0}, time_jtimes {0};
         std::vector<int> orders_seen, fpes_seen;
         std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
         Integrator(const LMM lmm, const IterType iter) {
