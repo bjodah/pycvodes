@@ -1,3 +1,9 @@
+v0.10.0
+=======
+- Exposed quadrature integration (quads and get_nquads)
+- Bumped AnyODE version (12)
+- More timing data (time spent in rhs, jac & preconditioners)
+
 v0.9.2
 ======
 - Bump AnyODE version
