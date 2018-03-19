@@ -415,7 +415,7 @@ namespace cvodes_cxx {
             if (A_ == nullptr){
                 if (A_)
                     throw std::runtime_error("matrix already set");
-                A_ = SUNBandMatrix(ny, mupper, mlower, std::min(N-1, mlower+mupper));
+                A_ = SUNBandMatrix(ny, mupper, mlower, mlower+mupper);
                 if (!A_)
                     throw std::runtime_error("SUNDenseMatrix failed.");
             }
