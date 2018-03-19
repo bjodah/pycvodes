@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <iostream>
 
+#include <sundials/sundials_config.h>
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -30,12 +31,16 @@
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 #else
+#if SUNDIALS_PACKAGE_VERSION == 2.7.0
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
 #include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 #define SUNTRUE TRUE
 #define SUNFALSE FALSE
+#else
+#error "Unkown sundials version"
+#endif
 #endif
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
