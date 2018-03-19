@@ -486,7 +486,8 @@ namespace cvodes_cxx {
                 break;
 #endif
             default:
-                throw std::runtime_error(StreamFmt() << "Unknown solver kind: " << solver);
+                throw std::runtime_error(StreamFmt() << "Unknown solver kind: "
+                                         << static_cast<int>(solver));
             }
 #if SUNDIALS_VERSION_MAJOR >= 3
             flag = CVSpilsSetLinearSolver(this->mem, LS_);
