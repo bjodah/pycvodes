@@ -1098,5 +1098,4 @@ namespace cvodes_cxx {
             }
         }
     }
-
 }
