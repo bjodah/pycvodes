@@ -481,15 +481,15 @@ namespace cvodes_cxx {
                 LS_ = SUNSPBCGS(y_, static_cast<int>(ptyp), maxl);
 #else
                 flag = CVSpbcg(this->mem, static_cast<int>(ptyp), maxl);
-                break;
 #endif
+                break;
             case IterLinSolEnum::TFQMR:
 #if SUNDIALS_VERSION_MAJOR >= 3
                 LS_ = SUNSPTFQMR(y_, static_cast<int>(ptyp), maxl);
 #else
                 flag = CVSptfqmr(this->mem, static_cast<int>(ptyp), maxl);
-                break;
 #endif
+                break;
             default:
                 throw std::runtime_error(StreamFmt() << "Unknown solver kind: "
                                          << static_cast<int>(solver));
