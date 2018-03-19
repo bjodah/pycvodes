@@ -31,7 +31,7 @@
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 #else
-#if SUNDIALS_PACKAGE_VERSION == 2.7.0
+#if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
