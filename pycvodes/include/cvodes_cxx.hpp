@@ -75,6 +75,7 @@ namespace {
 }
 
 namespace cvodes_cxx {
+    template<class T> void ignore( const T& ) { }
 
     static const std::unordered_map<std::string, int> fpes {{
         {"FE_INEXACT", FE_INEXACT},
@@ -417,6 +418,7 @@ namespace cvodes_cxx {
         void set_linear_solver_to_banded(int N, int mupper, int mlower){
             int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
+            ignore(N);
             if (A_ == nullptr){
                 if (A_)
                     throw std::runtime_error("matrix already set");
