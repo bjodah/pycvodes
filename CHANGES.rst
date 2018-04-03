@@ -1,3 +1,8 @@
+v0.10.1
+=======
+- Better compile-time inspection of sundials version
+- Work aroud for sundials/lapack inconsistency wrt. dgbtrf
+
 v0.10.0
 =======
 - Exposed quadrature integration (quads and get_nquads)
