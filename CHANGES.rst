@@ -1,3 +1,7 @@
+v0.10.2
+=======
+- New AnyODE version (13)
+
 v0.10.1
 =======
 - Better compile-time inspection of sundials version
