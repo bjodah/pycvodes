@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -eu
+PREFIX=$1
+if [ ! -d "$PREFIX" ]; then 2>&1 echo "Not a directory: $PREFIX"; exit 1; fi
 TIMEOUT=60  # 60 seconds
 SUNDIALS_FNAME="sundials-3.1.0.tar.gz"
 SUNDIALS_MD5="1a84ca41c7f71067e03d519ddbcd9dae"
@@ -17,16 +19,18 @@ for URL in "${SUNDIALS_URLS[@]}"; do
         tar xzf $SUNDIALS_FNAME
         mkdir sundials_build
         cd sundials_build
-        cmake -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_SHARED_LIBS=ON \
-              -DBUILD_STATIC_LIBS=OFF \
-              -DEXAMPLES_ENABLE_C=OFF \
-              -DEXAMPLES_INSTALL=OFF \
-              -DOPENMP_ENABLE=OFF \
-              -DLAPACK_ENABLE=ON \
-              -DSUNDIALS_INDEX_TYPE=int32_t \
+        cmake -DCMAKE_INSTALL_PREFIX:PATH=$PREFIX \
+              -DCMAKE_BUILD_TYPE:STRING="Release" \
+              -DBUILD_SHARED_LIBS:BOOL=ON \
+              -DBUILD_STATIC_LIBS:BOOL=OFF \
+              -DEXAMPLES_ENABLE_C:BOOL=OFF \
+              -DEXAMPLES_INSTALL:BOOL=OFF \
+              -DOPENMP_ENABLE:BOOL=OFF \
+              -DLAPACK_ENABLE:BOOL=ON \
+              -DSUNDIALS_INDEX_TYPE:STRING="int32_t" \
               ../sundials-*/
-        make install >/dev/null 2>&1
+        make -j 2 >/dev/null 2>&1
+        make install
         if [ $? -ne 0 ]; then
             2>&1 echo "Sundials build/install failed."
             exit 1
