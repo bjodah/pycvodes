@@ -23,3 +23,6 @@ cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}"; make clean; cd -
 cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" EXTRA_FLAGS=-DNDEBUG; make clean; cd -
 cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
 cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" CXX=clang++-5.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+
+(cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+(cd examples/; ../scripts/render_index.sh *.html)

@@ -1,26 +1,27 @@
+cache:
+  mount:
+    - /drone/sundials-3.1
+
 build:
   image: bjodah/bjodahimg16dev:v1.3
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
-    - ./scripts/ci.sh pycvodes
-    - (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-    - (cd examples/; ../scripts/render_index.sh *.html)
+    - apt-get -qq remove libsundials*
+    - if [ ! -d /drone/sundials-3.1 ]; then mkdir /drone/sundials-3.1 && .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
+    - CPLUS_INCLUDE_PATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib EXTRA_LIBS="-lsundials_sunlinsollapackdense -lsundials_sunlinsollapackband" ./scripts/ci.sh pycvodes
+    - python2 -m pip uninstall --yes pycvodes
+    - python3 -m pip uninstall --yes pycvodes
+    - apt-get update --quiet
+    - apt-get install --quiet -y libsundials-serial-dev
+    - git clean -xfd
+    - ./scripts/ci.sh pycvodes    
     - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
-    - apt-get remove libsundials*
-    - python2 -m pip uninstall --yes pycvodes
-    - python3 -m pip uninstall --yes pycvodes
-    - rm -r /usr/local/lib/python*/dist-packages/pycvodes*
-    - mv deploy/ /tmp/
-    - git clean -xfd
-    - ./scripts/.ci/download_and_install_sundials-3.1.sh
-    - LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CPLUS_INCLUDE_PATH=/usr/local/include EXTRA_LIBS="-lsundials_sunlinsollapackdense -lsundials_sunlinsollapackband" ./scripts/ci.sh pycvodes
-    - mv /tmp/deploy .
 
 deploy:
 

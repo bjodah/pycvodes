@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: continuumio/miniconda
+      - image: continuumio/miniconda3
     steps:
       - checkout
       - run: apt-get --quiet update && apt-get --quiet --assume-yes install gcc g++

@@ -1,5 +1,5 @@
 {% set name = "pycvodes" %}
-{% set version = "0.10.0+git" %}
+{% set version = "0.11.0.dev0+git" %}
 {% set variant = "openblas" %}
 
 package:
@@ -10,15 +10,15 @@ source:
   git_url: ../
 
 build:
-  number: 0
+  number: 200
   features:
     - blas_{{ variant }}  # [not win]
 
 requirements:
   build:
     - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.19*  # [not win]
-    - sundials <3.0.0
+    - openblas 0.2.20*  # [not win]
+    - sundials >=3.1.0
     - python
     - setuptools
     - pip
@@ -26,8 +26,8 @@ requirements:
     - numpy
   run:
     - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.19*  # [not win]
-    - sundials <3.0.0
+    - openblas 0.2.20*  # [not win]
+    - sundials >=3.1.0
     - python
     - numpy
 
