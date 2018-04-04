@@ -13,7 +13,7 @@ build:
     - CPLUS_INCLUDE_PATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib EXTRA_LIBS="-lsundials_sunlinsollapackdense -lsundials_sunlinsollapackband" ./scripts/ci.sh pycvodes
     - python2 -m pip uninstall --yes pycvodes
     - python3 -m pip uninstall --yes pycvodes
-    - rm -r /usr/local/lib/python*/dist-packages/pycvodes/
+    - rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
     - apt-get update --quiet
     - apt-get install --quiet -y libsundials-serial-dev
     - git clean -xfd
