@@ -1,6 +1,7 @@
 cache:
   mount:
     - /drone/sundials-3.1
+    - /drone/miniconda3
 
 build:
   image: bjodah/bjodahimg18:v1.0
@@ -18,7 +19,8 @@ build:
     - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
-    #- PATH=/drone/miniconda3/bin:$PATH conda build conda-recipe
+    - if [ ! -d /drone/miniconda3 ]; then mkdir /drone/miniconda3 && .ci/download_and_install_miniconda3.sh /drone/miniconda3; fi
+    - PATH=/drone/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 
