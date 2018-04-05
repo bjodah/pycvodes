@@ -31,7 +31,7 @@ if not _math_ok:
 _sundials_ok, _sundials_out = _compiles_ok('#include <sundials/sundials_config.h>')
 if not _sundials_ok:
     _warn("sundials not in include path, set e.g. $CPLUS_INCLUDE_PATH (%s):\n%s" %
-          (os.environ.get('CPLUS_INCLUDE_PATH', ''), _spgmr_out))
+          (os.environ.get('CPLUS_INCLUDE_PATH', ''), _sundials_out))
 
 _sun3_ok, _sun3_out = _compiles_ok("""
 #include <sundials/sundials_config.h>
