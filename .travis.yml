@@ -35,7 +35,8 @@ install:
       conda config --set show_channel_urls true
 
 script:
-    - conda build conda-recipe
+    - conda build --python 3.6 conda-recipe
+    - conda build --python 2.7 conda-recipe
 
 notifications:
   email: false
