@@ -3,6 +3,7 @@ import os
 import subprocess
 import warnings
 
+
 def _warn(msg):
     if os.environ.get("PYCVODES_STRICT", '0') == '1':
         raise RuntimeError(msg)
