@@ -23,12 +23,12 @@ test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad 
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
 	./test_tough_case --abortx 1
-ifeq ($(CXX),clang++-5.0)
+ifeq ($(CXX),clang++-6.0)
 	@echo "skipping openmp when using clang"
 else
 	./test_cvodes_anyode_parallel --abortx 1
 endif
-	python ./_test_cvodes_anyode.py
+	python3 ./_test_cvodes_anyode.py
 
 clean:
 	rm catch.hpp
