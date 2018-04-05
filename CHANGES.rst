@@ -1,3 +1,7 @@
+v0.10.3
+=======
+- More robust deducation of sundials version.
+
 v0.10.2
 =======
 - New AnyODE version (13)
