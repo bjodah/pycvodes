@@ -1,14 +1,15 @@
 cache:
   mount:
     - /drone/sundials-3.1
+    - /drone/miniconda3
 
 build:
   image: bjodah/bjodahimg18:v1.0
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
-    - if [ ! -d /drone/sundials-3.1 ]; then mkdir /drone/sundials-3.1 && .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
-    - CPATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib EXTRA_LIBS="-lsundials_sunlinsollapackdense -lsundials_sunlinsollapackband" ./scripts/ci.sh pycvodes
+    - if [ ! -d /drone/sundials-3.1 ]; then .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
+    - CPATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib ./scripts/ci.sh pycvodes
     - python3 -m pip uninstall --yes pycvodes
     - rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
     - apt-get update --quiet
@@ -18,7 +19,9 @@ build:
     - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
-    #- PATH=/drone/miniconda3/bin:$PATH conda build conda-recipe
+    - apt-get remove -qq -y libsundials-dev
+    - if [ ! -d /drone/miniconda3 ]; then .ci/download_and_install_miniconda3.sh /drone/miniconda3; fi
+    - PATH=/drone/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 

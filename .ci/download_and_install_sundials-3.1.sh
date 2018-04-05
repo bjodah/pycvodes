@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 PREFIX=$1
-if [ ! -d "$PREFIX" ]; then 2>&1 echo "Not a directory: $PREFIX"; exit 1; fi
+if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
 TIMEOUT=60  # 60 seconds
 SUNDIALS_FNAME="sundials-3.1.0.tar.gz"
 SUNDIALS_MD5="1a84ca41c7f71067e03d519ddbcd9dae"

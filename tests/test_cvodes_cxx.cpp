@@ -1,5 +1,4 @@
 // C++11 source code.
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
 #include "catch.hpp"
 #include "cvodes_cxx.hpp"
 #include "testing_utils.hpp"

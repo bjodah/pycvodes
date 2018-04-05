@@ -1,5 +1,4 @@
 // C++11 source code.
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
 #include "catch.hpp"
 #include "sundials_cxx.hpp"
 #include <vector>
