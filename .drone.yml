@@ -12,7 +12,7 @@ build:
     - python3 -m pip uninstall --yes pycvodes
     - rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
     - apt-get update --quiet
-    - apt-get install --quiet -y libsundials-serial-dev
+    - apt-get install --quiet -y libsundials-dev
     - git clean -xfd
     - ./scripts/ci.sh pycvodes    
     - python3 -m pip install --user -e .[docs]
