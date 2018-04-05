@@ -1,9 +1,6 @@
 CXX ?= g++
-LAPACK ?= -llapack -lblas
-LIBS ?=-lsundials_cvodes -lsundials_nvecserial $(LAPACK)
-LIBS += $(EXTRA_LIBS)
+LIBS ?=$(shell python3 -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in (env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0
-# -O3 -ffast-math -funroll-loops -march=native
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include
@@ -35,15 +32,18 @@ clean:
 	rm $(TARGETS)
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
-test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.hpp
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS)
+test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.o
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LIBS)
 
-test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp catch.hpp
+test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp catch.o
 ifeq ($(CXX),clang++-6.0)
 	@echo "skipping openmp when using clang"
 else
-	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< $(LIBS) $(OPENMP_LIB)
+	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LIBS) $(OPENMP_LIB)
 endif
 
 catch.hpp: catch.hpp.bz2
-	bunzip2 -k -f $<
+	bzcat $< >$@
+
+catch.o: catch.cpp catch.hpp
+
