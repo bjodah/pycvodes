@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Tested with Sundials 2.6.2
 
 import io
 import os

@@ -5,7 +5,7 @@
 build/
 dist/
 cython_debug/
-.cache/
+.*cache/
 doc/
 MANIFEST
 pycvodes/_cvodes.cpp
