@@ -1,3 +1,8 @@
 #!/bin/bash
 sed -i -E -e 's/'"'"'lapack'"'"'/'"'"'openblas'"'"'/' pycvodes/_config.py
-PYCVODES_LAPACK=openblas CPLUS_INCLUDE_PATH=${PREFIX}/include ${PYTHON} -m pip install --no-deps --ignore-installed .
+export PYCVODES_STRICT=1
+export PYCVODES_LAPACK=openblas
+export CPATH=${PREFIX}/include
+export LIBRARY_PATH=${PREFIX}/lib
+export LD_LIBRARY_PATH=${PREFIX}/lib
+${PYTHON} -m pip install --no-deps --ignore-installed .
