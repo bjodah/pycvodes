@@ -12,7 +12,7 @@ def _warn(msg):
 
 
 def _compiles_ok(codestring):
-    _preproc = subprocess.Popen('cc -E -x c++ -', shell=True, stdin=subprocess.PIPE,
+    _preproc = subprocess.Popen('%s -E -' % os.environ.get('CXX', 'cc -x c++'), shell=True, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _err = _preproc.communicate(codestring.encode('utf-8'))
     _retcode = _preproc.wait()

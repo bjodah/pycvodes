@@ -4,6 +4,7 @@
 #
 #  $ cd examples/ && ../scripts/render_index.sh !(index).html
 #
+SCRIPTDIR=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
 mkdir -p thumbs
 tmpdir=$(mktemp -d)
 trap "rm -r $tmpdir" INT TERM EXIT
@@ -17,7 +18,7 @@ cat <<EOF>index.html
 EOF
 for f in $@; do
     img=$(basename $f .html).png
-    phantomjs $(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)/rasterize.js $f $tmpdir/$img 1200px*900px
+    QT_QPA_PLATFORM=offscreen phantomjs $SCRIPTDIR/rasterize.js $f $tmpdir/$img 1200px*900px
     convert $tmpdir/$img -resize 400x300 thumbs/$img
     cat <<EOF>>index.html
 <p style='text-align: center'>
