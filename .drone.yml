@@ -8,6 +8,7 @@ build:
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
+    - git fetch -t  # used by ``git describe``
     - if [ ! -d /drone/sundials-3.1 ]; then .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
     - CPATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib ./scripts/ci.sh pycvodes
     - python3 -m pip uninstall --yes pycvodes
@@ -20,7 +21,6 @@ build:
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - apt-get remove -qq -y libsundials-dev
-    - rm -r /drone/miniconda3 # evict cache
     - if [ ! -d /drone/miniconda3 ]; then .ci/download_and_install_miniconda3.sh /drone/miniconda3; fi
     - PATH=/drone/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
