@@ -77,7 +77,7 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
    'lapack,blas'
 
 If you use ``pip`` to install ``pycvodes`` note that you will need to install sundials
-(and its development headers, with cvodes enabled) prior to installing pycvodes.
+(and its development headers, with cvodes & lapack enabled) prior to installing pycvodes.
 
 Examples
 --------
