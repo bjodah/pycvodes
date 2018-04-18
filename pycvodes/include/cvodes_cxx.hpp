@@ -1107,17 +1107,17 @@ namespace cvodes_cxx {
                 info_int["dense_n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
             }
         }
-        info_dbl["time_rhs"] += integr->time_rhs;
-        info_dbl["time_quads"] += integr->time_quads;
-        info_dbl["time_roots"] += integr->time_roots;
-        info_dbl["time_jac"] += integr->time_jac;
-        info_dbl["time_jtimes"] += integr->time_jtimes;
-        info_dbl["time_prec"] += integr->time_prec;
+        info_dbl["time_rhs"] += integrator.time_rhs;
+        info_dbl["time_quads"] += integrator.time_quads;
+        info_dbl["time_roots"] += integrator.time_roots;
+        info_dbl["time_jac"] += integrator.time_jac;
+        info_dbl["time_jtimes"] += integrator.time_jtimes;
+        info_dbl["time_prec"] += integrator.time_prec;
         if (odesys->record_order)
-            extend_vector(info_vecint["orders"], integr->orders_seen);
+            extend_vector(info_vecint["orders"], integrator.orders_seen);
         if (odesys->record_fpe)
-            extend_vector(info_vecint["fpes"], integr->fpes_seen);
+            extend_vector(info_vecint["fpes"], integrator.fpes_seen);
         if (odesys->record_steps)
-            extend_vector(info_vecdbl["steps"], integr->steps_seen);
+            extend_vector(info_vecdbl["steps"], integrator.steps_seen);
     }
 }
