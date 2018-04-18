@@ -386,6 +386,7 @@ namespace cvodes_anyode {
             odesys->last_integration_info,
             odesys->last_integration_info_dbl,
             odesys->last_integration_info_vecdbl,
+            odesys->last_integration_info_vecint,
             *integr, iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
@@ -464,6 +465,7 @@ namespace cvodes_anyode {
             odesys->last_integration_info,
             odesys->last_integration_info_dbl,
             odesys->last_integration_info_vecdbl,
+            odesys->last_integration_info_vecint,
             *integr, iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
