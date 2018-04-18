@@ -1076,28 +1076,48 @@ namespace cvodes_cxx {
 
     };
 
-    void set_integration_info(std::unordered_map<std::string, int>& info,
-                              const Integrator& integrator,
-                              IterType iter_type, int linear_solver){
-        info["n_steps"] = integrator.get_n_steps();
-        info["n_root_evals"] = integrator.get_n_root_evals();
-        info["n_rhs_evals"] = integrator.get_n_rhs_evals();
-        info["n_lin_solv_setups"] = integrator.get_n_lin_solv_setups();
-        info["n_err_test_fails"] = integrator.get_n_err_test_fails();
-        info["n_nonlin_solv_iters"] = integrator.get_n_nonlin_solv_iters();
-        info["n_nonlin_solv_conv_fails"] = integrator.get_n_nonlin_solv_conv_fails();
+    template<typename T>
+    void extend_vector(std::vector<T> &dest, const std::vector<T> &source){
+        dest.reserve(dest.size() + std::distance(source.begin(), source.end()));
+        dest.insert(dest.end(), source.begin(), source.end());
+    }
+
+    void update_integration_info(std::unordered_map<std::string, int> &info_int,
+                                 std::unordered_map<std::string, double> &info_dbl,
+                                 std::unordered_map<std::string, std::vector<int> &info_vecint,
+                                 const Integrator& integrator,
+                                 const IterType iter_type, const int linear_solver){
+        info_int["n_steps"] += integrator.get_n_steps();
+        info_int["n_root_evals"] += integrator.get_n_root_evals();
+        info_int["n_rhs_evals"] += integrator.get_n_rhs_evals();
+        info_int["n_lin_solv_setups"] += integrator.get_n_lin_solv_setups();
+        info_int["n_err_test_fails"] += integrator.get_n_err_test_fails();
+        info_int["n_nonlin_solv_iters"] += integrator.get_n_nonlin_solv_iters();
+        info_int["n_nonlin_solv_conv_fails"] += integrator.get_n_nonlin_solv_conv_fails();
         if (iter_type == IterType::Newton){
             if (linear_solver >= 10) {  // iterative linear solver
-                info["krylov_n_lin_iters"] = integrator.get_n_lin_iters();
-                info["krylov_n_prec_evals"] = integrator.get_n_prec_evals();
-                info["krylov_n_prec_solves"] = integrator.get_n_prec_solves();
-                info["krylov_n_conv_fails"] = integrator.get_n_conv_fails();
-                info["krylov_n_jac_times_evals"] = integrator.get_n_jac_times_evals();
-                info["krylov_n_iter_rhs"] = integrator.get_n_iter_rhs();
+                info_int["krylov_n_lin_iters"] += integrator.get_n_lin_iters();
+                info_int["krylov_n_prec_evals"] += integrator.get_n_prec_evals();
+                info_int["krylov_n_prec_solves"] += integrator.get_n_prec_solves();
+                info_int["krylov_n_conv_fails"] += integrator.get_n_conv_fails();
+                info_int["krylov_n_jac_times_evals"] += integrator.get_n_jac_times_evals();
+                info_int["krylov_n_iter_rhs"] += integrator.get_n_iter_rhs();
             } else { // direct linear solver
-                info["dense_n_dls_jac_evals"] = integrator.get_n_dls_jac_evals();
-                info["dense_n_dls_rhs_evals"] = integrator.get_n_dls_rhs_evals();
+                info_int["dense_n_dls_jac_evals"] += integrator.get_n_dls_jac_evals();
+                info_int["dense_n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
             }
         }
+        info_dbl["time_rhs"] += integr->time_rhs;
+        info_dbl["time_quads"] += integr->time_quads;
+        info_dbl["time_roots"] += integr->time_roots;
+        info_dbl["time_jac"] += integr->time_jac;
+        info_dbl["time_jtimes"] += integr->time_jtimes;
+        info_dbl["time_prec"] += integr->time_prec;
+        if (odesys->record_order)
+            extend_vector(info_vecint["orders"], integr->orders_seen);
+        if (odesys->record_fpe)
+            extend_vector(info_vecint["fpes"], integr->fpes_seen);
+        if (odesys->record_steps)
+            extend_vector(info_vecdbl["steps"], integr->steps_seen);
     }
 }

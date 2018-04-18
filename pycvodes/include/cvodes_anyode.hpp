@@ -382,21 +382,11 @@ namespace cvodes_anyode {
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
                 std::chrono::high_resolution_clock::now() - t_start).count();
-        odesys->last_integration_info_dbl["time_rhs"] = integr->time_rhs;
-        odesys->last_integration_info_dbl["time_quads"] = integr->time_quads;
-        odesys->last_integration_info_dbl["time_roots"] = integr->time_roots;
-        odesys->last_integration_info_dbl["time_jac"] = integr->time_jac;
-        odesys->last_integration_info_dbl["time_jtimes"] = integr->time_jtimes;
-        odesys->last_integration_info_dbl["time_prec"] = integr->time_prec;
-        if (odesys->record_order)
-            odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
-        if (odesys->record_fpe)
-            odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
-        if (odesys->record_steps)
-            odesys->last_integration_info_vecdbl["steps"] = integr->steps_seen;
-
-        cvodes_cxx::set_integration_info(odesys->last_integration_info, *integr,
-                                         iter_type, linear_solver);
+        cvodes_cxx::update_integration_info(
+            odesys->last_integration_info,
+            odesys->last_integration_info_dbl,
+            odesys->last_integration_info_vecdbl,
+            *integr, iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
         return result;
@@ -465,19 +455,16 @@ namespace cvodes_anyode {
         odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
         odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
                 std::chrono::high_resolution_clock::now() - t_start).count();
-        odesys->last_integration_info_dbl["time_rhs"] = integr->time_rhs;
-        odesys->last_integration_info_dbl["time_quads"] = integr->time_quads;
-        odesys->last_integration_info_dbl["time_roots"] = integr->time_roots;
-        odesys->last_integration_info_dbl["time_jac"] = integr->time_jac;
-        odesys->last_integration_info_dbl["time_jtimes"] = integr->time_jtimes;
-        odesys->last_integration_info_dbl["time_prec"] = integr->time_prec;
         if (odesys->record_order)
             odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
         if (odesys->record_fpe)
             odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
 
-        cvodes_cxx::set_integration_info(odesys->last_integration_info, *integr,
-                                         iter_type, linear_solver);
+        cvodes_cxx::update_integration_info(
+            odesys->last_integration_info,
+            odesys->last_integration_info_dbl,
+            odesys->last_integration_info_vecdbl,
+            *integr, iter_type, linear_solver);
         odesys->last_integration_info["nfev"] = odesys->nfev;
         odesys->last_integration_info["njev"] = odesys->njev;
         return nreached;
