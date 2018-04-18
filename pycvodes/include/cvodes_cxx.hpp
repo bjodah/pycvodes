@@ -1113,11 +1113,8 @@ namespace cvodes_cxx {
         info_dbl["time_jac"] += integrator.time_jac;
         info_dbl["time_jtimes"] += integrator.time_jtimes;
         info_dbl["time_prec"] += integrator.time_prec;
-        if (odesys->record_order)
-            extend_vector(info_vecint["orders"], integrator.orders_seen);
-        if (odesys->record_fpe)
-            extend_vector(info_vecint["fpes"], integrator.fpes_seen);
-        if (odesys->record_steps)
-            extend_vector(info_vecdbl["steps"], integrator.steps_seen);
+        extend_vector(info_vecint["orders"], integrator.orders_seen);
+        extend_vector(info_vecint["fpes"], integrator.fpes_seen);
+        extend_vector(info_vecdbl["steps"], integrator.steps_seen);
     }
 }
