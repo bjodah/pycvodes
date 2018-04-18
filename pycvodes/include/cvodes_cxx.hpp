@@ -1084,7 +1084,7 @@ namespace cvodes_cxx {
 
     void update_integration_info(std::unordered_map<std::string, int> &info_int,
                                  std::unordered_map<std::string, double> &info_dbl,
-                                 std::unordered_map<std::string, std::vector<int> &info_vecint,
+                                 std::unordered_map<std::string, std::vector<int>> &info_vecint,
                                  const Integrator& integrator,
                                  const IterType iter_type, const int linear_solver){
         info_int["n_steps"] += integrator.get_n_steps();
