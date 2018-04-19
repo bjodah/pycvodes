@@ -9,6 +9,11 @@
 
 namespace cvodes_anyode {
 
+    template<typename T, typename... Args>
+    std::unique_ptr<T> make_unique(Args&&... args) {
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
+
     using cvodes_cxx::Integrator;
     using cvodes_cxx::LMM;
     using cvodes_cxx::IterType;
@@ -220,7 +225,7 @@ namespace cvodes_anyode {
         const int ny = odesys->get_ny();
         const int nroots = odesys->get_nroots();
         const int nq = odesys->get_nquads();
-        auto integr_ptr = std::make_unique<Integrator>(lmm, iter_type);
+        auto integr_ptr = make_unique<Integrator>(lmm, iter_type);
         auto &integr = *integr_ptr;
         integr.autonomous_exprs = odesys->autonomous_exprs;
         integr.record_order = odesys->record_order;

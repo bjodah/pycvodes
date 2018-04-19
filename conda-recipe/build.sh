@@ -11,4 +11,7 @@ export PYCVODES_STRICT=1
 export CPLUS_INCLUDE_PATH=${PREFIX}/include
 export LIBRARY_PATH=${PREFIX}/lib
 export LD_LIBRARY_PATH=${PREFIX}/lib
+export CC=clang-6.0
+export CXX=clang++
+export CFLAGS=-std=c++14
 ${PYTHON} -m pip install --no-deps --ignore-installed .
