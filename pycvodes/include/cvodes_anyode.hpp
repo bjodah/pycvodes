@@ -202,7 +202,7 @@ int prec_setup_cb(realtype t, N_Vector y, N_Vector fy, booleantype jok,
 }
 
 template <class OdeSys>
-std::unique_ptr<AnyODE::Result> get_integrator(
+std::unique_ptr<Integrator> get_integrator(
     OdeSys * odesys,
     std::vector<realtype> &atol,
     const realtype rtol,
