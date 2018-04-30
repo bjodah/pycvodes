@@ -7,7 +7,7 @@ build:
   environment:
     - PYCVODES_LAPACK=lapack,blas
   commands:
-    - git fetch -t  # used by ``git describe``
+    - git fetch -tq  # used by ``git describe``
     - if [ ! -d /drone/sundials-3.1 ]; then .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
     - CPATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib ./scripts/ci.sh pycvodes
     - python3 -m pip uninstall --yes pycvodes

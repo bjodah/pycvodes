@@ -16,9 +16,9 @@ TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
     for (int i = 0; i < nout; ++i){
         REQUIRE( std::abs(std::exp(-xout(i)) - yout(i)) < 1e-8 );
     }
-    REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
-    REQUIRE( odesys.last_integration_info["n_steps"] >= nout );
-    REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] >= nout );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
 #undef xout
 #undef yout
     free(xyout);
@@ -39,7 +39,7 @@ TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
     for (int i = 0; i < nout; ++i){
         REQUIRE( std::abs(std::exp(-xout(i)) - yout(i)) < 1e-8 );
     }
-    REQUIRE( odesys.last_integration_info["n_steps"] > 1000 );  // dx_max == 1e-3
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1000 );  // dx_max == 1e-3
 #undef xout
 #undef yout
     free(xyout);
@@ -60,8 +60,8 @@ TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
     for (int i = 0; i < nout; ++i){
         REQUIRE( std::abs(std::exp(-xout(i)) - yout(i)) < 1e-8 );
     }
-    REQUIRE( odesys.last_integration_info["n_steps"] > 998 );
-    REQUIRE( odesys.last_integration_info["n_steps"] >= nout );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 998 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] >= nout );
     REQUIRE( nout >= 998 );
     free(xyout);
 }
