@@ -120,7 +120,7 @@ enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
         Right=PREC_RIGHT, Both=PREC_BOTH};
 enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
 
-void check_flag(int flag) {
+inline void check_flag(int flag) {
     switch (flag){
     case CV_SUCCESS:
         break;

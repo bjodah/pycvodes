@@ -16,7 +16,7 @@ using cvodes_cxx::IterLinSolEnum;
 using cvodes_cxx::PrecType;
 using cvodes_cxx::GramSchmidtType;
 
-int handle_status_(AnyODE::Status status){
+inline int handle_status_(AnyODE::Status status){
     switch (status){
     case AnyODE::Status::success:
         return 0;
@@ -25,7 +25,8 @@ int handle_status_(AnyODE::Status status){
     case AnyODE::Status::unrecoverable_error:
         return -1;
     default:
-        throw std::runtime_error(StreamFmt() << "Got an unhandled status: " << static_cast<int>(status));
+        throw std::runtime_error(cvodes_cxx::StreamFmt() <<
+                                 "Got an unhandled status: " << static_cast<int>(status));
     }
 }
 
