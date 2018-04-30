@@ -85,8 +85,8 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
         REQUIRE( std::abs(xyqout[i*4+2] - q0) < 1e-4 );
         REQUIRE( std::abs(xyqout[i*4+3] - q1) < 1e-4 );
     }
-    REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
-    REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
     REQUIRE( nout > 1 );
     REQUIRE( nout < 997 );
     free(xyqout);
@@ -122,6 +122,6 @@ TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
         REQUIRE( std::abs(yqout[i*3+1] - q0) < 1e-4 );
         REQUIRE( std::abs(yqout[i*3+2] - q1) < 1e-4 );
     }
-    REQUIRE( odesys.last_integration_info["n_steps"] > 1 );
-    REQUIRE( odesys.last_integration_info["n_steps"] < 997 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
 }

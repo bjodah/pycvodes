@@ -33,10 +33,10 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
             REQUIRE( std::abs(y0[idx]*std::exp(t0[idx]-xyout_arr[idx][2*j])
                               - xyout_arr[idx][2*j+1]) < 1e-8 );
         }
-        REQUIRE( systems[idx]->last_integration_info["n_steps"] > 1 );
-        REQUIRE( systems[idx]->last_integration_info["n_steps"] < 997 );
-        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] > 0 );
-        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] < 100 );
+        REQUIRE( systems[idx]->current_info.nfo_int["n_steps"] > 1 );
+        REQUIRE( systems[idx]->current_info.nfo_int["n_steps"] < 997 );
+        REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] > 0 );
+        REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] < 100 );
     }
     free(td_arr);
     free(xyout_arr);
@@ -72,9 +72,9 @@ TEST_CASE( "decay_predefined", "[multi_predefined]" ) {
         for (unsigned j=0; j<10; ++j){
             REQUIRE( std::abs(y0[idx]*std::exp(tout[10*idx + 0]-tout[10*idx + j]) - yout[10*idx + j]) < 1e-8 );
         }
-        REQUIRE( systems[idx]->last_integration_info["n_steps"] > 1 );
-        REQUIRE( systems[idx]->last_integration_info["n_steps"] < 997 );
-        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] > 0 );
-        REQUIRE( systems[idx]->last_integration_info_dbl["time_wall"] < 100 );
+        REQUIRE( systems[idx]->current_info.nfo_int["n_steps"] > 1 );
+        REQUIRE( systems[idx]->current_info.nfo_int["n_steps"] < 997 );
+        REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] > 0 );
+        REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] < 100 );
     }
 }

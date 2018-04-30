@@ -599,8 +599,8 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
         odesys->last_integration_info_vecdbl,
         odesys->last_integration_info_vecint,
         *integr, iter_type, linear_solver);
-    odesys->last_integration_info["nfev"] = odesys->nfev;
-    odesys->last_integration_info["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["nfev"] = odesys->nfev;
+    odesys->current_info.nfo_int["njev"] = odesys->njev;
 
     auto result = std::make_unique<AnyODE::Result>(
         ntot, odesys->ny, odesys->nquads, odesys->nroots, xyqout);
