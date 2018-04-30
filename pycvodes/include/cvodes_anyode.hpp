@@ -222,7 +222,7 @@ auto get_integrator(OdeSys * odesys,
     const int ny = odesys->get_ny();
     const int nroots = odesys->get_nroots();
     const int nq = odesys->get_nquads();
-    auto integr_ptr = std::make_unique<Integrator>(lmm, iter_type);
+    auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type);
     auto &integr = *integr_ptr;
     integr.autonomous_exprs = odesys->autonomous_exprs;
     integr.record_order = odesys->record_order;
@@ -602,7 +602,7 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
     odesys->current_info.nfo_int["nfev"] = odesys->nfev;
     odesys->current_info.nfo_int["njev"] = odesys->njev;
 
-    auto result = std::make_unique<AnyODE::Result>(
+    auto result = AnyODE::make_unique<AnyODE::Result>(
         ntot, odesys->ny, odesys->nquads, odesys->nroots, xyqout);
     info.nfo_int["success"] = success;
     result->info = info;
