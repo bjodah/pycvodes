@@ -1,3 +1,7 @@
+v0.10.4
+=======
+- Build related changes.
+
 v0.10.3
 =======
 - More robust deducation of sundials version.

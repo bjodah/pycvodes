@@ -24,12 +24,15 @@ requirements:
     - pip
     - cython
     - numpy
+    - clangdev >=6.0
+    - libcxx >=6.0
   run:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20|0.2.20.*  # [not win]
     - sundials
     - python
     - numpy
+    - libcxx >=6.0
 
 test:
   imports:
