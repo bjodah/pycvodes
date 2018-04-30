@@ -8,6 +8,7 @@
 #define ANYODE_HPP_D47BAD58870311E6B95F2F58DEFE6E37 14
 
 #include <memory>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 #include <vector>
