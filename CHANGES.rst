@@ -1,3 +1,8 @@
+v0.10.5
+=======
+- Bump to AnyODE 14
+- Only require C++14
+
 v0.10.4
 =======
 - Build related changes.
