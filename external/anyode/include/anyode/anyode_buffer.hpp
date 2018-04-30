@@ -8,7 +8,6 @@
 
 namespace AnyODE {
 
-#ifdef NDEBUG
 #if __cplusplus >= 201402L
     using std::make_unique;
 #else
@@ -35,6 +34,7 @@ namespace AnyODE {
         return std::unique_ptr<T>(new RT[n]);
     }
 #endif
+#ifdef NDEBUG
     template<typename T> using buffer_t = std::unique_ptr<T[]>;
     template<typename T> using buffer_ptr_t = T*;
     template<typename T> constexpr T* buffer_get_raw_ptr(buffer_t<T>& buf) {

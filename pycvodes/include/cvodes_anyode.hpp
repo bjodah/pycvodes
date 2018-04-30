@@ -201,23 +201,23 @@ int prec_setup_cb(realtype t, N_Vector y, N_Vector fy, booleantype jok,
 }
 
 template <class OdeSys>
-auto get_integrator(OdeSys * odesys,
-                    std::vector<realtype> &atol,
-                    const realtype rtol,
-                    const LMM lmm,
-                    const realtype * const yq0,
-                    const realtype t0,
-                    const long int mxsteps=0,
-                    const realtype dx0=0.0,
-                    const realtype dx_min=0.0,
-                    const realtype dx_max=0.0,
-                    const bool with_jacobian=false,
-                    const IterType iter_type=IterType::Newton,
-                    const int linear_solver=0,
-                    const int maxl=0,
-                    const realtype eps_lin=0.0,
-                    const bool with_jtimes=false
-    )
+std::unique_ptr<AnyODE::Result> get_integrator(
+    OdeSys * odesys,
+    std::vector<realtype> &atol,
+    const realtype rtol,
+    const LMM lmm,
+    const realtype * const yq0,
+    const realtype t0,
+    const long int mxsteps=0,
+    const realtype dx0=0.0,
+    const realtype dx_min=0.0,
+    const realtype dx_max=0.0,
+    const bool with_jacobian=false,
+    const IterType iter_type=IterType::Newton,
+    const int linear_solver=0,
+    const int maxl=0,
+    const realtype eps_lin=0.0,
+    const bool with_jtimes=false)
 {
     const int ny = odesys->get_ny();
     const int nroots = odesys->get_nroots();
@@ -607,7 +607,6 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
     info.nfo_int["success"] = success;
     result->info = info;
     return result;
-
 }
 
 END_NAMESPACE(cvodes_anyode)
