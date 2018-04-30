@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "anyode/anyode.hpp"
+#include "anyode/anyode_buffer.hpp"
 #include "cvodes_cxx.hpp"
 
 BEGIN_NAMESPACE(cvodes_anyode)
