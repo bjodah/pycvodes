@@ -2,9 +2,7 @@
 
 from cpython.ref cimport PyObject
 from libcpp cimport bool
-from libcpp.string cimport string
-from libcpp.unordered_map cimport unordered_map
-from libcpp.vector cimport vector
+from anyode cimport Info
 
 cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
     cdef cppclass PyOdeSys:
@@ -22,9 +20,6 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
         bool record_fpe
         bool record_steps
         int mlower, mupper, nroots
-        unordered_map[string, int] last_integration_info
-        unordered_map[string, double] last_integration_info_dbl
-        unordered_map[string, vector[double]] last_integration_info_vecdbl
-        unordered_map[string, vector[int]] last_integration_info_vecint
+        Info current_info
         int nfev, njev
         void * integrator

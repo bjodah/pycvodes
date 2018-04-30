@@ -16,6 +16,7 @@ using cvodes_cxx::IterLinSolEnum;
 using cvodes_cxx::PrecType;
 using cvodes_cxx::GramSchmidtType;
 
+
 inline int handle_status_(AnyODE::Status status){
     switch (status){
     case AnyODE::Status::success:
@@ -35,7 +36,7 @@ int rhs_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
     if (odesys.record_rhs_xvals)
-        odesys.last_integration_info_vecdbl["rhs_xvals"].push_back(t);
+        odesys.current_info.nfo_vecdbl["rhs_xvals"].push_back(t);
     AnyODE::Status status = odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
     static_cast<Integrator*>(odesys.integrator)->time_rhs += std::chrono::duration<double>(
         std::chrono::high_resolution_clock::now() - t_start).count();
@@ -89,7 +90,7 @@ int jac_dense_cb(
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
     if (odesys.record_jac_xvals)
-        odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
+        odesys.current_info.nfo_vecdbl["jac_xvals"].push_back(t);
     AnyODE::Status status = odesys.dense_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy),
 #if SUNDIALS_VERSION_MAJOR < 3
                                                   DENSE_COL(Jac, 0), Jac->ldim
@@ -131,7 +132,7 @@ int jac_band_cb(
     auto Jac_ = SM_CONTENT_B(Jac);
 #endif
     if (odesys.record_jac_xvals)
-        odesys.last_integration_info_vecdbl["jac_xvals"].push_back(t);
+        odesys.current_info.nfo_vecdbl["jac_xvals"].push_back(t);
     AnyODE::Status status = odesys.banded_jac_cmaj(t, NV_DATA_S(y), NV_DATA_S(fy), Jac_->data + Jac_->s_mu - Jac_->mu, Jac_->ldim);
     static_cast<Integrator*>(odesys.integrator)->time_jac += std::chrono::duration<double>(
         std::chrono::high_resolution_clock::now() - t_start).count();
@@ -356,14 +357,11 @@ simple_adaptive(realtype ** xyqout,
 
     odesys->integrator = static_cast<void*>(integr.get());
 
-    odesys->last_integration_info.clear();
-    odesys->last_integration_info_dbl.clear();
-    odesys->last_integration_info_vecdbl.clear();
-    odesys->last_integration_info_vecint.clear();
+    odesys->current_info.clear();
     if (odesys->record_rhs_xvals)
-        odesys->last_integration_info_vecdbl["rhs_xvals"] = {};
+        odesys->current_info.nfo_vecdbl["rhs_xvals"] = {};
     if (odesys->record_jac_xvals)
-        odesys->last_integration_info_vecdbl["jac_xvals"] = {};
+        odesys->current_info.nfo_vecdbl["jac_xvals"] = {};
 
     std::time_t cput0 = std::clock();
     auto t_start = std::chrono::high_resolution_clock::now();
@@ -380,17 +378,17 @@ simple_adaptive(realtype ** xyqout,
             cvodes_cxx::get_dx_max_fn()
             ), tidx);
 
-    odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
-    odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
+    odesys->current_info.nfo_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
+    odesys->current_info.nfo_dbl["time_wall"] = std::chrono::duration<double>(
         std::chrono::high_resolution_clock::now() - t_start).count();
     cvodes_cxx::update_integration_info(
-        odesys->last_integration_info,
-        odesys->last_integration_info_dbl,
-        odesys->last_integration_info_vecdbl,
-        odesys->last_integration_info_vecint,
+        odesys->current_info.nfo_int,
+        odesys->current_info.nfo_dbl,
+        odesys->current_info.nfo_vecdbl,
+        odesys->current_info.nfo_vecint,
         *integr, iter_type, linear_solver);
-    odesys->last_integration_info["nfev"] = odesys->nfev;
-    odesys->last_integration_info["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["nfev"] = odesys->nfev;
+    odesys->current_info.nfo_int["njev"] = odesys->njev;
     return result;
 }
 
@@ -438,13 +436,11 @@ int simple_predefined(OdeSys * const odesys,
                                          with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
     odesys->integrator = static_cast<void*>(integr.get());
 
-    odesys->last_integration_info.clear();
-    odesys->last_integration_info_dbl.clear();
-    odesys->last_integration_info_vecdbl.clear();
+    odesys->current_info.clear();
     if (odesys->record_rhs_xvals)
-        odesys->last_integration_info_vecdbl["rhs_xvals"] = {};
+        odesys->current_info.nfo_vecdbl["rhs_xvals"] = {};
     if (odesys->record_jac_xvals)
-        odesys->last_integration_info_vecdbl["jac_xvals"] = {};
+        odesys->current_info.nfo_vecdbl["jac_xvals"] = {};
 
     std::time_t cput0 = std::clock();
     auto t_start = std::chrono::high_resolution_clock::now();
@@ -454,22 +450,22 @@ int simple_predefined(OdeSys * const odesys,
         ((odesys->use_get_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
          : cvodes_cxx::get_dx_max_fn()));
 
-    odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
-    odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
+    odesys->current_info.nfo_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
+    odesys->current_info.nfo_dbl["time_wall"] = std::chrono::duration<double>(
         std::chrono::high_resolution_clock::now() - t_start).count();
     if (odesys->record_order)
-        odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
+        odesys->current_info.nfo_vecint["orders"] = integr->orders_seen;
     if (odesys->record_fpe)
-        odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
+        odesys->current_info.nfo_vecint["fpes"] = integr->fpes_seen;
 
     cvodes_cxx::update_integration_info(
-        odesys->last_integration_info,
-        odesys->last_integration_info_dbl,
-        odesys->last_integration_info_vecdbl,
-        odesys->last_integration_info_vecint,
+        odesys->current_info.nfo_int,
+        odesys->current_info.nfo_dbl,
+        odesys->current_info.nfo_vecdbl,
+        odesys->current_info.nfo_vecint,
         *integr, iter_type, linear_solver);
-    odesys->last_integration_info["nfev"] = odesys->nfev;
-    odesys->last_integration_info["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["nfev"] = odesys->nfev;
+    odesys->current_info.nfo_int["njev"] = odesys->njev;
     return nreached;
 }
 
@@ -497,87 +493,36 @@ void check_atol(const OdeSys * odesys, const SolverSettings& settings){
         throw std::logic_error("atol of incorrect length");
 }
 
-struct Result {
-    int nt, ny, nquads, nroots;
-    Info info;
-private:
-    std::unique_ptr<double[], decltype(std::free) *> m_data;
-public:
-    Result() = delete;
-    Result(const Result&) = delete;
-    Result(int nt, int ny, int nquads, int nroots, double * data) :
-        nt(nt), ny(ny), nquads(nquads), nroots(nroots), m_data(data, std::free)
-    {
-    }
-    double &t (int tidx) { return m_data[tidx*(nquads+ny+1)]; }
-    double &y (int tidx, int yidx) { return m_data[tidx*(nquads+ny+1) + 1 + yidx]; }
-    double &q (int tidx, int qidx) { return m_data[tidx*(nquads+ny+1) + 1 + ny + qidx]; }
-    double * get_raw_ptr() const { return m_data.get(); }
-    template<typename stream_t>
-    void dump_ascii(stream_t& out) {
-        const auto nyq = ny + nquads;
-        for (int ti=0; ti<nt; ++ti){
-            out << t(ti);
-            for (int yqi=0; yqi < nyq; ++yqi){
-                out << " " << y(ti, yqi);
-            }
-            out << '\n';
-        }
-    }
-};
-
-
 template <class OdeSys>
-std::unique_ptr<Result> chained_predefined(OdeSys * const odesys,
-                                           const std::vector<double> durations,
-                                           const std::vector<double> &yq0,
-                                           const std::vector<double> &varied_values,
-                                           const std::vector<int> &varied_indices,
-                                           int npoints,
-                                           const SolverSettings &settings){
+std::unique_ptr<AnyODE::Result> chained_predefined(
+    OdeSys * const odesys,
+    const std::vector<double> durations,
+    const std::vector<double> &yq0,
+    const std::vector<double> &varied_values,
+    const std::vector<int> &varied_indices,
+    int npoints,
+    const SolverSettings &settings)
+{
+    LMM lmm = cvodes_cxx::lmm_from_name(settings.method);
+    IterType iter_type = cvodes_cxx::iter_type_from_name(settings.iter_type);
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
+    int linear_solver = settings.linear_solver;
     if (linear_solver == 0)
         linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+    double dx0 = settings.dx0;
+    double x0 = 0.0;
     if (dx0 == 0.0)
-        dx0 = odesys->get_dx0(xout[0], yq0);
-    auto integr = get_integrator<OdeSys>(odesys, settings.atol, rtol, lmm, yq0, xout[0], mxsteps, dx0, dx_min, dx_max,
-                                         with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
+        dx0 = odesys->get_dx0(x0, yq0);
+    auto integr = get_integrator<OdeSys>(
+        odesys, settings.atol, settings.rtol, lmm, yq0, x0, settings.mxsteps, dx0,
+        settings.dx_min, settings.dx_max,
+        settings.with_jacobian, iter_type, linear_solver, settings.maxl, settings.eps_lin,
+        settings.with_jtimes);
     odesys->integrator = static_cast<void*>(integr.get());
-
-    odesys->last_integration_info.clear();
-    odesys->last_integration_info_dbl.clear();
-    odesys->last_integration_info_vecdbl.clear();
-    if (odesys->record_rhs_xvals)
-        odesys->last_integration_info_vecdbl["rhs_xvals"] = {};
-    if (odesys->record_jac_xvals)
-        odesys->last_integration_info_vecdbl["jac_xvals"] = {};
 
     std::time_t cput0 = std::clock();
     auto t_start = std::chrono::high_resolution_clock::now();
-
-    auto nreached = integr->predefined(
-        nout, xout, yq0, yqout, nderiv, root_indices, root_out, autorestart, return_on_error,
-        ((odesys->use_get_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
-         : cvodes_cxx::get_dx_max_fn()));
-
-    odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
-    odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
-        std::chrono::high_resolution_clock::now() - t_start).count();
-    if (odesys->record_order)
-        odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
-    if (odesys->record_fpe)
-        odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
-
-    cvodes_cxx::update_integration_info(
-        odesys->last_integration_info,
-        odesys->last_integration_info_dbl,
-        odesys->last_integration_info_vecdbl,
-        odesys->last_integration_info_vecint,
-        *integr, iter_type, linear_solver);
-    odesys->last_integration_info["nfev"] = odesys->nfev;
-    odesys->last_integration_info["njev"] = odesys->njev;
-
 
     auto ny = odesys->ny;
     auto nq = odesys->nquads;
@@ -601,6 +546,8 @@ std::unique_ptr<Result> chained_predefined(OdeSys * const odesys,
     std::vector<int> root_indices;
     std::vector<double> roots_out;
     bool success = true;
+    AnyODE::Info info;
+    int ntot = 1;
     for (int i=0; i<ndur; ++i){
 #if defined(PYCVODES_VERBOSE)
         printf("\rProgress in %s: %.3f %%", __FUNCTION__, i*100.0/ndur);
@@ -624,13 +571,42 @@ std::unique_ptr<Result> chained_predefined(OdeSys * const odesys,
         if (nreached != static_cast<int>(npoints+1)){
             success = false;
             break;
+        } else {
+            ntot += nreached - 1;
         }
+        info.update(odesys->current_info.nfo_int,
+                    odesys->current_info.nfo_dbl,
+                    odesys->current_info.nfo_vecdbl,
+                    odesys->current_info.nfo_vecint);
         for (int j=0; j<npoints; ++j){
             xyqout[i*npoints*(1+ny+nq) + (j+1)*(1+ny+nq)] = xyqout[i*npoints*(1+ny+nq)] + tbuffer[j+1];
             for (int k=0; k<ny+nq; ++k)
                 xyqout[(i*npoints+1)*(1+ny+nq) + j*(1+ny+nq) + k + 1] = yqbuffer[(j+1)*(ny+nq) + k];
         }
     }
+
+    odesys->last_integration_info_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
+    odesys->last_integration_info_dbl["time_wall"] = std::chrono::duration<double>(
+        std::chrono::high_resolution_clock::now() - t_start).count();
+    if (odesys->record_order)
+        odesys->last_integration_info_vecint["orders"] = integr->orders_seen;
+    if (odesys->record_fpe)
+        odesys->last_integration_info_vecint["fpes"] = integr->fpes_seen;
+
+    cvodes_cxx::update_integration_info(
+        odesys->last_integration_info,
+        odesys->last_integration_info_dbl,
+        odesys->last_integration_info_vecdbl,
+        odesys->last_integration_info_vecint,
+        *integr, iter_type, linear_solver);
+    odesys->last_integration_info["nfev"] = odesys->nfev;
+    odesys->last_integration_info["njev"] = odesys->njev;
+
+    auto result = std::make_unique<AnyODE::Result>(
+        ntot, odesys->ny, odesys->nquads, odesys->nroots, xyqout);
+    info.nfo_int["success"] = success;
+    result->info = info;
+    return result;
 
 }
 

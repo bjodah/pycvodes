@@ -1,5 +1,5 @@
 #pragma once
-#include <stdlib.h>  // aligned_alloc & free
+#include <cstdlib>  // std::aligned_alloc (C++17) & std::free
 #include <stdint.h> // uintptr_t
 #include <cstring>  // std::memset
 #include <stdexcept> // std::runtime_error
@@ -14,12 +14,13 @@ namespace AnyODE {
 
     template<typename Real_t>
     class MatrixBase {
-        void * m_array_ = nullptr;
-        bool m_own_array_ = false;
+        void * m_own_array_ = nullptr;
         Real_t * alloc_array_(int n){
-            m_array_ = aligned_alloc(alignment_bytes_, sizeof(Real_t)*n);
-            m_own_array_ = true;
-            return static_cast<Real_t *>(m_array_);
+            m_own_array_ = std::malloc(sizeof(Real_t)*n + alignment_bytes_ - 1);
+            const uintptr_t mask = ~uintptr_t(alignment_bytes_ - 1);
+            const uintptr_t addr = reinterpret_cast<uintptr_t>(m_own_array_);
+            const uintptr_t candidate = addr + alignment_bytes_ - 1;
+            return static_cast<Real_t *>(reinterpret_cast<void *>(candidate & mask));
         }
     public:
 
@@ -37,10 +38,10 @@ namespace AnyODE {
             std::copy(ori.m_data, ori.m_data + m_ndata, m_data);
         }
         virtual ~MatrixBase(){
-            if (m_own_array_ and m_array_)
-                free(m_array_);
+            if (m_own_array_)
+                std::free(m_own_array_);
             if (m_own_data and m_data)
-                free(m_data);
+                std::free(m_data);
         }
         virtual Real_t& operator()(int /* ri */, int /* ci */) { throw std::runtime_error("Not implemented: operator() in MatrixBase"); }
         const Real_t& operator()(int ri, int ci) const { return (*const_cast<MatrixBase<Real_t>* >(this))(ri, ci); }

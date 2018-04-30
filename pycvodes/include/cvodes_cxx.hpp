@@ -94,7 +94,7 @@ using get_dx_max_fn = std::function<double(double, const double * const)>;
 // Wrapper for Revision 4306 of cvodes.c
 
 enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
-LMM lmm_from_name(std::string name){
+inline LMM lmm_from_name(std::string name){
     if (name == "adams")
         return LMM::Adams;
     else if (name == "bdf")
@@ -105,7 +105,7 @@ LMM lmm_from_name(std::string name){
 
 enum class Task : int {Normal=CV_NORMAL, One_Step=CV_ONE_STEP};
 enum class IterType : int {Functional=CV_FUNCTIONAL, Newton=CV_NEWTON, Undecided=-1};
-IterType iter_type_from_name(std::string name){
+inline IterType iter_type_from_name(std::string name){
     if (name == "functional")
         return IterType::Functional;
     else if (name == "newton")
