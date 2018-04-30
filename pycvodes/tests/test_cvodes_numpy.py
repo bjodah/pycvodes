@@ -108,7 +108,7 @@ def test_integrate_predefined(method, forgiveness, banded):
         if method in requires_jac and j is not None:
             assert nfo['njev'] > 0
             if os.name == 'posix':
-                assert nfo['time_jac'] > 1e-9
+                assert nfo['time_jac'] >= 0
 
 
 def test_integrate_adaptive_tstop0():
