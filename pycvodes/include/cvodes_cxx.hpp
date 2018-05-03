@@ -619,7 +619,7 @@ public:
     }
     void get_err_weights(realtype * ew) const {
         SVectorV ew_(ny, ew);
-        this->get_err_weights(ew_);
+        this->get_err_weights(ew_.n_vec);
     }
     void get_est_local_errors(N_Vector ele) const {
         check_flag(CVodeGetEstLocalErrors(this->mem, ele));
@@ -629,7 +629,7 @@ public:
     }
     void get_est_local_errors(realtype * ele) const {
         SVectorV ele_(ny, ele);
-        this->get_est_local_errors(ele_);
+        this->get_est_local_errors(ele_.n_vec);
     }
     // get info
     long int get_n_lin_iters() const {
