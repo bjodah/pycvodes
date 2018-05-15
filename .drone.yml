@@ -1,6 +1,6 @@
 cache:
   mount:
-    - /drone/sundials-3.1
+    - /drone/sundials-3.1.1
 
 build:
   image: bjodah/bjodahimg18dev:v1.0
@@ -8,8 +8,8 @@ build:
     - PYCVODES_LAPACK=lapack,blas
   commands:
     - git fetch -tq  # used by ``git describe``
-    - if [ ! -d /drone/sundials-3.1 ]; then .ci/download_and_install_sundials-3.1.sh /drone/sundials-3.1; fi
-    - CPATH=/drone/sundials-3.1/include LIBRARY_PATH=/drone/sundials-3.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1/lib ./scripts/ci.sh pycvodes
+    - if [ ! -d /drone/sundials-3.1.1 ]; then .ci/get_sundials-3.1.1.sh /drone/sundials-3.1.1; fi
+    - CPATH=/drone/sundials-3.1.1/include LIBRARY_PATH=/drone/sundials-3.1.1/lib LD_LIBRARY_PATH=/drone/sundials-3.1.1/lib ./scripts/ci.sh pycvodes
     - python3 -m pip uninstall --yes pycvodes
     - rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
     - apt-get update --quiet
