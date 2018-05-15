@@ -72,4 +72,4 @@ env = {
 }
 
 for k, v in list(env.items()):
-    env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+    env[k] = os.environ.get('%s_%s' % (__package__.upper(), k), v)
