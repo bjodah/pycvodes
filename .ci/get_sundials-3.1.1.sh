@@ -2,8 +2,8 @@
 PREFIX=$1
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
 TIMEOUT=60  # 60 seconds
-SUNDIALS_FNAME="sundials-3.1.0.tar.gz"
-SUNDIALS_MD5="1a84ca41c7f71067e03d519ddbcd9dae"
+SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
+SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
 SUNDIALS_URLS=(\
 "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
 "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
