@@ -70,3 +70,6 @@ env = {
         ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if _sun3 else ''
     ),
 }
+
+for k, v in list(env.items()):
+    env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)
