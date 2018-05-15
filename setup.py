@@ -37,6 +37,9 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     import numpy as np
     env = None  # silence pyflakes, 'env' is actually set on the next line
     exec(open(config_py_path).read())
+    for k, v in list(env.items()):
+        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+
 
     ext = '.pyx' if USE_CYTHON else '.cpp'
     sources = [os.path.join(pkg_name, '_cvodes'+ext)]
