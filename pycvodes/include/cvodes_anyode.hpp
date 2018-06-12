@@ -333,7 +333,8 @@ simple_adaptive(realtype ** xyqout,
                 int autorestart=0,
                 bool return_on_error=false,
                 bool with_jtimes=false,
-                int tidx=0
+                int tidx=0,
+                realtype ** ew_ele=nullptr
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -377,7 +378,7 @@ simple_adaptive(realtype ** xyqout,
                                                        std::placeholders::_2))
             :
             cvodes_cxx::get_dx_max_fn()
-            ), tidx);
+            ), tidx, ew_ele);
 
     odesys->current_info.nfo_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
     odesys->current_info.nfo_dbl["time_wall"] = std::chrono::duration<double>(
@@ -416,7 +417,8 @@ int simple_predefined(OdeSys * const odesys,
                       const unsigned nderiv=0,
                       int autorestart=0,
                       bool return_on_error=false,
-                      bool with_jtimes=false
+                      bool with_jtimes=false,
+                      realtype * ew_ele=nullptr
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -449,7 +451,7 @@ int simple_predefined(OdeSys * const odesys,
     auto nreached = integr->predefined(
         nout, xout, yq0, yqout, nderiv, root_indices, root_out, autorestart, return_on_error,
         ((odesys->use_get_dx_max) ? static_cast<cvodes_cxx::get_dx_max_fn>(std::bind(&OdeSys::get_dx_max, odesys, std::placeholders::_1 , std::placeholders::_2))
-         : cvodes_cxx::get_dx_max_fn()));
+         : cvodes_cxx::get_dx_max_fn()), ew_ele);
 
     odesys->current_info.nfo_dbl["time_cpu"] = (std::clock() - cput0) / (double)CLOCKS_PER_SEC;
     odesys->current_info.nfo_dbl["time_wall"] = std::chrono::duration<double>(

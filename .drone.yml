@@ -3,9 +3,11 @@ cache:
     - /drone/sundials-3.1.1
 
 build:
-  image: bjodah/bjodahimg18dev:v1.0
+  image: bjodah/bjodahimg18dev:v1.2
   environment:
     - PYCVODES_LAPACK=lapack,blas
+    - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-6.0/bin/llvm-symbolizer
+    - ASAN_OPTIONS=symbolize=1
   commands:
     - git fetch -tq  # used by ``git describe``
     - if [ ! -d /drone/sundials-3.1.1 ]; then .ci/get_sundials-3.1.1.sh /drone/sundials-3.1.1; fi

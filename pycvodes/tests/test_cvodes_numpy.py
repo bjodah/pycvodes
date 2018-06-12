@@ -500,3 +500,40 @@ def test_dx_max_cb():
     assert info['njev'] > 0
     assert info['success'] is True
     assert xout[-1] == xend
+
+
+def test_predefined_ew_ele():
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0., 0.]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(dx0=1e-10, atol=atol, rtol=rtol,
+                  method='bdf', ew_ele=True)
+    f, j = _get_f_j(k)
+    xout = np.logspace(-3, 1)
+    yout, info = integrate_predefined(f, j, y0, xout, **kwargs)
+    yref = decay_get_Cref(k, y0, xout - xout[0])
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+    assert yout.shape[0] == xout.size
+    assert info['nfev'] > 0
+    assert info['njev'] > 0
+    assert info['success']
+    abs_ew_ele = np.abs(np.prod(info['ew_ele'], axis=1))
+    assert np.all(abs_ew_ele < 1)
+
+
+def test_adaptive_ew_ele():
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0., 0.]
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(dx0=1e-10, atol=atol, rtol=rtol,
+                  method='bdf', ew_ele=True)
+    f, j = _get_f_j(k)
+    xout, yout, info = integrate_adaptive(f, j, y0, 0, 10, **kwargs)
+    yref = decay_get_Cref(k, y0, xout - xout[0])
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+    assert yout.shape[0] == xout.size
+    assert info['nfev'] > 0
+    assert info['njev'] > 0
+    assert info['success']
+    abs_ew_ele = np.abs(np.prod(info['ew_ele'], axis=1))
+    assert np.all(abs_ew_ele < 1)

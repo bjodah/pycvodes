@@ -819,6 +819,7 @@ public:
     }
 #define row(ti) (1 + ny*(nderiv+1) + nq)*(ti)
 #define datalen(nt, nd, ny, nq) ((1 + (ny)*((nd)+1) + nq)*(nt)*sizeof(realtype))
+#define ew_ele_len(nt, ny) (2*ny*nt*sizeof(realtype))
 #define xout(ti) (*xyqout)[row(ti)]
 #define yout(ti, di, yi) (*xyqout)[row(ti) + 1 + ny*(di) + yi]
 #define qout(ti, qi) (*xyqout)[row(ti) + 1 + ny*(nderiv+1) + qi]
@@ -831,7 +832,8 @@ public:
                  int autorestart=0,
                  bool return_on_error=false,
                  get_dx_max_fn get_dx_max = get_dx_max_fn(),
-                 int tidx=0
+                 int tidx=0,
+                 realtype ** ew_ele=nullptr // length(ew_ele) must be == 2*td*ny if not nullptr
         ){
         realtype cur_t;
         int status;
@@ -845,6 +847,11 @@ public:
             throw std::logic_error("xyqout cannot be a nullptr");
         if (*xyqout == nullptr)
             throw std::logic_error("xyqout cannot point to a nullptr");
+        if (ew_ele){
+            if (*ew_ele == nullptr) {
+                throw std::logic_error("ew_ele cannot point to a nullptr");
+            }
+        }
         if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
         if (record_steps)
             steps_seen.push_back(get_current_step());
@@ -883,6 +890,15 @@ public:
                         throw std::bad_alloc();
                     } else {
                         *xyqout = (realtype *)new_xyqout;
+                    }
+                }
+                if (ew_ele)
+                {
+                    void * new_ew_ele = realloc(*ew_ele, ew_ele_len(*td, 2*ny));
+                    if (new_ew_ele == nullptr){
+                        throw std::bad_alloc();
+                    } else {
+                        *ew_ele = (realtype *)new_ew_ele;
                     }
                 }
             }
@@ -940,8 +956,8 @@ public:
                         const double last_x = xout(tidx - step_back);
                         if (autonomous_exprs)
                             xout(tidx - step_back) = 0; // allows for smaller step sizes
-                        auto inner = this->adaptive(xyqout, td, xend - last_x, nderiv, root_indices,
-                                                    return_on_root, autorestart-1, return_on_error, get_dx_max, tidx - step_back);
+                        auto inner = this->adaptive(xyqout, td, xend - last_x, nderiv, root_indices, return_on_root,
+                                                    autorestart-1, return_on_error, get_dx_max, tidx - step_back, ew_ele);
                         if (autonomous_exprs){
                             for (int i=tidx - step_back; i<=inner; ++i)
                                 xout(i) += last_x;
@@ -977,6 +993,12 @@ public:
                 get_quad_dky(cur_t, 0, yQ.n_vec);
             for (int i=0; i<nq; ++i)
                 qout(tidx, i) = yQ[i];
+            if (ew_ele) {
+                this->get_err_weights(work);
+                work.dump((*ew_ele) + 2*ny*tidx);
+                this->get_est_local_errors(work);
+                work.dump((*ew_ele) + 2*ny*tidx + ny);
+            }
             if (return_on_root && status == CV_ROOT_RETURN)
                 break;
         } while (status != CV_TSTOP_RETURN);
@@ -1005,7 +1027,8 @@ public:
                    std::vector<realtype>& root_out,
                    int autorestart=0, // must be autonomous if >0b
                    bool return_on_error=false,
-                   get_dx_max_fn get_dx_max = get_dx_max_fn()
+                   get_dx_max_fn get_dx_max=get_dx_max_fn(),
+                   realtype * ew_ele=nullptr
         ){
         int iout = 0;
         realtype cur_t=tout[0];
@@ -1064,6 +1087,12 @@ public:
                     get_quad_dky(cur_t, 0, yQ.n_vec);
                 for (int i=0; i<nq; ++i)
                     yqout[iout*(ny*(nderiv+1) + nq) + (nderiv+1)*ny + i] = yQ[i];
+                if (ew_ele){
+                    this->get_err_weights(work);
+                    work.dump(ew_ele + 2*ny*iout);
+                    this->get_est_local_errors(work);
+                    work.dump(ew_ele + 2*ny*iout + ny);
+                }
             } else if (status == CV_ROOT_RETURN) {
                 root_out.push_back(cur_t);
                 for (int i=0; i<ny; ++i)

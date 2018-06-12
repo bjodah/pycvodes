@@ -104,6 +104,10 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         'autonomous_exprs' bool
             Whether expressions contain the independent variable. If not, autorestart
             is allowed to shift the independent variable to zero at restart).
+        'with_jtimes': bool
+            Whether to use analytic Jacobian for iterative solves. (default: False)
+        'ew_ele': bool
+            Whether to return error_weights, estimated_local_errors in info dict.
 
     Returns
     -------
@@ -211,6 +215,10 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
         'autonomous_exprs' bool
             Whether expressions contain the independent variable. If not, autorestart
             is allowed to shift the independent variable to zero at restart).
+        'with_jtimes': bool
+            Whether to use analytic Jacobian for iterative solves. (default: False)
+        'ew_ele': bool
+            Whether to return error_weights, estimated_local_errors in info dict.
 
     Returns
     -------
