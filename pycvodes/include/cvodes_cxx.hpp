@@ -819,7 +819,7 @@ public:
     }
 #define row(ti) (1 + ny*(nderiv+1) + nq)*(ti)
 #define datalen(nt, nd, ny, nq) ((1 + (ny)*((nd)+1) + nq)*(nt)*sizeof(realtype))
-#define ew_ele_len(nt, ny, nq) (ny*nt*sizeof(realtype))
+#define ew_ele_len(nt, ny) (ny*nt*sizeof(realtype))
 #define xout(ti) (*xyqout)[row(ti)]
 #define yout(ti, di, yi) (*xyqout)[row(ti) + 1 + ny*(di) + yi]
 #define qout(ti, qi) (*xyqout)[row(ti) + 1 + ny*(nderiv+1) + qi]
@@ -895,7 +895,7 @@ public:
                 }
                 if (ew_ele)
                 {
-                    void * new_ew_ele = realloc(*ew_ele, ew_ele_len(*td, ny, nq));
+                    void * new_ew_ele = realloc(*ew_ele, ew_ele_len(*td, ny));
                     if (new_ew_ele == nullptr){
                         throw std::bad_alloc();
                     } else {
