@@ -841,7 +841,6 @@ public:
         SVector yQ {nq};
         SVector work {ny};
         long int mxsteps = get_max_num_steps();
-        bool record_ew_ele = ew_ele != nullptr;
         if (*td < 1)
             throw std::logic_error("Expected td >= 1");
         if (xyqout == nullptr)

@@ -63,7 +63,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
         int td = nprealloc
         int tidx = 0
         double * xyqout = <double*>malloc(td*(1 + ny*(nderiv+1) + nquads)*sizeof(double))
-        double * ew_ele_out = <double*>malloc(td*ny*sizeof(double))
+        double * ew_ele_out = <double*>malloc(2*td*ny*sizeof(double))
         cnp.ndarray[cnp.float64_t, ndim=2] xyqout_arr
         cnp.ndarray[cnp.float64_t, ndim=3] ew_ele_arr
         cnp.npy_intp xyqout_dims[2]
