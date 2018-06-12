@@ -51,7 +51,8 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500):
+             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500,
+             bool with_jtimes=False, bool ew_ele=False):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
@@ -60,10 +61,16 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
         vector[int] root_indices
         vector[double] atol_vec
         int td = nprealloc
+        int tidx = 0
         double * xyqout = <double*>malloc(td*(1 + ny*(nderiv+1) + nquads)*sizeof(double))
+        double * ew_ele_out = <double*>malloc(td*ny*sizeof(double))
         cnp.ndarray[cnp.float64_t, ndim=2] xyqout_arr
+        cnp.ndarray[cnp.float64_t, ndim=3] ew_ele_arr
         cnp.npy_intp xyqout_dims[2]
+        cnp.npy_intp ew_ele_dims[3]
         int nout
+    if nprealloc < 1:
+        raise ValueError("Need nprealloc > 0")
     if isinstance(atol, float):
         atol_vec.push_back(atol)
     else:
@@ -81,6 +88,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     xyqout[0] = x0
     for i in range(ny):
         xyqout[1+i] = yq0[i]
+        ew_ele_out[i] = 0.0
     for i in range(nquads):
         xyqout[1+ny*(nderiv+1)+i] = 0.0;
 
@@ -95,16 +103,18 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     odesys.record_steps = record_steps
 
     try:
-        nout = simple_adaptive[PyOdeSys](&xyqout, &td,
-            odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
+        nout = simple_adaptive[PyOdeSys](
+            &xyqout, &td, odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
             xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
-            eps_lin, nderiv, return_on_root, autorestart, return_on_error)
+            eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
+            tidx, &ew_ele_out if ew_ele else NULL)
+
         xyqout_dims[0] = nout + 1
         xyqout_dims[1] = ny*(nderiv+1) + 1 + nquads
-        xyqout_arr = cnp.PyArray_SimpleNewFromData(2, xyqout_dims,
-                                                  cnp.NPY_DOUBLE, <void *>xyqout)
+        xyqout_arr = cnp.PyArray_SimpleNewFromData(2, xyqout_dims, cnp.NPY_DOUBLE, <void *>xyqout)
         PyArray_ENABLEFLAGS(xyqout_arr, cnp.NPY_OWNDATA)
+
         xout = xyqout_arr[:, 0]
         yout = xyqout_arr[:, 1:1+ny*(nderiv+1)]
         if return_on_error:
@@ -123,6 +133,14 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
         if nquads > 0:
             info['quads'] = xyqout_arr[:, 1+(1+nderiv)*ny:]
         yout_shape = (xout.size, ny) if nderiv == 0 else (xout.size, nderiv+1, ny)
+
+        if ew_ele:
+            ew_ele_dims[0] = nout + 1
+            ew_ele_dims[1] = 2
+            ew_ele_dims[2] = ny
+            ew_ele_arr = cnp.PyArray_SimpleNewFromData(3, ew_ele_dims, cnp.NPY_DOUBLE, <void *>ew_ele_out)
+            PyArray_ENABLEFLAGS(ew_ele_arr, cnp.NPY_OWNDATA)
+            info['ew_ele'] = ew_ele_arr
         return xout, yout.reshape(yout_shape), info
     finally:
         del odesys
@@ -137,11 +155,13 @@ def predefined(rhs, jac,
                const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-               bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False):
+               bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
+               bool with_jtimes=False, bool ew_ele=False):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
         cnp.ndarray[cnp.float64_t, ndim=3] yqout = np.empty((xout.size, nderiv+1, nyq))
+        cnp.ndarray[cnp.float64_t, ndim=3] ew_ele_arr = np.empty((xout.size, 2, ny))
         bool with_jacobian = jac is not None
         int nreached
         PyOdeSys * odesys
@@ -177,7 +197,8 @@ def predefined(rhs, jac,
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &yq0[0],
             xout.size, &xout[0], <double *>yqout.data, root_indices, roots_output, nsteps,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
-            linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error)
+            linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes,
+            <double *>ew_ele_arr.data if ew_ele else NULL)
         info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size else True)
         info['nreached'] = nreached
         info['atol'] = atol_vec
@@ -187,6 +208,8 @@ def predefined(rhs, jac,
         if nroots > 0:
             info['root_indices'] = root_indices
             info['roots_output'] = _reshape_roots(np.asarray(roots_output), ny)
+        if ew_ele:
+            info['ew_ele'] = ew_ele_arr
         yout = yqout[:, :, :ny]
         return yout.reshape((xout.size, ny)) if nderiv == 0 else yout, info
     finally:

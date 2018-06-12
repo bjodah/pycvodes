@@ -30,7 +30,8 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         int,
         bool,
         bool,
-        int
+        int,
+        double **
     ) except +
 
     cdef int simple_predefined[U](
@@ -56,5 +57,6 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         unsigned,
         int,
         bool,
-        bool
+        bool,
+        double *
     ) except +
