@@ -819,7 +819,7 @@ public:
     }
 #define row(ti) (1 + ny*(nderiv+1) + nq)*(ti)
 #define datalen(nt, nd, ny, nq) ((1 + (ny)*((nd)+1) + nq)*(nt)*sizeof(realtype))
-#define ew_ele_len(nt, ny) (ny*nt*sizeof(realtype))
+#define ew_ele_len(nt, ny) (2*ny*nt*sizeof(realtype))
 #define xout(ti) (*xyqout)[row(ti)]
 #define yout(ti, di, yi) (*xyqout)[row(ti) + 1 + ny*(di) + yi]
 #define qout(ti, qi) (*xyqout)[row(ti) + 1 + ny*(nderiv+1) + qi]
@@ -833,7 +833,7 @@ public:
                  bool return_on_error=false,
                  get_dx_max_fn get_dx_max = get_dx_max_fn(),
                  int tidx=0,
-                 realtype ** ew_ele=nullptr // length(ew_ele) must be == td*ny if not nullptr
+                 realtype ** ew_ele=nullptr // length(ew_ele) must be == 2*td*ny if not nullptr
         ){
         realtype cur_t;
         int status;
@@ -895,7 +895,7 @@ public:
                 }
                 if (ew_ele)
                 {
-                    void * new_ew_ele = realloc(*ew_ele, ew_ele_len(*td, ny));
+                    void * new_ew_ele = realloc(*ew_ele, ew_ele_len(*td, 2*ny));
                     if (new_ew_ele == nullptr){
                         throw std::bad_alloc();
                     } else {

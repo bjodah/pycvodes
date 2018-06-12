@@ -29,7 +29,7 @@ TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
     std::vector<int> root_indices;
     int td = 1;
     double * xyout = (double *)malloc(td*(odesys.get_ny()+1)*sizeof(double));
-    double * ew_ele = (double *)malloc(td*odesys.get_ny()*sizeof(double));
+    double * ew_ele = (double *)malloc(2*td*odesys.get_ny()*sizeof(double));
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
@@ -62,6 +62,7 @@ TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
 #undef xout
 #undef yout
     free(xyout);
+    free(ew_ele);
 }
 
 TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
@@ -70,7 +71,7 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
     double t0=0, tend=4.0;
     std::vector<double> tout(nt);
     std::vector<double> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
-    std::vector<double> ew_ele(nt*odesys.get_ny());
+    std::vector<double> ew_ele(2*nt*odesys.get_ny());
 
     for (int i=0; i<nt; ++i){
         tout[i] = t0 + i*(tend - t0)/(nt-1);
@@ -92,7 +93,7 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
     bool return_on_error=false;
     bool with_jtimes=false;
     auto nout = cvodes_anyode::simple_predefined(
-        &odesys, {1e-10, 1e-11, 1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
+        &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
         yqout.data(), root_indices, root_out, mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type,
         linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes, ew_ele.data()
         );
