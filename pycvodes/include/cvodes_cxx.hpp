@@ -618,10 +618,19 @@ public:
         this->get_err_weights(ew.n_vec);
     }
     void get_err_weights(realtype * ew) const {
-        SVector ew_(ny, ew);
-        this->get_err_weights(ew_);
+        SVectorV ew_(ny, ew);
+        this->get_err_weights(ew_.n_vec);
     }
-
+    void get_est_local_errors(N_Vector ele) const {
+        check_flag(CVodeGetEstLocalErrors(this->mem, ele));
+    }
+    void get_est_local_errors(SVector &ele) const {
+        this->get_est_local_errors(ele.n_vec);
+    }
+    void get_est_local_errors(realtype * ele) const {
+        SVectorV ele_(ny, ele);
+        this->get_est_local_errors(ele_.n_vec);
+    }
     // get info
     long int get_n_lin_iters() const {
         long int res=0;
@@ -895,11 +904,31 @@ public:
                             unsuccessful_step_throw_(status);
                         }
                     } else {
-                        if (this->verbosity > 0)
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << " ";
+                        if (this->verbosity > 0){
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            if (status >= 0) {
+                                N_Vector ele, ew;
+                                ele = N_VNew_Serial(ny);
+                                ew = N_VNew_Serial(ny);
+                                get_est_local_errors(ele);
+                                get_err_weights(ew);
+                                double mx = 0.0;
+                                int mxi = -1;
+                                for (unsigned i=0; i < ny; ++i){
+                                    const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                    if (cur > mx){
+                                        mxi = i;
+                                        mx = cur;
+                                    }
+                                }
+                                N_VDestroy_Serial(ele);
+                                N_VDestroy_Serial(ew);
+                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                            }
+                        }
                         if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
                             if (this->verbosity > 0)
-                                std::cerr << "Singular Jacobian?";
+                                std::cerr << "    Singular Jacobian?";
                             this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
                             this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
                         }
