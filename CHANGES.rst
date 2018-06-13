@@ -1,3 +1,7 @@
+v0.10.6
+=======
+- Optionally return error weights and estimated local errors (kwarg: ``ew_ele=True``)
+
 v0.10.5
 =======
 - Bump to AnyODE 14
