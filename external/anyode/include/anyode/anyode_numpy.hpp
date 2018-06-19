@@ -180,40 +180,50 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         return handle_status_(py_result, "jac");
     }
     AnyODE::Status dense_jac_cmaj(double t, const double * const y, const double * const fy,
-    			      double * const jac, long int ldim, double * const dfdt=nullptr) override {
+                                  double * const jac, long int ldim, double * const dfdt=nullptr) override {
         npy_intp Jdims[2] { static_cast<npy_intp>(this->ny), static_cast<npy_intp>(this->ny) };
         npy_intp strides[2] { sizeof(double), static_cast<npy_intp>(ldim*sizeof(double)) };
+        int flags = NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE;
+        if (ldim == Jdims[0]) {
+            flags |= NPY_ARRAY_F_CONTIGUOUS;
+        }
         const auto type_tag = NPY_DOUBLE;
         PyObject * py_jmat = PyArray_New(
             &PyArray_Type, 2, Jdims, type_tag, strides,
             static_cast<void *>(const_cast<double *>(jac)), sizeof(double),
-            NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
+            flags, nullptr);
         AnyODE::Status status = call_py_jac(t, y, fy, py_jmat, dfdt);
         Py_DECREF(py_jmat);
         return status;
     }
     AnyODE::Status dense_jac_rmaj(double t, const double * const y, const double * const fy,
-    			      double * const jac, long int ldim, double * const dfdt=nullptr) override {
+                                  double * const jac, long int ldim, double * const dfdt=nullptr) override {
         npy_intp Jdims[2] { static_cast<npy_intp>(this->ny), static_cast<npy_intp>(this->ny) };
         npy_intp strides[2] { static_cast<npy_intp>(ldim*sizeof(double)), sizeof(double) };
         const auto type_tag = NPY_DOUBLE;
+        int flags = NPY_ARRAY_ALIGNED| NPY_ARRAY_WRITEABLE;
+        if (ldim == Jdims[1]) {
+            flags |= NPY_ARRAY_C_CONTIGUOUS;
+        }
         PyObject * py_jmat = PyArray_New(
             &PyArray_Type, 2, Jdims, type_tag, strides,
-            static_cast<void *>(const_cast<double *>(jac)), sizeof(double),
-            NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
+            static_cast<void *>(const_cast<double *>(jac)), sizeof(double), flags, nullptr);
         AnyODE::Status status = call_py_jac(t, y, fy, py_jmat, dfdt);
         Py_DECREF(py_jmat);
         return status;
     }
     AnyODE::Status banded_jac_cmaj(double t, const double * const y, const double * const fy,
-    			       double * const jac, long int ldim) override {
+                                   double * const jac, long int ldim) override {
         npy_intp Jdims[2] { 1 + this->mlower + this->mupper, static_cast<npy_intp>(this->ny) };
         npy_intp strides[2] { sizeof(double), static_cast<npy_intp>(ldim*sizeof(double)) };
         const auto type_tag = NPY_DOUBLE;
+        int flags = NPY_ARRAY_ALIGNED | NPY_ARRAY_WRITEABLE;
+        if (ldim == Jdims[0] ) {
+            flags |= NPY_ARRAY_F_CONTIGUOUS;
+        }
         PyObject * py_jmat = PyArray_New(
             &PyArray_Type, 2, Jdims, type_tag, strides,
-            static_cast<void *>(const_cast<double *>(jac)), sizeof(double),
-            NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
+            static_cast<void *>(const_cast<double *>(jac)), sizeof(double), flags, nullptr);
         AnyODE::Status status = call_py_jac(t, y, fy, py_jmat, nullptr);
         Py_DECREF(py_jmat);
         return status;
