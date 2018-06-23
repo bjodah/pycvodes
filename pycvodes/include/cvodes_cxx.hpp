@@ -1,7 +1,6 @@
 #pragma once
-// Thin C++11 wrapper around CVODES v2.8.2 (SUNDIALS v2.6.2)
-// far from all functionality is available yet.
-// sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
+// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.1.x)
+// far from all functionality has been wrapped yet.
 
 #include <assert.h>
 #include <cfenv>
@@ -25,8 +24,13 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunmatrix/sunmatrix_band.h>
 #include <sunmatrix/sunmatrix_sparse.h>
-#include <sunlinsol/sunlinsol_lapackdense.h>
-#include <sunlinsol/sunlinsol_lapackband.h>
+#if defined(SUNDIALS_BLAS_LAPACK)
+#  include <sunlinsol/sunlinsol_lapackdense.h>
+#  include <sunlinsol/sunlinsol_lapackband.h>
+#else
+#  include <sunlinsol/sunlinsol_dense.h>
+#  include <sunlinsol/sunlinsol_band.h>
+#endif
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
@@ -35,7 +39,11 @@
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
-#include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#if SUNDIALS_BLAS_LAPACK == 1
+#  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#else
+#  include <cvodes/cvodes_dense.h>
+#endif
 #define SUNTRUE TRUE
 #define SUNFALSE FALSE
 #else
@@ -383,7 +391,11 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
+#if defined(SUNDIALS_BLAS_LAPACK)
             LS_ = SUNLapackDense(y_, A_);
+#else
+            LS_ = SUNDenseLinearSolver(y_, A_);
+#endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -391,9 +403,20 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
+#if SUNDIALS_BLAS_LAPACK == 1
         status = CVLapackDense(this->mem, ny);
-        if (status != CVDLS_SUCCESS)
-            throw std::runtime_error("CVLapackDense failed");
+#else
+        status = CVDense(this->mem, ny);
+#endif
+        if (status != CVDLS_SUCCESS) {
+            throw std::runtime_error(
+#if SUNDIALS_BLAS_LAPACK == 1
+                "CVLapackDense failed"
+#else
+                "CVDense failed"
+#endif
+                );
+        }
 #endif
     }
     void set_dense_jac_fn(
@@ -431,7 +454,11 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
+#if defined(SUNDIALS_BLAS_LAPACK)
             LS_ = SUNLapackBand(y_, A_);
+#else
+            LS_ = SUNBandLinearSolver(y_, A_);
+#endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -439,9 +466,20 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-        status = CVLapackBand(this->mem, N, mupper, mlower);
+        status =
+#if SUNDIALS_BLAS_LAPACK == 1
+        CVLapackBand(this->mem, N, mupper, mlower);
+#else
+        CVBand(this->mem, N, mupper, mlower);
+#endif
         if (status != CVDLS_SUCCESS)
-            throw std::runtime_error("CVLapackBand failed");
+            throw std::runtime_error(
+#if SUNDIALS_BLAS_LAPACK == 1
+                "CVLapackBand failed"
+#else
+                "CVBand failed"
+#endif
+                );
 #endif
     }
     void set_band_jac_fn(
