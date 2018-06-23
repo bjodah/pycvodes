@@ -1,9 +1,12 @@
-#!/bin/bash -xeu
+#!/bin/bash -xe
 PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
+
+export CPATH=${2}/include LIBRARY_PATH=${2}/lib LD_LIBRARY_PATH=${2}/lib  # SUNDIALS_ROOT=${2}
+git clean -xfd
 
 python3 setup.py sdist
 (cd dist/; python3 -m pip install $PKG_NAME-$(python3 ../setup.py --version).tar.gz)
