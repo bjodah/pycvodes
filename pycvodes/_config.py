@@ -148,8 +148,8 @@ else:
     else:
         _warn("Unknown sundials version:\n%s" % _sun2_out)
 
-if 'PYCVODES_LAPACK' in env:
-    if env['PYCVODES_LAPACK'] == '':
+if 'PYCVODES_LAPACK' in os.environ:
+    if os.environ['PYCVODES_LAPACK'] == '':
         _lapack_ok = False
 
 env = {
