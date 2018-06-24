@@ -32,4 +32,4 @@ install:
 build: off
 
 test_script:
-    - "conda build conda-recipe"
+    - conda.exe build conda-recipe --quiet
