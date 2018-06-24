@@ -82,9 +82,9 @@ def _compiles_ok(codestring):
     ntf.close()
     compiler = new_compiler()
     customize_compiler(compiler)
+    out = ''
     try:
         if 'pytest' in sys.modules:
-            out = ''
             compiler.compile([ntf.name])
         else:
             with capture_stdout_stderr() as out:
@@ -93,7 +93,7 @@ def _compiles_ok(codestring):
         _ok = False
     except Exception:
         _ok = False
-        _warn("Failed test compilation of '%s'" % (codestring))
+        _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
     else:
         _ok = True
 
@@ -120,6 +120,7 @@ _sun3_ok, _sun3_out = _compiles_ok("""
 #endif
 """)
 
+_sun3, _lapack_ok = False, False
 if _sun3_ok:
     _lapack_ok, _lapack_out = _compiles_ok("""
 #include <stdio.h>
