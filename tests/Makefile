@@ -1,22 +1,28 @@
 CXX ?= g++
 LIBS ?=$(shell python3 -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
-CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0
+USE_LAPACK=$(shell python3 -c "from pycvodes._config import env; print('0' if env['LAPACK'] == '' else '1')")
+CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DUSE_LAPACK=$(USE_LAPACK)
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
-
 .PHONY: test clean
 
-TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case
+TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_cxx test_sundials_cxx test_tough_case
 
-test: test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_anyode_svd test_cvodes_cxx test_sundials_cxx test_tough_case test_cvodes_anyode_parallel
+ifeq ($(USE_LAPACK),1)
+TARGETS += test_cvodes_anyode_svd 
+endif
+
+test: $(TARGETS) test_cvodes_anyode_parallel
 	./test_cvodes_anyode --abortx 1
 	./test_cvodes_anyode_autorestart --abortx 1
 	./test_cvodes_anyode_quad --abortx 1
+ifeq ($(USE_LAPACK),1)
 	./test_cvodes_anyode_svd --abortx 1
+endif
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
 	./test_tough_case --abortx 1
