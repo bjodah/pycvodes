@@ -19,6 +19,8 @@ build:
     - .ci/run_ci.sh pycvodes /drone/sundials-2.7.0-nolapack
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
     - .ci/run_ci.sh pycvodes /usr
+    - PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1
+    - PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - python3 -m pip install --user -e .[docs]
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
