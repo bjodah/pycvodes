@@ -2,8 +2,52 @@
 import os
 import warnings
 import io
+import sys
 import tempfile
-from contextlib import redirect_stdout
+from contextlib import contextmanager
+
+@contextmanager
+def capture_stdout_stderr():
+    def _redirect(attr, src_fd, dest_fd):
+        getattr(sys, attr).close()
+        os.dup2(src_fd, dest_fd)
+
+        if sys.version_info[0] == 2:
+            buf = os.fdopen(dest_fd, 'wb')
+            setattr(sys, attr, buf)
+        else:
+            buf = io.open(dest_fd, 'wb')
+            setattr(sys, attr, io.TextIOWrapper(buf))
+
+    ori_fds = [sys.stdout.fileno(), sys.stderr.fileno()]
+    encdngs = [sys.stdout.encoding, sys.stderr.encoding]
+    dup_fds = [os.dup(fd) for fd in ori_fds]
+    attrs = ['stdout', 'stderr']
+    try:
+        tfiles = [
+            tempfile.TemporaryFile(mode='w+b'),
+            tempfile.TemporaryFile(mode='w+b')
+        ]
+        for attr, tfile, ori_fd in zip(attrs, tfiles, ori_fds):
+            _redirect(attr, tfile.fileno(), ori_fd)
+        capt = [io.BytesIO(), io.BytesIO()]
+        yield capt
+    finally:
+        _redirect('stdout', saved_stdout_fd, original_stdout_fd)
+        _redirect('stderr', saved_stdout_fd, original_stderr_fd)
+        out_tfile.flush()
+        err_tfile.flush()
+        out_tfile.seek(0, io.SEEK_SET)
+        err_tfile.seek(0, io.SEEK_SET)
+        capt[0].write(out_tfile.read())
+        capt[1].write(err_tfile.read())
+    # finally:
+        out_tfile.close()
+        err_tfile.close()
+        capt[0] = capt[0].getvalue().decode(out_enc)
+        capt[1] = capt[1].getvalue().decode(err_enc)
+        os.close(saved_stdout_fd)
+        os.close(saved_stderr_fd)
 
 
 def _warn(msg):
@@ -23,9 +67,9 @@ def _compiles_ok(codestring):
     compiler = new_compiler()
     customize_compiler(compiler)
     try:
-        capt = io.StringIO()
-        with redirect_stdout(capt):
-            compiler.compile([ntf.name])
+        # with capture_stdout_stderr() as out:
+        out = ''
+        compiler.compile([ntf.name])
     except CompileError:
         _ok = False
     except Exception:
@@ -33,8 +77,6 @@ def _compiles_ok(codestring):
         _warn("Failed test compilation of '%s'" % (codestring))
     else:
         _ok = True
-    finally:
-        out = capt.getvalue()
 
     os.unlink(ntf.name)
     return _ok, out
