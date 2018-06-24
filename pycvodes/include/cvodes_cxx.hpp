@@ -49,6 +49,7 @@
 #  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 #else
 #  include <cvodes/cvodes_dense.h>
+#  include <cvodes/cvodes_band.h>
 #endif
 #define SUNTRUE TRUE
 #define SUNFALSE FALSE
