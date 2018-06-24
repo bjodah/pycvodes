@@ -31,6 +31,4 @@ install:
 build: off
 
 test_script:
-    - "conda install --yes --quiet sundials python pip numpy cython pytest"
-    - "pip install ."
-    - "pytest --pyargs pycvodes -ra"
+    - "conda build conda-recipe"

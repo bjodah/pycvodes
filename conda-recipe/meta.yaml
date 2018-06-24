@@ -37,6 +37,8 @@ test:
     - pycvodes
   requires:
     - pytest
+  commands:
+    - pytest --pyargs {{ name }}
 
 about:
   home: https://github.com/bjodah/{{ name }}
