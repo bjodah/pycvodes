@@ -1,4 +1,7 @@
-#!/bin/bash -xe
+#!/bin/bash -x
+rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
+set -e
+
 PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
