@@ -65,9 +65,11 @@ else:
         _warn("Unknown sundials version:\n%s" % _sun2_out)
 
 env = {
-    'LAPACK': 'blas,lapack',
+    'LAPACK': 'blas,lapack' if _lapack_ok else '',
     'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
-        ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if _sun3 else ''
+        ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if _sun3 and _lapack_ok else (
+            ',sundials_sunlinsoldense,sundials_sunlinsolband' if _sun3 and not _lapack_ok else ''
+        )
     ),
 }
 
