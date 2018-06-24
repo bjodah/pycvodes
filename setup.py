@@ -55,7 +55,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
                                    os.path.join('external', 'anyode', 'include')]
     if env['LAPACK']:
         ext_modules[0].libraries += env['LAPACK'].split(',')
-    print("env['LAPACK']:", env['LAPACK'])##DEBUG,DO-NOT-MERGE!
+    print("env['LAPACK']:", env['LAPACK'])  ## DEBUG,DO-NOT-MERGE!
     ext_modules[0].define_macros += [('USE_LAPACK', '1' if env['LAPACK'] else '0')]
 
     if env['SUNDIALS_LIBS']:
