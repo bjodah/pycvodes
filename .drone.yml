@@ -6,7 +6,6 @@ cache:
 build:
   image: bjodah/bjodahimg18dev:v1.2
   environment:
-    - PYCVODES_LAPACK=lapack,blas
     - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-6.0/bin/llvm-symbolizer
     - ASAN_OPTIONS=symbolize=1
   commands:
