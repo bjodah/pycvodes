@@ -24,8 +24,10 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunmatrix/sunmatrix_band.h>
 #include <sunmatrix/sunmatrix_sparse.h>
-#if !defined(USE_LAPACK) && defined(SUNDIALS_BLAS_LAPACK)
-#  define USE_LAPACK 1
+#if !defined(USE_LAPACK)
+#  if defined(SUNDIALS_BLAS_LAPACK)
+#    define USE_LAPACK 1
+#  endif
 #endif
 #if USE_LAPACK == 1
 #  include <sunlinsol/sunlinsol_lapackdense.h>
@@ -42,8 +44,10 @@
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
-#if !defined(USE_LAPACK) && SUNDIALS_BLAS_LAPACK == 1
-#  define USE_LAPACK 1
+#if !defined(USE_LAPACK)
+#  if SUNDIALS_BLAS_LAPACK == 1
+#    define USE_LAPACK 1
+#  endif
 #endif
 #if USE_LAPACK == 1
 #  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
@@ -567,7 +571,7 @@ public:
         case CVSPILS_LMEM_NULL:
             throw std::runtime_error("CVSPILS linear solver has not been initialized)");
         }
-        if ((check_ill_input) && (flag == CVSPILS_ILL_INPUT))
+        if ((check_ill_input) and (flag == CVSPILS_ILL_INPUT))
             throw std::runtime_error("Bad input.");
     }
     void set_jac_times_vec_fn(CVSpilsJacTimesVecFn jtimes){
@@ -1044,7 +1048,7 @@ public:
                 this->get_est_local_errors(work);
                 work.dump((*ew_ele) + 2*ny*tidx + ny);
             }
-            if (return_on_root && status == CV_ROOT_RETURN)
+            if (return_on_root and status == CV_ROOT_RETURN)
                 break;
         } while (status != CV_TSTOP_RETURN);
 
