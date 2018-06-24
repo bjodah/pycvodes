@@ -22,6 +22,7 @@ build:
     - PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1
     - PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - python3 -m pip install --user -e .[docs]
+    - python3 -m pytest --pep8
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - apt-get remove -qq -y libsundials-dev
