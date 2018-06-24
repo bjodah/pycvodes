@@ -1,6 +1,5 @@
 # This file is replaced by setup.py in distributions for tagged releases
 import os
-import subprocess
 import warnings
 import io
 import tempfile
