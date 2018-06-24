@@ -5,6 +5,6 @@ from pycvodes._config import env
 def make_ext(modname, pyxfilename):
     from Cython.Build import cythonize
     ext = cythonize([pyxfilename], include_path=['../pycvodes/include', '../external/anyode/cython_def'])[0]
-    ext.libraries = env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(',')
+    ext.libraries = [l for l in (env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(',')) if l != '']
     ext.include_dirs=['../pycvodes/include', '../external/anyode/include', np.get_include()]
     return ext
