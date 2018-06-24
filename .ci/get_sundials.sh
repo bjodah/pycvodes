@@ -1,13 +1,15 @@
 #!/bin/bash -eu
-PREFIX=$1
+VERSION=$1
+PREFIX=$2
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
-VERSION=$2
 if [[ $VERSION == "3.1.1" ]]; then
     SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
     SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
 elif [[ $VERSION == "2.7.0" ]]; then
     SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
     SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"    
+else
+    2>&1 echo "Unknown sundials version $VERSION"
 fi
 
 SUNDIALS_URLS=(\
