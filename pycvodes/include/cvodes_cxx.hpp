@@ -24,7 +24,10 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunmatrix/sunmatrix_band.h>
 #include <sunmatrix/sunmatrix_sparse.h>
-#if defined(SUNDIALS_BLAS_LAPACK)
+#if !defined(USE_LAPACK) && defined(SUNDIALS_BLAS_LAPACK)
+#  define USE_LAPACK 1
+#endif
+#if USE_LAPACK == 1
 #  include <sunlinsol/sunlinsol_lapackdense.h>
 #  include <sunlinsol/sunlinsol_lapackband.h>
 #else
@@ -39,7 +42,10 @@
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
-#if SUNDIALS_BLAS_LAPACK == 1
+#if !defined(USE_LAPACK) && SUNDIALS_BLAS_LAPACK == 1
+#  define USE_LAPACK 1
+#endif
+#if USE_LAPACK == 1
 #  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
 #else
 #  include <cvodes/cvodes_dense.h>
@@ -391,7 +397,7 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if defined(SUNDIALS_BLAS_LAPACK)
+#if USE_LAPACK == 1
             LS_ = SUNLapackDense(y_, A_);
 #else
             LS_ = SUNDenseLinearSolver(y_, A_);
@@ -403,14 +409,14 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-#if SUNDIALS_BLAS_LAPACK == 1
+#if USE_LAPACK == 1
         status = CVLapackDense(this->mem, ny);
 #else
         status = CVDense(this->mem, ny);
 #endif
         if (status != CVDLS_SUCCESS) {
             throw std::runtime_error(
-#if SUNDIALS_BLAS_LAPACK == 1
+#if USE_LAPACK == 1
                 "CVLapackDense failed"
 #else
                 "CVDense failed"
@@ -454,7 +460,7 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if defined(SUNDIALS_BLAS_LAPACK)
+#if USE_LAPACK == 1
             LS_ = SUNLapackBand(y_, A_);
 #else
             LS_ = SUNBandLinearSolver(y_, A_);
@@ -467,14 +473,14 @@ public:
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
         status =
-#if SUNDIALS_BLAS_LAPACK == 1
+#if USE_LAPACK == 1
         CVLapackBand(this->mem, N, mupper, mlower);
 #else
         CVBand(this->mem, N, mupper, mlower);
 #endif
         if (status != CVDLS_SUCCESS)
             throw std::runtime_error(
-#if SUNDIALS_BLAS_LAPACK == 1
+#if USE_LAPACK == 1
                 "CVLapackBand failed"
 #else
                 "CVBand failed"
