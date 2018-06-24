@@ -148,6 +148,10 @@ else:
     else:
         _warn("Unknown sundials version:\n%s" % _sun2_out)
 
+if 'PYCVODES_LAPACK' in env:
+    if env['PYCVODES_LAPACK'] == '':
+        _lapack_ok = False
+
 env = {
     'LAPACK': 'blas,lapack' if _lapack_ok else '',
     'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
