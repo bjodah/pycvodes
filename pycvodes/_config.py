@@ -2,6 +2,9 @@
 import os
 import subprocess
 import warnings
+import io
+import tempfile
+from contextlib import redirect_stdout
 
 
 def _warn(msg):
@@ -12,17 +15,31 @@ def _warn(msg):
 
 
 def _compiles_ok(codestring):
-    _preproc = subprocess.Popen('%s -E -' % os.environ.get('CXX', 'cc -x c++'), shell=True, stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    out, _err = _preproc.communicate(codestring.encode('utf-8'))
-    _retcode = _preproc.wait()
-    if _retcode == 0:
-        return True, out
-    elif _retcode > 0:
-        return False, out
+    from distutils.ccompiler import new_compiler
+    from distutils.sysconfig import customize_compiler
+    from distutils.errors import CompileError
+    ntf = tempfile.NamedTemporaryFile(suffix='.cpp', delete=False)
+    ntf.write(codestring.encode('utf-8'))
+    ntf.close()
+    compiler = new_compiler()
+    customize_compiler(compiler)
+    try:
+        capt = io.StringIO()
+        with redirect_stdout(capt):
+            compiler.compile([ntf.name])
+    except CompileError:
+        _ok = False
+    except Exception:
+        _ok = False
+        _warn("Failed test compilation of '%s'" % (codestring))
     else:
-        _warn("Failed test compilation of '%s':\n%s" % (codestring, out))
-        return False, out
+        _ok = True
+    finally:
+        out = capt.getvalue()
+
+    os.unlink(ntf.name)
+    return _ok, out
+
 
 _math_ok, _math_out = _compiles_ok('#include <math.h>')
 if not _math_ok:
@@ -36,6 +53,7 @@ if not _sundials_ok:
 _sun3_ok, _sun3_out = _compiles_ok("""
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
+#include <stdio.h>
 #include <sunmatrix/sunmatrix_dense.h>
 #else
 #error "Sundials 2?"
@@ -43,7 +61,9 @@ _sun3_ok, _sun3_out = _compiles_ok("""
 """)
 
 if _sun3_ok:
-    _lapack_ok, _lapack_out = _compiles_ok('#include <sunlinsol/sunlinsol_lapackband.h>')
+    _lapack_ok, _lapack_out = _compiles_ok("""
+#include <stdio.h>
+#include <sunlinsol/sunlinsol_lapackband.h>""")
     if not _lapack_ok:
         _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
     _sun3 = True
@@ -58,7 +78,10 @@ else:
 """)
     if _sun2_ok:
         _sun3 = False
-        _lapack_ok, _lapack_out = _compiles_ok('#include <cvodes/cvodes_lapack.h>')
+        _lapack_ok, _lapack_out = _compiles_ok("""
+#include <cvodes/cvodes_lapack.h>
+
+""")
         if not _lapack_ok:
             _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
     else:
