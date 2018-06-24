@@ -1,4 +1,11 @@
 #!/bin/bash -eu
+#
+# Usage:
+#
+#  $ ./get_sundials.sh 3.1.1 /opt/sun-3.1.1 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t"
+#  $ ./get_sundials.sh 2.7.0 /opt/sun-2.7.0 -DLAPACK_ENABLE:BOOL=OFF
+#
+
 VERSION=$1
 PREFIX=$2
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
