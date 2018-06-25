@@ -156,7 +156,7 @@ env = {
     'LAPACK': 'blas,lapack' if _lapack_ok else '',
     'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
         ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_sun3 and _lapack_ok) else (
-            ',sundials_sunlinsoldense,sundials_sunlinsolband' if (_sun3 and not _lapack_ok) else ''
+            ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunmatrixdense,sundials_sunmatrixband' if (_sun3 and not _lapack_ok) else ''
         )
     ),
 }
