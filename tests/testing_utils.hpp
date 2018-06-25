@@ -8,7 +8,7 @@ struct Decay : public AnyODE::OdeSysBase<T> {
 
     Decay(T k) : m_k(k) {}
     int get_ny() const override { return 1; }
-    AnyODE::Status rhs(T t, const T * const __restrict__ y, T * const __restrict__ f) override {
+    AnyODE::Status rhs(T t, const T * const ANYODE_RESTRICT y, T * const ANYODE_RESTRICT f) override {
         AnyODE::ignore(t);
         f[0] = -y[0];
         return AnyODE::Status::success;

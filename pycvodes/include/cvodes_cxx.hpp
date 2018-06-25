@@ -45,7 +45,7 @@
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
 #if !defined(USE_LAPACK)
-#  if SUNDIALS_BLAS_LAPACK == 1
+#  if defined(SUNDIALS_BLAS_LAPACK)
 #    define USE_LAPACK 1
 #  endif
 #endif

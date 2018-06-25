@@ -6,20 +6,20 @@ struct OdeSys : public AnyODE::OdeSysBase<double> {
     OdeSys(const double * const params);
     int get_ny() const override;
     AnyODE::Status rhs(double t,
-                       const double * const __restrict__ y,
-                       double * const __restrict__ f) override;
+                       const double * const ANYODE_RESTRICT y,
+                       double * const ANYODE_RESTRICT f) override;
     AnyODE::Status dense_jac_cmaj(double t,
-                                  const double * const __restrict__ y,
-                                  const double * const __restrict__ fy,
-                                  double * const __restrict__ jac,
+                                  const double * const ANYODE_RESTRICT y,
+                                  const double * const ANYODE_RESTRICT fy,
+                                  double * const ANYODE_RESTRICT jac,
                                   long int ldim,
-                                  double * const __restrict__ dfdt=nullptr) override;
+                                  double * const ANYODE_RESTRICT dfdt=nullptr) override;
     AnyODE::Status dense_jac_rmaj(double t,
-                                  const double * const __restrict__ y,
-                                  const double * const __restrict__ fy,
-                                  double * const __restrict__ jac,
+                                  const double * const ANYODE_RESTRICT y,
+                                  const double * const ANYODE_RESTRICT fy,
+                                  double * const ANYODE_RESTRICT jac,
                                   long int ldim,
-                                  double * const __restrict__ dfdt=nullptr) override;
+                                  double * const ANYODE_RESTRICT dfdt=nullptr) override;
 };
 
 
@@ -30,8 +30,8 @@ int OdeSys::get_ny() const {
     return 5;
 }
 AnyODE::Status OdeSys::rhs(double t,
-                           const double * const __restrict__ y,
-                           double * const __restrict__ f) {
+                           const double * const ANYODE_RESTRICT y,
+                           double * const ANYODE_RESTRICT f) {
     AnyODE::ignore(t);
     const double x0 = m_p[0]*y[0];
     const double x1 = 0.120272395808565/m_p[0];
@@ -58,11 +58,11 @@ AnyODE::Status OdeSys::rhs(double t,
 
 
 AnyODE::Status OdeSys::dense_jac_cmaj(double t,
-                                      const double * const __restrict__ y,
-                                      const double * const __restrict__ fy,
-                                      double * const __restrict__ jac,
+                                      const double * const ANYODE_RESTRICT y,
+                                      const double * const ANYODE_RESTRICT fy,
+                                      double * const ANYODE_RESTRICT jac,
                                       long int ldim,
-                                      double * const __restrict__ dfdt) {
+                                      double * const ANYODE_RESTRICT dfdt) {
     // The AnyODE::ignore(...) calls below are used to generate code free from compiler warnings.
     AnyODE::ignore(fy);  // Currently we are not using fy (could be done through extensive pattern matching)
     AnyODE::ignore(t);
@@ -126,11 +126,11 @@ AnyODE::Status OdeSys::dense_jac_cmaj(double t,
 }
 
 AnyODE::Status OdeSys::dense_jac_rmaj(double t,
-                                      const double * const __restrict__ y,
-                                      const double * const __restrict__ fy,
-                                      double * const __restrict__ jac,
+                                      const double * const ANYODE_RESTRICT y,
+                                      const double * const ANYODE_RESTRICT fy,
+                                      double * const ANYODE_RESTRICT jac,
                                       long int ldim,
-                                      double * const __restrict__ dfdt) {
+                                      double * const ANYODE_RESTRICT dfdt) {
     // The AnyODE::ignore(...) calls below are used to generate code free from compiler warnings.
     AnyODE::ignore(fy);  // Currently we are not using fy (could be done through extensive pattern matching)
     AnyODE::ignore(t);
