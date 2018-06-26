@@ -53,10 +53,10 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].language = 'c++'
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
-    if env['LAPACK']:
+    if env['LAPACK'] not in ('', '0'):
         ext_modules[0].libraries += env['LAPACK'].split(',')
 
-    ext_modules[0].define_macros += [('USE_LAPACK', '1' if env['LAPACK'] else '0')]
+    ext_modules[0].define_macros += [('USE_LAPACK', '1' if env['LAPACK'] not in ('', '0') else '0')]
 
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')

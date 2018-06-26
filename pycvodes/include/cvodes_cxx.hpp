@@ -900,6 +900,9 @@ public:
             if (*ew_ele == nullptr) {
                 throw std::logic_error("ew_ele cannot point to a nullptr");
             }
+            for (int i=0; i<2*ny; ++i){
+                ew_ele[tidx*2*ny+i] = 0.0;
+            }
         }
         if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
         if (record_steps)
@@ -1110,6 +1113,11 @@ public:
         }
         for (int i=0; i<nq; ++i){
             yqout[ny*(nderiv+1) + i] = yq0[ny+i];
+        }
+        if (ew_ele) {
+            for (int i=0; i<2*ny; ++i){
+                ew_ele[i] = 0.0;
+            }
         }
         for(iout=1; (iout < nt); iout++) {
             if (get_dx_max)
