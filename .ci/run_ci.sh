@@ -24,10 +24,10 @@ git archive -o /tmp/$PKG_NAME.zip HEAD
 python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
-cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}"; make clean; cd -
-cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" EXTRA_FLAGS=-DNDEBUG; make clean; cd -
-cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
-cd tests/; make EXTRA_LIBS="${EXTRA_LIBS:-}" CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+cd tests/; make; make clean; cd -
+cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
+cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
 
 (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
 (cd examples/; ../scripts/render_index.sh *.html)

@@ -34,7 +34,7 @@ endif
 	python3 ./_test_cvodes_anyode.py
 
 clean:
-	rm catch.hpp
+	rm catch.o
 	rm $(TARGETS)
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
