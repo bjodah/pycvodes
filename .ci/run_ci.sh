@@ -26,8 +26,10 @@ python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
 
 cd tests/; make; make clean; cd -
 cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
-cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
-cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
+    cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+    cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+fi
 
 (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
 (cd examples/; ../scripts/render_index.sh *.html)
