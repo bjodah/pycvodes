@@ -103,7 +103,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         Py_DECREF(py_result);
 
 
-        if ((PyErr_Occurred() && (result == -1)) or
+        if ((PyErr_Occurred() && (result == -1)) ||
             (result == static_cast<long int>(AnyODE::Status::unrecoverable_error))) {
             return AnyODE::Status::unrecoverable_error;
         } else if (result == static_cast<long int>(AnyODE::Status::recoverable_error)) {
