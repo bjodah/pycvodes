@@ -901,7 +901,7 @@ public:
                 throw std::logic_error("ew_ele cannot point to a nullptr");
             }
             for (int i=0; i<2*ny; ++i){
-                ew_ele[tidx*2*ny+i] = 0.0;
+                (*ew_ele)[tidx*2*ny+i] = 0.0;
             }
         }
         if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
