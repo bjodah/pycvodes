@@ -47,7 +47,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
     int get_nquads() const override { return nquads; }
     int get_nroots() const override { return nroots; }
     double get_dx0(double t, const double * const y) override {
-        if (py_dx0cb == nullptr or py_dx0cb == Py_None) {
+        if (py_dx0cb == nullptr || py_dx0cb == Py_None) {
             return default_dx0;
         }
         npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
@@ -70,7 +70,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         return res;
     }
     double get_dx_max(double t, const double * const y) override {
-        if (py_dx_max_cb == nullptr or py_dx_max_cb == Py_None) {
+        if (py_dx_max_cb == nullptr || py_dx_max_cb == Py_None) {
             return INFINITY;
         }
         npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
