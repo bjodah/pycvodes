@@ -12,18 +12,18 @@ struct OdeSys : public AnyODE::OdeSysBase<double> {
         return 2;
     }
     AnyODE::Status rhs(double /* t */,
-                       const double * const __restrict__ y,
-                       double * const __restrict__ f) override
+                       const double * const ANYODE_RESTRICT y,
+                       double * const ANYODE_RESTRICT f) override
     {
         f[0] = -0.7*y[0]; // y(t) = y(0)*exp(-0.7*t)
         return AnyODE::Status::success;
     }
     AnyODE::Status dense_jac_cmaj(double /* t */,
-                                  const double * const __restrict__ /* y */,
-                                  const double * const __restrict__ /* fy */,
-                                  double * const __restrict__ jac,
+                                  const double * const ANYODE_RESTRICT /* y */,
+                                  const double * const ANYODE_RESTRICT /* fy */,
+                                  double * const ANYODE_RESTRICT jac,
                                   long int /* ldim */,
-                                  double * const __restrict__ /*dfdt*/=nullptr) override
+                                  double * const ANYODE_RESTRICT /*dfdt*/=nullptr) override
     {
         jac[0] = -0.7;
         return AnyODE::Status::success;

@@ -17,10 +17,12 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         py_kwargs(py_kwargs), py_dx0cb(py_dx0cb), py_dx_max_cb(py_dx_max_cb),
         mlower(mlower), mupper(mupper), nquads(nquads), nroots(nroots)
     {
-        if (py_rhs == nullptr)
+        if (py_rhs == nullptr){
             throw std::runtime_error("py_rhs must not be nullptr");
-        if (py_dx_max_cb != nullptr and py_dx_max_cb != Py_None)
+        }
+        if ((py_dx_max_cb != nullptr) && (py_dx_max_cb != Py_None)) {
             this->use_get_dx_max = true;
+        }
         Py_INCREF(py_rhs);
         Py_XINCREF(py_jac);
         Py_XINCREF(py_quads);
@@ -45,8 +47,9 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
     int get_nquads() const override { return nquads; }
     int get_nroots() const override { return nroots; }
     double get_dx0(double t, const double * const y) override {
-        if (py_dx0cb == nullptr or py_dx0cb == Py_None)
+        if (py_dx0cb == nullptr || py_dx0cb == Py_None) {
             return default_dx0;
+        }
         npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
         const auto type_tag = NPY_DOUBLE;
         PyObject * py_yarr = PyArray_SimpleNewFromData(
@@ -56,17 +59,20 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_dx0cb, py_arglist, this->py_kwargs);
         Py_DECREF(py_arglist);
         Py_DECREF(py_yarr);
-        if (py_result == nullptr)
+        if (py_result == nullptr) {
             throw std::runtime_error("get_dx0 failed (dx0cb failed)");
+        }
         double res = PyFloat_AsDouble(py_result);
         Py_DECREF(py_result);
-        if (PyErr_Occurred() and res == -1.0)
+        if ((PyErr_Occurred()) && (res == -1.0)) {
             throw std::runtime_error("get_dx0 failed (value returned by dx0cb could not be converted to float)");
+        }
         return res;
     }
     double get_dx_max(double t, const double * const y) override {
-        if (py_dx_max_cb == nullptr or py_dx_max_cb == Py_None)
+        if (py_dx_max_cb == nullptr || py_dx_max_cb == Py_None) {
             return INFINITY;
+        }
         npy_intp dims[1] { static_cast<npy_intp>(this->ny) } ;
         const auto type_tag = NPY_DOUBLE;
         PyObject * py_yarr = PyArray_SimpleNewFromData(
@@ -76,12 +82,14 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_dx_max_cb, py_arglist, this->py_kwargs);
         Py_DECREF(py_arglist);
         Py_DECREF(py_yarr);
-        if (py_result == nullptr)
+        if (py_result == nullptr) {
             throw std::runtime_error("get_dx_max failed (dx_max_cb failed)");
+        }
         double res = PyFloat_AsDouble(py_result);
         Py_DECREF(py_result);
-        if (PyErr_Occurred() and res == -1.0)
+        if (PyErr_Occurred() && (res == -1.0)) {
             throw std::runtime_error("get_dx_max failed (value returned by dx_max_cb could not be converted to float)");
+        }
         return res;
     }
     Status handle_status_(PyObject * py_result, const std::string what_arg){
@@ -95,8 +103,8 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         Py_DECREF(py_result);
 
 
-        if ((PyErr_Occurred() and result == -1) or
-            result == static_cast<long int>(AnyODE::Status::unrecoverable_error)) {
+        if ((PyErr_Occurred() && (result == -1)) ||
+            (result == static_cast<long int>(AnyODE::Status::unrecoverable_error))) {
             return AnyODE::Status::unrecoverable_error;
         } else if (result == static_cast<long int>(AnyODE::Status::recoverable_error)) {
             return AnyODE::Status::recoverable_error;

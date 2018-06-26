@@ -11,6 +11,7 @@ import subprocess
 import sys
 import warnings
 from setuptools import setup
+from setuptools.command.build_ext import build_ext
 from setuptools.extension import Extension
 
 
@@ -50,10 +51,15 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
             os.path.join('external', 'anyode', 'cython_def')
         ])
     ext_modules[0].language = 'c++'
-    ext_modules[0].extra_compile_args = ['-std=c++11']
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
-    ext_modules[0].libraries += env['LAPACK'].split(',') + env['SUNDIALS_LIBS'].split(',')
+    if env['LAPACK'] not in ('', '0'):
+        ext_modules[0].libraries += env['LAPACK'].split(',')
+
+    ext_modules[0].define_macros += [('USE_LAPACK', '1' if env['LAPACK'] not in ('', '0') else '0')]
+
+    if env['SUNDIALS_LIBS']:
+        ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
 
 
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
@@ -85,6 +91,29 @@ else:  # set `__version__` from _release.py:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
                 __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+
+
+class BuildExt(build_ext):
+    """A custom build extension for adding compiler-specific options."""
+    c_opts = {
+        'msvc': ['/EHsc'],
+        'unix': [],
+    }
+
+    if sys.platform == 'darwin':
+        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+
+    def build_extensions(self):
+        ct = self.compiler.compiler_type
+        opts = self.c_opts.get(ct, [])
+        if ct == 'unix':
+            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
+            opts.append('-std=c++11')
+        elif ct == 'msvc':
+            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
+        for ext in self.extensions:
+            ext.extra_compile_args = opts
+        build_ext.build_extensions(self)
 
 
 classifiers = [
@@ -124,7 +153,8 @@ setup_kwargs = dict(
     install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     extras_require={'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc']},
-    ext_modules=ext_modules
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': BuildExt}
 )
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 #pragma once
-// Thin C++11 wrapper around CVODES v2.8.2 (SUNDIALS v2.6.2)
-// far from all functionality is available yet.
-// sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
+// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.1.x)
+// far from all functionality has been wrapped yet.
 
 #include <assert.h>
 #include <cfenv>
@@ -25,8 +24,18 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunmatrix/sunmatrix_band.h>
 #include <sunmatrix/sunmatrix_sparse.h>
-#include <sunlinsol/sunlinsol_lapackdense.h>
-#include <sunlinsol/sunlinsol_lapackband.h>
+#if !defined(USE_LAPACK)
+#  if defined(SUNDIALS_BLAS_LAPACK)
+#    define USE_LAPACK 1
+#  endif
+#endif
+#if USE_LAPACK == 1
+#  include <sunlinsol/sunlinsol_lapackdense.h>
+#  include <sunlinsol/sunlinsol_lapackband.h>
+#else
+#  include <sunlinsol/sunlinsol_dense.h>
+#  include <sunlinsol/sunlinsol_band.h>
+#endif
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
@@ -35,7 +44,17 @@
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
-#include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#if !defined(USE_LAPACK)
+#  if defined(SUNDIALS_BLAS_LAPACK)
+#    define USE_LAPACK 1
+#  endif
+#endif
+#if USE_LAPACK == 1
+#  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#else
+#  include <cvodes/cvodes_dense.h>
+#  include <cvodes/cvodes_band.h>
+#endif
 #define SUNTRUE TRUE
 #define SUNFALSE FALSE
 #else
@@ -383,7 +402,11 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
+#if USE_LAPACK == 1
             LS_ = SUNLapackDense(y_, A_);
+#else
+            LS_ = SUNDenseLinearSolver(y_, A_);
+#endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -391,9 +414,20 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
+#if USE_LAPACK == 1
         status = CVLapackDense(this->mem, ny);
-        if (status != CVDLS_SUCCESS)
-            throw std::runtime_error("CVLapackDense failed");
+#else
+        status = CVDense(this->mem, ny);
+#endif
+        if (status != CVDLS_SUCCESS) {
+            throw std::runtime_error(
+#if USE_LAPACK == 1
+                "CVLapackDense failed"
+#else
+                "CVDense failed"
+#endif
+                );
+        }
 #endif
     }
     void set_dense_jac_fn(
@@ -431,7 +465,11 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
+#if USE_LAPACK == 1
             LS_ = SUNLapackBand(y_, A_);
+#else
+            LS_ = SUNBandLinearSolver(y_, A_);
+#endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -439,9 +477,20 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-        status = CVLapackBand(this->mem, N, mupper, mlower);
+        status =
+#if USE_LAPACK == 1
+        CVLapackBand(this->mem, N, mupper, mlower);
+#else
+        CVBand(this->mem, N, mupper, mlower);
+#endif
         if (status != CVDLS_SUCCESS)
-            throw std::runtime_error("CVLapackBand failed");
+            throw std::runtime_error(
+#if USE_LAPACK == 1
+                "CVLapackBand failed"
+#else
+                "CVBand failed"
+#endif
+                );
 #endif
     }
     void set_band_jac_fn(
@@ -453,7 +502,7 @@ public:
         djac){
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
-        if (A_ == nullptr or LS_ == nullptr)
+        if (A_ == nullptr || LS_ == nullptr)
             throw std::runtime_error("set_linear_solver_to_banded not called?");
         status = CVDlsSetJacFn(this->mem, djac);
         if (status < 0)
@@ -851,6 +900,9 @@ public:
             if (*ew_ele == nullptr) {
                 throw std::logic_error("ew_ele cannot point to a nullptr");
             }
+            for (int i=0; i<2*ny; ++i){
+                (*ew_ele)[tidx*2*ny+i] = 0.0;
+            }
         }
         if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
         if (record_steps)
@@ -905,7 +957,7 @@ public:
             if (get_dx_max)
                 this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
             status = this->step(xend, y, &cur_t, Task::One_Step);
-            if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (tidx > mxsteps)){
+            if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) || (tidx > mxsteps)){
                 if (status == CV_ROOT_RETURN){
                     root_indices.push_back(tidx);
                 }else{
@@ -942,7 +994,7 @@ public:
                                 std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
-                        if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
+                        if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
                             if (this->verbosity > 0)
                                 std::cerr << "    Singular Jacobian?";
                             this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
@@ -1061,6 +1113,11 @@ public:
         }
         for (int i=0; i<nq; ++i){
             yqout[ny*(nderiv+1) + i] = yq0[ny+i];
+        }
+        if (ew_ele) {
+            for (int i=0; i<2*ny; ++i){
+                ew_ele[i] = 0.0;
+            }
         }
         for(iout=1; (iout < nt); iout++) {
             if (get_dx_max)
