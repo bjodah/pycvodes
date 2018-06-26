@@ -56,11 +56,13 @@ Simplest way to install is to use the `conda package manager <http://conda.pydat
 
 ::
 
-   $ conda install -c conda-forge -c bjodah pycvodes pytest
+   $ conda install -c conda-forge pycvodes pytest
    $ python -m pytest --pyargs pycvodes
 
 tests should pass.
 
+Manual installation
+~~~~~~~~~~~~~~~~~~~
 Binary distribution is available here:
 `<https://anaconda.org/bjodah/pycvodes>`_
 
