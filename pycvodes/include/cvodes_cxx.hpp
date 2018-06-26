@@ -502,7 +502,7 @@ public:
         djac){
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
-        if (A_ == nullptr or LS_ == nullptr)
+        if (A_ == nullptr || LS_ == nullptr)
             throw std::runtime_error("set_linear_solver_to_banded not called?");
         status = CVDlsSetJacFn(this->mem, djac);
         if (status < 0)
@@ -954,7 +954,7 @@ public:
             if (get_dx_max)
                 this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
             status = this->step(xend, y, &cur_t, Task::One_Step);
-            if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) or (tidx > mxsteps)){
+            if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) || (tidx > mxsteps)){
                 if (status == CV_ROOT_RETURN){
                     root_indices.push_back(tidx);
                 }else{
