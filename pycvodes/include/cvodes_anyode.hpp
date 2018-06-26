@@ -492,7 +492,7 @@ struct SolverSettings{
 
 template <class OdeSys>
 void check_atol(const OdeSys * odesys, const SolverSettings& settings){
-    if (settings.atol.size() != 1 and static_cast<int>(settings.atol.size()) != (odesys->ny + odesys->nquads))
+    if (settings.atol.size() != 1 && static_cast<int>(settings.atol.size()) != (odesys->ny + odesys->nquads))
         throw std::logic_error("atol of incorrect length");
 }
 

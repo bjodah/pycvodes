@@ -20,7 +20,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         if (py_rhs == nullptr){
             throw std::runtime_error("py_rhs must not be nullptr");
         }
-        if ((py_dx_max_cb != nullptr) and (py_dx_max_cb != Py_None)) {
+        if ((py_dx_max_cb != nullptr) && (py_dx_max_cb != Py_None)) {
             this->use_get_dx_max = true;
         }
         Py_INCREF(py_rhs);
@@ -64,7 +64,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         }
         double res = PyFloat_AsDouble(py_result);
         Py_DECREF(py_result);
-        if ((PyErr_Occurred()) and (res == -1.0)) {
+        if ((PyErr_Occurred()) && (res == -1.0)) {
             throw std::runtime_error("get_dx0 failed (value returned by dx0cb could not be converted to float)");
         }
         return res;
@@ -87,7 +87,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         }
         double res = PyFloat_AsDouble(py_result);
         Py_DECREF(py_result);
-        if (PyErr_Occurred() and (res == -1.0)) {
+        if (PyErr_Occurred() && (res == -1.0)) {
             throw std::runtime_error("get_dx_max failed (value returned by dx_max_cb could not be converted to float)");
         }
         return res;
@@ -103,7 +103,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         Py_DECREF(py_result);
 
 
-        if ((PyErr_Occurred() and (result == -1)) or
+        if ((PyErr_Occurred() && (result == -1)) or
             (result == static_cast<long int>(AnyODE::Status::unrecoverable_error))) {
             return AnyODE::Status::unrecoverable_error;
         } else if (result == static_cast<long int>(AnyODE::Status::recoverable_error)) {

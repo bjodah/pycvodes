@@ -571,7 +571,7 @@ public:
         case CVSPILS_LMEM_NULL:
             throw std::runtime_error("CVSPILS linear solver has not been initialized)");
         }
-        if ((check_ill_input) and (flag == CVSPILS_ILL_INPUT))
+        if ((check_ill_input) && (flag == CVSPILS_ILL_INPUT))
             throw std::runtime_error("Bad input.");
     }
     void set_jac_times_vec_fn(CVSpilsJacTimesVecFn jtimes){
@@ -954,7 +954,7 @@ public:
             if (get_dx_max)
                 this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
             status = this->step(xend, y, &cur_t, Task::One_Step);
-            if((status != CV_SUCCESS and status != CV_TSTOP_RETURN) or (tidx > mxsteps)){
+            if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) or (tidx > mxsteps)){
                 if (status == CV_ROOT_RETURN){
                     root_indices.push_back(tidx);
                 }else{
@@ -991,7 +991,7 @@ public:
                                 std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
-                        if (status == CV_CONV_FAILURE and autorestart == 1) { // Most likely close to singular matrix
+                        if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
                             if (this->verbosity > 0)
                                 std::cerr << "    Singular Jacobian?";
                             this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
@@ -1048,7 +1048,7 @@ public:
                 this->get_est_local_errors(work);
                 work.dump((*ew_ele) + 2*ny*tidx + ny);
             }
-            if (return_on_root and status == CV_ROOT_RETURN)
+            if (return_on_root && status == CV_ROOT_RETURN)
                 break;
         } while (status != CV_TSTOP_RETURN);
 
