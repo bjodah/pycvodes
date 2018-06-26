@@ -1,3 +1,8 @@
+v0.10.7
+=======
+- LAPACK now optional
+- Builds on Windows
+
 v0.10.6
 =======
 - Optionally return error weights and estimated local errors (kwarg: ``ew_ele=True``)
