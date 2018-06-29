@@ -1,10 +1,9 @@
 # This file is replaced by setup.py in distributions for tagged releases
+import shutil
 import os
 import warnings
-import io
 import sys
 import tempfile
-from contextlib import contextmanager
 
 pipes = None
 
@@ -25,7 +24,8 @@ def _compiles_ok(codestring):
     from distutils.ccompiler import new_compiler
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
-    ntf = tempfile.NamedTemporaryFile(suffix='.cpp', delete=False)
+    folder = tempfile.mkdtemp()
+    ntf = tempfile.NamedTemporaryFile(suffix='.cpp', delete=False, dir=folder)
     ntf.write(codestring.encode('utf-8'))
     ntf.close()
     compiler = new_compiler()
@@ -45,8 +45,8 @@ def _compiles_ok(codestring):
         _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
     else:
         _ok = True
-
-    os.unlink(ntf.name)
+    finally:
+        shutil.rmtree(folder)
     return _ok, out
 
 
