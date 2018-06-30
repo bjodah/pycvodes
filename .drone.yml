@@ -17,6 +17,7 @@ build:
     - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-nolapack
     - .ci/run_ci.sh pycvodes /drone/sundials-2.7.0-nolapack
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
+    - python3 -m pip install wurlitzer
     - .ci/run_ci.sh pycvodes /usr
     - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
