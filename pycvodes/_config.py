@@ -7,11 +7,12 @@ import tempfile
 
 pipes = None
 
-if not 'pytest' in sys.modules:
+if 'pytest' not in sys.modules:
     try:
         from wurlitzer import pipes
     except ImportError:
         pass
+
 
 def _warn(msg):
     if os.environ.get("PYCVODES_STRICT", '0') == '1':
