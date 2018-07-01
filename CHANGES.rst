@@ -1,3 +1,7 @@
+v0.10.8
+=======
+- Enhanced _config.py
+
 v0.10.7
 =======
 - LAPACK now optional
