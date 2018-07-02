@@ -21,7 +21,6 @@ if 'pytest' not in sys.modules:
         pass
 
 
-
 if sys.version_info[0] == 2:
     class TemporaryDirectory(object):
         def __init__(self):
@@ -69,6 +68,7 @@ def _compiles_ok(codestring):
         else:
             _ok = True
     return _ok, out
+
 
 def _attempt_compilation():
     _math_ok, _math_out = _compiles_ok('#include <math.h>')
