@@ -1,5 +1,6 @@
 # This file is replaced by setup.py in distributions for tagged releases
 import shutil
+import io
 import os
 import warnings
 import sys
@@ -38,8 +39,8 @@ def _compiles_ok(codestring):
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
-        with open(os.path.join(folder, 'complier_test_source.cpp'), 'wt') as ofh:
-            ofh.write(codestring.encode('utf-8'))
+        with io.open(os.path.join(folder, 'complier_test_source.cpp'), 'wt', encoding='utf-8') as ofh:
+            ofh.write(codestring)
         compiler = new_compiler()
         customize_compiler(compiler)
         out = ''
