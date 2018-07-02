@@ -2,9 +2,16 @@
 import shutil
 import io
 import os
+import logging
 import warnings
 import sys
 import tempfile
+import pickle
+
+try:
+    import appdirs
+except ImportError:
+    apddirs = None
 
 pipes = None
 
@@ -13,6 +20,7 @@ if 'pytest' not in sys.modules:
         from wurlitzer import pipes
     except ImportError:
         pass
+
 
 
 if sys.version_info[0] == 2:
@@ -63,68 +71,92 @@ def _compiles_ok(codestring):
             _ok = True
     return _ok, out
 
+def _attempt_compilation():
+    _math_ok, _math_out = _compiles_ok('#include <math.h>')
+    if not _math_ok:
+        _warn("Failed to include math.h: %s" % _math_out)
+        _warn(_math_out)
 
-_math_ok, _math_out = _compiles_ok('#include <math.h>')
-if not _math_ok:
-    _warn("Failed to include math.h: %s" % _math_out)
-    _warn(_math_out)
+    _sundials_ok, _sundials_out = _compiles_ok('#include <sundials/sundials_config.h>')
+    if not _sundials_ok:
+        _warn("sundials not in include path, set e.g. $CPLUS_INCLUDE_PATH (%s):\n%s" %
+              (os.environ.get('CPLUS_INCLUDE_PATH', ''), _sundials_out))
 
-_sundials_ok, _sundials_out = _compiles_ok('#include <sundials/sundials_config.h>')
-if not _sundials_ok:
-    _warn("sundials not in include path, set e.g. $CPLUS_INCLUDE_PATH (%s):\n%s" %
-          (os.environ.get('CPLUS_INCLUDE_PATH', ''), _sundials_out))
+    _sun3_ok, _sun3_out = _compiles_ok("""
+    #include <sundials/sundials_config.h>
+    #if SUNDIALS_VERSION_MAJOR >= 3
+    #include <stdio.h>
+    #include <sunmatrix/sunmatrix_dense.h>
+    #else
+    #error "Sundials 2?"
+    #endif
+    """)
 
-_sun3_ok, _sun3_out = _compiles_ok("""
-#include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <stdio.h>
-#include <sunmatrix/sunmatrix_dense.h>
-#else
-#error "Sundials 2?"
-#endif
-""")
-
-_sun3, _lapack_ok = False, False
-if _sun3_ok:
-    _lapack_ok, _lapack_out = _compiles_ok("""
-#include <stdio.h>
-#include <sunlinsol/sunlinsol_lapackband.h>""")
-    if not _lapack_ok:
-        _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
-    _sun3 = True
-else:
-    _sun2_ok, _sun2_out = _compiles_ok("""
-#include <sundials/sundials_config.h>
-#if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
-#include <cvodes/cvodes_spgmr.h>
-#else
-#error "Unkown sundials version"
-#endif
-""")
-    if _sun2_ok:
-        _sun3 = False
+    _sun3, _lapack_ok = False, False
+    if _sun3_ok:
         _lapack_ok, _lapack_out = _compiles_ok("""
-#include <cvodes/cvodes_lapack.h>
-
-""")
+    #include <stdio.h>
+    #include <sunlinsol/sunlinsol_lapackband.h>""")
         if not _lapack_ok:
-            _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
+            _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
+        _sun3 = True
     else:
-        _warn("Unknown sundials version:\n%s" % _sun2_out)
+        _sun2_ok, _sun2_out = _compiles_ok("""
+    #include <sundials/sundials_config.h>
+    #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+    #include <cvodes/cvodes_spgmr.h>
+    #else
+    #error "Unkown sundials version"
+    #endif
+    """)
+        if _sun2_ok:
+            _sun3 = False
+            _lapack_ok, _lapack_out = _compiles_ok("""
+    #include <cvodes/cvodes_lapack.h>
 
-if 'PYCVODES_LAPACK' in os.environ:
-    if os.environ['PYCVODES_LAPACK'] in ('', '0'):
-        _lapack_ok = False
+    """)
+            if not _lapack_ok:
+                _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
+        else:
+            _warn("Unknown sundials version:\n%s" % _sun2_out)
+    return locals()
 
-env = {
-    'LAPACK': 'blas,lapack' if _lapack_ok else '',
-    'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
-        ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_sun3 and _lapack_ok) else ((
-            ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
-            'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
-        ) if (_sun3 and not _lapack_ok) else '')
-    ),
-}
+logger = loggin.getLogger(__name__)
+
+env = None
+if appdirs:
+    cfg = os.path.join(apddirs.user_config_dir('pycvodes'), 'env.pkl')
+    if os.path.exists(cfg):
+        with open(cfg) as ifh:
+            env = pickle.load(ifh)
+    else:
+        logger.info("Path: '%s' does not exist, will run test compilations" % cfg)
+else:
+    logger.info("appdirs not installed, will run test compilations")
+
+    
+if env is None:
+    _result = _attempt_compilation()
+
+    if 'PYCVODES_LAPACK' in os.environ:
+        if os.environ['PYCVODES_LAPACK'] in ('', '0'):
+            _result['_lapack_ok'] = False
+
+    env = {
+        'LAPACK': 'blas,lapack' if _lapack_ok else '',
+        'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
+            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_sun3 and _lapack_ok) else ((
+                ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
+                'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
+            ) if (_sun3 and not _lapack_ok) else '')
+        ),
+    }
+    if appdirs:
+        cfg_dir = os.path.dirname(cfg)
+        if not os.path.exists(cfg_dir):
+            os.mkdir(cfg_dir)
+        with open(cfg, 'wt') as ofh:
+            pickle.dump(env, ofh)
 
 for k, v in list(env.items()):
     env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)
