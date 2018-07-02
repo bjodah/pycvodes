@@ -1,6 +1,5 @@
 # This file is replaced by setup.py in distributions for tagged releases
 import shutil
-import io
 import os
 import logging
 import warnings
@@ -11,7 +10,7 @@ import pickle
 try:
     import appdirs
 except ImportError:
-    apddirs = None
+    appdirs = None
 
 pipes = None
 
@@ -50,7 +49,7 @@ def _compiles_ok(codestring):
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
         source_path = os.path.join(folder, 'complier_test_source.cpp')
-        with io.open(source_path, 'wt', encoding='utf-8') as ofh:
+        with open(source_path, 'wt', encoding='utf-8') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
         customize_compiler(compiler)
@@ -121,41 +120,41 @@ def _attempt_compilation():
             _warn("Unknown sundials version:\n%s" % _sun2_out)
     return locals()
 
-logger = loggin.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 env = None
 if appdirs:
-    cfg = os.path.join(apddirs.user_config_dir('pycvodes'), 'env.pkl')
-    if os.path.exists(cfg):
-        with open(cfg) as ifh:
+    cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'env.pkl')
+    if os.path.exists(cfg) and os.path.getsize(cfg):
+        with open(cfg, 'rb') as ifh:
             env = pickle.load(ifh)
     else:
         logger.info("Path: '%s' does not exist, will run test compilations" % cfg)
 else:
     logger.info("appdirs not installed, will run test compilations")
 
-    
+
 if env is None:
-    _result = _attempt_compilation()
+    _r = _attempt_compilation()
 
     if 'PYCVODES_LAPACK' in os.environ:
         if os.environ['PYCVODES_LAPACK'] in ('', '0'):
-            _result['_lapack_ok'] = False
+            _r['_lapack_ok'] = False
 
     env = {
-        'LAPACK': 'blas,lapack' if _lapack_ok else '',
+        'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
         'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
-            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_sun3 and _lapack_ok) else ((
+            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_r['_sun3'] and _r['_lapack_ok']) else ((
                 ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
                 'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
-            ) if (_sun3 and not _lapack_ok) else '')
+            ) if (_r['_sun3'] and not _r['_lapack_ok']) else '')
         ),
     }
     if appdirs:
         cfg_dir = os.path.dirname(cfg)
         if not os.path.exists(cfg_dir):
             os.mkdir(cfg_dir)
-        with open(cfg, 'wt') as ofh:
+        with open(cfg, 'wb') as ofh:
             pickle.dump(env, ofh)
 
 for k, v in list(env.items()):
