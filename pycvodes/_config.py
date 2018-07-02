@@ -14,17 +14,19 @@ if 'pytest' not in sys.modules:
     except ImportError:
         pass
 
+
 if sys.version_info[0] == 2:
     class TemporaryDirectory(object):
         def __init__(self):
             self.path = tempfile.mkdtemp()
+
         def __enter__(self):
             return self.path
+
         def __exit__(self, exc, value, tb):
             shutil.rmtree(self.path)
 else:
     TemporaryDirectory = tempfile.TemporaryDirectory
-
 
 
 def _warn(msg):
@@ -39,17 +41,18 @@ def _compiles_ok(codestring):
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
-        with io.open(os.path.join(folder, 'complier_test_source.cpp'), 'wt', encoding='utf-8') as ofh:
+        source_path = os.path.join(folder, 'complier_test_source.cpp')
+        with io.open(source_path, 'wt', encoding='utf-8') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
         customize_compiler(compiler)
         out = ''
         try:
             if pipes is None:
-                compiler.compile([ntf.name])
+                compiler.compile([source_path])
             else:
                 with pipes() as out_err:
-                    compiler.compile([ntf.name])
+                    compiler.compile([source_path])
                 out = '\n'.join([p.read() for p in out_err])
         except CompileError:
             _ok = False
