@@ -13,6 +13,18 @@ if 'pytest' not in sys.modules:
     except ImportError:
         pass
 
+if sys.version_info[0] == 2:
+    class TemporaryDirectory(object):
+        def __init__(self):
+            self.path = tempfile.mkdtemp()
+        def __enter__(self):
+            return self.path
+        def __exit__(self, exc, value, tb):
+            shutil.rmtree(self.path)
+else:
+    TemporaryDirectory = tempfile.TemporaryDirectory
+
+
 
 def _warn(msg):
     if os.environ.get("PYCVODES_STRICT", '0') == '1':
@@ -25,29 +37,26 @@ def _compiles_ok(codestring):
     from distutils.ccompiler import new_compiler
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
-    folder = tempfile.mkdtemp()
-    ntf = tempfile.NamedTemporaryFile(suffix='.cpp', delete=False, dir=folder)
-    ntf.write(codestring.encode('utf-8'))
-    ntf.close()
-    compiler = new_compiler()
-    customize_compiler(compiler)
-    out = ''
-    try:
-        if pipes is None:
-            compiler.compile([ntf.name])
-        else:
-            with pipes() as out_err:
+    with TemporaryDirectory() as folder:
+        with open(os.path.join(folder, 'complier_test_source.cpp'), 'wt') as ofh:
+            ofh.write(codestring.encode('utf-8'))
+        compiler = new_compiler()
+        customize_compiler(compiler)
+        out = ''
+        try:
+            if pipes is None:
                 compiler.compile([ntf.name])
-            out = '\n'.join([p.read() for p in out_err])
-    except CompileError:
-        _ok = False
-    except Exception:
-        _ok = False
-        _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
-    else:
-        _ok = True
-    finally:
-        shutil.rmtree(folder)
+            else:
+                with pipes() as out_err:
+                    compiler.compile([ntf.name])
+                out = '\n'.join([p.read() for p in out_err])
+        except CompileError:
+            _ok = False
+        except Exception:
+            _ok = False
+            _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
+        else:
+            _ok = True
     return _ok, out
 
 
