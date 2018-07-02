@@ -123,13 +123,16 @@ def _attempt_compilation():
 logger = logging.getLogger(__name__)
 
 env = None
-if appdirs and locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
+if appdirs:
     cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'env.pkl')
-    if os.path.exists(cfg) and os.path.getsize(cfg):
-        with open(cfg, 'rb') as ifh:
-            env = pickle.load(ifh)
+    if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
+        if os.path.exists(cfg) and os.path.getsize(cfg):
+            with open(cfg, 'rb') as ifh:
+                env = pickle.load(ifh)
+        else:
+            logger.info("Path: '%s' does not exist, will run test compilations" % cfg)
     else:
-        logger.info("Path: '%s' does not exist, will run test compilations" % cfg)
+        logger.info("ignoring contents of '%s' (running from setup.py)" % cfg)
 else:
     logger.info("appdirs not installed, will run test compilations")
 
