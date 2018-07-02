@@ -123,7 +123,7 @@ def _attempt_compilation():
 logger = logging.getLogger(__name__)
 
 env = None
-if appdirs:
+if appdirs and locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
     cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'env.pkl')
     if os.path.exists(cfg) and os.path.getsize(cfg):
         with open(cfg, 'rb') as ifh:
