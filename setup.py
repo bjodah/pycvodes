@@ -101,15 +101,14 @@ class BuildExt(build_ext):
         'unix': [],
     }
 
-    if sys.platform == 'darwin':
-        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
-
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
         if ct == 'unix':
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append('-std=c++11')
+            opts.append('--std=c++11')
+            if sys.platform == 'darwin' and re.search("clang", self.compiler.compiler[0]) is not None:
+                opts += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
         elif ct == 'msvc':
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
         for ext in self.extensions:
