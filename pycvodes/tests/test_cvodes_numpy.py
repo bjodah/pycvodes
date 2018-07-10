@@ -60,10 +60,42 @@ def _get_f_j(k):
             dfdx_out[2] = 0
     return f, j
 
+
+def _gravity_f_j_jtimes(g):
+    """ RHS, jacobian, and jacobian-vector product for
+        particle falling under influence of gravity"""
+
+    def f(t, y, fout):
+        x, v = y
+        fout[0] = v
+        fout[1] = -g
+
+    def jac(t, y, jmat_out, dfdx_out=None, fy=None):
+        jmat_out[0, 0] = 0
+        jmat_out[0, 1] = 1
+        jmat_out[1, 0] = 0
+        jmat_out[0, 1] = 0
+
+    def jtimes(v, Jv, t, y, fy, user_data=None, tmp=None):
+        Jv[0] = v[1]
+        Jv[1] = 0
+
+    return f, jac, jtimes
+
+
+def gravity_analytic(g, y0, tout):
+    """ Analytic solution to the above at times tout"""
+    x0, v0 = y0
+    t0 = tout[0]
+    return np.column_stack((x0 - 0.5 * g * (tout - t0)**2, v0 - g * (tout - t0)))
+
+
 methods = [('adams', 1.8, False),
            ('adams', 1.8, True),
            ('bdf', 10, False),
            ('bdf', 10, True)]
+
+sparse_linear_solvers = [10, 11, 20, 30]
 
 
 def bandify(cb, mlower, mupper):
@@ -537,3 +569,38 @@ def test_adaptive_ew_ele():
     assert info['success']
     abs_ew_ele = np.abs(np.prod(info['ew_ele'], axis=1))
     assert np.all(abs_ew_ele < 1)
+
+
+@pytest.mark.parametrize("linear_solver", sparse_linear_solvers)
+def test_jtimes_adaptive(linear_solver):
+    g = 9.81
+    y0 = [1000.0, 0.0]
+    atol, rtol = 1e-8, 1e-8
+    f, jac, jtimes = _gravity_f_j_jtimes(g)
+    kwargs = dict(atol=atol, rtol=rtol,
+                  method='bdf', linear_solver=linear_solver,
+                  jtimes=jtimes)
+    tout, yout, info = integrate_adaptive(f, jac, y0, 0, 10, **kwargs)
+    yref = gravity_analytic(g, y0, tout)
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+    assert info['success']
+    assert info['njvev'] > 0
+    assert info['njev'] == 0
+
+
+@pytest.mark.parametrize("linear_solver", sparse_linear_solvers)
+def test_jtimes_predefined(linear_solver):
+    g = 9.81
+    y0 = [1000.0, 0.0]
+    atol, rtol = 1e-8, 1e-8
+    f, jac, jtimes = _gravity_f_j_jtimes(g)
+    kwargs = dict(atol=atol, rtol=rtol,
+                  method='bdf', linear_solver=linear_solver,
+                  jtimes=jtimes)
+    tout = np.linspace(0, 10, 100)
+    yout, info = integrate_predefined(f, jac, y0, tout, **kwargs)
+    yref = gravity_analytic(g, y0, tout)
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+    assert info['success']
+    assert info['njvev'] > 0
+    assert info['njev'] == 0
