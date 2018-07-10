@@ -574,7 +574,7 @@ public:
         if ((check_ill_input) && (flag == CVSPILS_ILL_INPUT))
             throw std::runtime_error("Bad input.");
     }
-    void set_jac_times_vec_fn(CVSpilsJacTimesVecFn jtimes){
+    void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
 #if SUNDIALS_VERSION_MAJOR >= 3
         int flag = CVSpilsSetJacTimes(this->mem, NULL, jtimes);
 #else
@@ -583,7 +583,7 @@ public:
         this->cvspils_check_flag(flag);
     }
 #if SUNDIALS_VERSION_MAJOR >=3
-    void set_jac_times_vec_fn(CVSpilsJacTimesSetupFn jtsetup,
+    void set_jtimes_fn(CVSpilsJacTimesSetupFn jtsetup,
                               CVSpilsJacTimesVecFn jtimes){
         int flag = CVSpilsSetJacTimes(this->mem, jtsetup, jtimes);
         this->cvspils_check_flag(flag);
