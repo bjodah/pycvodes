@@ -5,7 +5,6 @@ import warnings
 from cpython.object cimport PyObject
 from libc.stdlib cimport malloc
 from libcpp cimport bool
-from libcpp.string cimport string
 from libcpp.vector cimport vector
 cimport numpy as cnp
 
@@ -22,9 +21,6 @@ cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
-
-iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
-linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
