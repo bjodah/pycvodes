@@ -14,6 +14,7 @@ BEGIN_NAMESPACE(cvodes_anyode)
 using cvodes_cxx::Integrator;
 using cvodes_cxx::LMM;
 using cvodes_cxx::IterType;
+using cvodes_cxx::LinSol;
 using cvodes_cxx::IterLinSolEnum;
 using cvodes_cxx::PrecType;
 using cvodes_cxx::GramSchmidtType;
@@ -216,7 +217,7 @@ std::unique_ptr<Integrator> get_integrator(
     const realtype dx_max=0.0,
     const bool with_jacobian=false,
     const IterType iter_type=IterType::Newton,
-    const int linear_solver=0,
+    const LinSol linear_solver=LinSol::DEFAULT,
     const int maxl=0,
     const realtype eps_lin=0.0,
     const bool with_jtimes=false)
@@ -273,35 +274,35 @@ std::unique_ptr<Integrator> get_integrator(
     if (iter_type == IterType::Newton){
         // Newton iteration --> we need a linear solver:
         switch(linear_solver){
-        case 1:
+        case LinSol::DENSE:
             integr.set_linear_solver_to_dense(ny);
             if (with_jacobian)
                 integr.set_dense_jac_fn(jac_dense_cb<OdeSys >);
             break;
-        case 2:
+        case LinSol::BANDED:
             integr.set_linear_solver_to_banded(ny, odesys->get_mupper(), odesys->get_mlower());
             if (with_jacobian)
                 integr.set_band_jac_fn(jac_band_cb<OdeSys >);
             break;
-        case 10:
-        case 11:
+        case LinSol::GMRES:
+        case LinSol::GMRES_CLASSIC:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::GMRES, maxl); break;
-        case 20:
+        case LinSol::BICGSTAB:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::BICGSTAB, maxl); break;
-        case 30:
+        case LinSol::TFQMR:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR, maxl); break;
         default:
             throw std::runtime_error("Invalid linear_solver");
         }
-        if (linear_solver >= 10){
+        if (cvodes_cxx::is_iterative_linear_solver(linear_solver)) {
             integr.set_prec_type(PrecType::Left);
             integr.set_iter_eps_lin(eps_lin);
             if (with_jtimes)
                 integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
             integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
-            if (linear_solver == 10 || linear_solver == 11) // GMRES
-                integr.set_gram_schmidt_type((linear_solver == 10) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
-            else if (linear_solver == 20 || linear_solver == 30) // BiCGStab, TFQMR
+            if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
+                integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
+            else if (linear_solver == LinSol::BICGSTAB or linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
                 ;
             else
                 throw std::runtime_error("Unknown linear_solver.");
@@ -326,7 +327,7 @@ simple_adaptive(realtype ** xyqout,
                 const realtype dx_max=0.0,
                 const bool with_jacobian=false,
                 IterType iter_type=IterType::Undecided,
-                int linear_solver=0,
+                LinSol linear_solver=LinSol::DEFAULT,
                 const int maxl=0,
                 const realtype eps_lin=0.0,
                 const unsigned nderiv=0,
@@ -348,8 +349,8 @@ simple_adaptive(realtype ** xyqout,
     // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
-    if (linear_solver == 0)
-        linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+    if (linear_solver == LinSol::DEFAULT)
+        linear_solver = (odesys->get_mlower() == -1) ? LinSol::DENSE : LinSol::BANDED;
     realtype x0 = (*xyqout)[0];
     realtype * y0 = (*xyqout) + 1;
     if (dx0 == 0.0)
@@ -412,7 +413,7 @@ int simple_predefined(OdeSys * const odesys,
                       const realtype dx_max=0.0,
                       const bool with_jacobian=false,
                       IterType iter_type=IterType::Undecided,
-                      int linear_solver=0,
+                      LinSol linear_solver=LinSol::DEFAULT,
                       const int maxl=0,
                       const realtype eps_lin=0.0,
                       const unsigned nderiv=0,
@@ -432,8 +433,8 @@ int simple_predefined(OdeSys * const odesys,
     // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
-    if (linear_solver == 0)
-        linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+    if (linear_solver == LinSol::DEFAULT)
+        linear_solver = (odesys->get_mlower() == -1) ? LinSol::DENSE : LinSol::BANDED;
     if (dx0 == 0.0)
         dx0 = odesys->get_dx0(xout[0], yq0);
     auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, yq0, xout[0], mxsteps, dx0, dx_min, dx_max,
@@ -479,8 +480,7 @@ struct SolverSettings{
     std::vector<double> atol {1e-8};
     int mxsteps {0};
     double dx0{0}, dx_min{0}, dx_max{0};
-    std::string method {"bdf"}, iter_type {"undecided"};
-    int linear_solver {0};
+    std::string method {"bdf"}, iter_type {"undecided"}, linear_solver {"default"};
     int maxl {0};
     realtype eps_lin {0.0};
     unsigned nderiv {0};
@@ -511,9 +511,9 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
     IterType iter_type = cvodes_cxx::iter_type_from_name(settings.iter_type);
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
-    int linear_solver = settings.linear_solver;
-    if (linear_solver == 0)
-        linear_solver = (odesys->get_mlower() == -1) ? 1 : 2;
+    LinSol linear_solver = cvodes_cxx::linear_solver_from_name(settings.linear_solver);
+    if (linear_solver == LinSol::DEFAULT)
+        linear_solver = (odesys->get_mlower() == -1) ? LinSol::DENSE : LinSol::BANDED;
     double dx0 = settings.dx0;
     double x0 = 0.0;
     if (dx0 == 0.0)

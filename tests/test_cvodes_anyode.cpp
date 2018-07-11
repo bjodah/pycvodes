@@ -40,7 +40,7 @@ TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
     const realtype dx_max=0.0;
     const bool with_jacobian=false;
     cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
-    int linear_solver=0;
+    cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::DEFAULT;
     const int maxl=0;
     const realtype eps_lin=0.0;
     const unsigned nderiv=0;
@@ -85,7 +85,7 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
     const realtype dx_max=0.0;
     const bool with_jacobian=false;
     cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
-    int linear_solver=0;
+    cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::DEFAULT;
     const int maxl=0;
     const realtype eps_lin=0.0;
     const unsigned nderiv=0;
