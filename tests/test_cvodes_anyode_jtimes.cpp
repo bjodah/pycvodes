@@ -17,19 +17,17 @@ TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec", "[simple_adaptive]" ) {
     const realtype dx_min=0.0;
     const realtype dx_max=0.0;
     const bool with_jacobian=true;
+    const bool with_jtimes = true;
     cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
     const int maxl=0;
     const realtype eps_lin=0.0;
     const unsigned nderiv=0;
-    bool return_on_root=false;
 
     double atol=1e-8, rtol=1e-8;
 
     cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::GMRES;
     int autorestart=0;
     bool return_on_error = false;
-    bool with_jtimes = true;
-    bool with_jacobian = false;
     double * xyout = (double*)malloc((odesys.get_ny() + 1)*sizeof(double));
     int td = 1;
     xyout[0] = 0;
