@@ -21,7 +21,8 @@ def get_include():
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
                        dx_min=.0, dx_max=.0, nsteps=500, method=None, nderiv=0,
                        roots=None, nroots=0, return_on_root=False,
-                       check_callable=False, check_indexing=False, **kwargs):
+                       check_callable=False, check_indexing=False,
+                       **kwargs):
     """ Integrates a system of ordinary differential equations.
 
     Solves the initial value problem (IVP) defined by the user supplied
@@ -104,8 +105,10 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         'autonomous_exprs' bool
             Whether expressions contain the independent variable. If not, autorestart
             is allowed to shift the independent variable to zero at restart).
-        'with_jtimes': bool
-            Whether to use analytic Jacobian for iterative solves. (default: False)
+        'jtimes': callable
+            Function with signature f(v, Jv, t, y, fy) to calculate the product of the
+            Jacobian evaluated at t, y with a vector v. Should modify Jv *inplace*.
+            For use with linear solvers 'gmres', 'gmres_classic', 'bicgstab', 'tfqmr'.
         'ew_ele': bool
             Whether to return error_weights, estimated_local_errors in info dict.
 
@@ -215,8 +218,10 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
         'autonomous_exprs' bool
             Whether expressions contain the independent variable. If not, autorestart
             is allowed to shift the independent variable to zero at restart).
-        'with_jtimes': bool
-            Whether to use analytic Jacobian for iterative solves. (default: False)
+        'jtimes': callable
+            Function with signature f(v, Jv, t, y, fy) to calculate the product of the
+            Jacobian evaluated at t, y with a vector v. Should modify Jv *inplace*.
+            For use with linear solvers 'gmres', 'gmres_classic', 'bicgstab', 'tfqmr'.
         'ew_ele': bool
             Whether to return error_weights, estimated_local_errors in info dict.
 

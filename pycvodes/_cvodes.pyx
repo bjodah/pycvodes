@@ -21,6 +21,7 @@ cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
+iterative_linsols = ('gmres','gmres_classic', 'bicgstab', 'tfqmr')
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
@@ -48,11 +49,12 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
              bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500,
-             bool with_jtimes=False, bool ew_ele=False):
+             jtimes=None, bool ew_ele=False):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
         bool with_jacobian = jac is not None
+        bool with_jtimes = jtimes is not None
         PyOdeSys * odesys
         vector[int] root_indices
         vector[double] atol_vec
@@ -74,9 +76,13 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
             atol_vec.push_back(at)
     rhs(0, yq0[..., :ny], np.empty(ny))  # fail early if rhs does not work
 
-
     if method.lower() in requires_jac and jac is None:
-        warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
+        if linear_solver.lower() not in iterative_linsols:
+            warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
+        elif jtimes is None:
+            warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
+        warnings.warn("No full jacobian provided; disabling preconditioning.")
+
     if np.isinf([x0, xend]).any(): raise ValueError("+/-Inf found in x0/xend")
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
@@ -92,9 +98,9 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     for i in range(nquads):
         xyqout[1+ny*(nderiv+1)+i] = 0.0;
 
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>quads, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb,
-                          <PyObject *>dx_max_cb)
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
+                          <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
+                          <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals
@@ -157,13 +163,14 @@ def predefined(rhs, jac,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
                bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-               bool with_jtimes=False, bool ew_ele=False):
+               jtimes=None, bool ew_ele=False):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
         cnp.ndarray[cnp.float64_t, ndim=3] yqout = np.empty((xout.size, nderiv+1, nyq))
         cnp.ndarray[cnp.float64_t, ndim=3] ew_ele_arr = np.empty((xout.size, 2, ny))
         bool with_jacobian = jac is not None
+        bool with_jtimes = jtimes is not None
         int nreached
         PyOdeSys * odesys
         vector[int] root_indices
@@ -179,12 +186,17 @@ def predefined(rhs, jac,
             atol_vec.push_back(at)
 
     if method.lower() in requires_jac and jac is None:
-        warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
+        if linear_solver.lower() not in iterative_linsols:
+            warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
+        elif jtimes is None:
+            warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
+        warnings.warn("No full jacobian provided; disabling preconditioning.")
+
     if np.isinf(xout).any(): raise ValueError("+/-Inf found in xout")
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
     if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *>quads, <PyObject *>roots,
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads, <PyObject *>roots,
                           <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
