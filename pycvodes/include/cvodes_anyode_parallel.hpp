@@ -8,6 +8,7 @@ namespace cvodes_anyode_parallel {
 
     using cvodes_cxx::LMM;
     using cvodes_cxx::IterType;
+    using cvodes_cxx:LinSol;
     using cvodes_anyode::simple_adaptive;
     using cvodes_anyode::simple_predefined;
 
@@ -26,7 +27,7 @@ namespace cvodes_anyode_parallel {
                    const realtype * dx_max,  // vectorized
                    const bool with_jacobian=false,
                    IterType iter_type=IterType::Undecided,
-                   int linear_solver=0,
+                   LinSol linear_solver=LinSol::DEFAULT,
                    const int maxl=0,
                    const realtype eps_lin=0.0,
                    const unsigned nderiv=0,
