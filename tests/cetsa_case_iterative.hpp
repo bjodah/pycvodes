@@ -22,6 +22,14 @@ struct OdeSys : public AnyODE::OdeSysIterativeBase<double> {
                                   double * const ANYODE_RESTRICT jac,
                                   long int ldim,
                                   double * const ANYODE_RESTRICT dfdt=nullptr) override;
+    AnyODE::Status jtimes(const double * const ANYODE_RESTRICT v,
+                          double * const ANYODE_RESTRICT out,
+                          double t,
+                          double * const ANYODE_RESTRICT y,
+                          double * const ANYODE_RESTRICT fy,
+                          void * user_data=nullptr,
+                          double * const ANYODE_RESTRICT tmp=nullptr
+                          ) override;
 };
 
 
@@ -192,5 +200,45 @@ AnyODE::Status OdeSys::dense_jac_rmaj(double t,
         dfdt[4] = 0;
     }
     this->njev++;
+    return AnyODE::Status::success;
+}
+
+AnyODE::Status jtimes(const double * const ANYODE_RESTRICT v,
+                      double * const ANYODE_RESTRICT Jv,
+                      double t,
+                      const double * const ANYODE_RESTRICT y,
+                      const double * const ANYODE_RESTRICT fy,
+                      void * user_data=nullptr,
+                      double * const ANYODE_RESTRICT tmp=nullptr
+                      ) {
+    // The AnyODE::ignore(...) calls below are used to generate code free from compiler warnings.
+    AnyODE::ignore(fy);  // Currently we are not using fy (could be done through extensive pattern matching)
+    AnyODE::ignore(t);
+    AnyODE::ignore(tmp);
+    AnyODE::ignore(user_data);
+
+    const double x0 = 0.120272395808565/m_p[0];
+    const double x1 = -m_p[9];
+    const double x2 = 20836.6122251252*m_p[0]*exp(x0*(m_p[0]*m_p[10] + x1));
+    const double x3 = x2*y[3];
+    const double x4 = -x3;
+    const double x5 = 20836612225.1252*m_p[0];
+    const double x6 = -m_p[1];
+    const double x7 = m_p[0] - 298.15;
+    const double x8 = log(0.00335401643468053*m_p[0]);
+    const double x9 = x5*exp(x0*(m_p[0]*(m_p[2] + m_p[3]*x8 + m_p[4]/(m_p[5] + 273.15)) - m_p[3]*x7 - m_p[4] + x6));
+    const double x10 = x5*exp(x0*(m_p[0]*m_p[2] + x6));
+    const double x11 = x2*y[0];
+    const double x12 = -x11;
+    const double x13 = x5*exp(x0*(m_p[0]*(m_p[10] + m_p[12] + m_p[8]*x8) - m_p[11] - m_p[8]*x7 + x1));
+    const double x14 = x5*exp(x0*(m_p[0]*m_p[7] - m_p[6]));
+
+    Jv[0] = (x4 - x9)*v[0] + x10*v[1] + x12*v[3] + x13*v[4];
+    Jv[1] = x9*v[0] - (x10 + x14)*v[1];
+    Jv[2] = x14*v[1];
+    Jv[3] = x4*v[0] + x12*v[3] + x13*v[4];
+    Jv[4] = x3*v[0] + x11*v[3] - x13*v[4];
+
+    this->njvev++;
     return AnyODE::Status::success;
 }

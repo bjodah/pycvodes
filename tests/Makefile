@@ -13,7 +13,7 @@ OPENMP_LIB ?= -lgomp
 TARGETS=test_cvodes_anyode test_cvodes_anyode_autorestart test_cvodes_anyode_quad test_cvodes_cxx test_sundials_cxx
 
 ifeq ($(USE_LAPACK),1)
-TARGETS += test_cvodes_anyode_svd test_tough_case
+TARGETS += test_cvodes_anyode_svd test_tough_case test_cvodes_anyode_jtimes
 endif
 
 test: $(TARGETS) test_cvodes_anyode_parallel
@@ -23,6 +23,7 @@ test: $(TARGETS) test_cvodes_anyode_parallel
 ifeq ($(USE_LAPACK),1)
 	./test_cvodes_anyode_svd --abortx 1
 	./test_tough_case --abortx 1
+	./test_cvodes_anyode_jtimes --abortx 1
 endif
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
