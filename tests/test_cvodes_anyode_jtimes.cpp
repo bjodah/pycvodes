@@ -16,18 +16,19 @@ TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec", "[simple_adaptive]" ) {
     const realtype dx0=0.0;
     const realtype dx_min=0.0;
     const realtype dx_max=0.0;
-    const bool with_jacobian=true;
-    const bool with_jtimes = true;
+    const bool with_jacobian=false;
     cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
     const int maxl=0;
     const realtype eps_lin=0.0;
     const unsigned nderiv=0;
+    bool return_on_root=false;
 
     double atol=1e-8, rtol=1e-8;
 
     cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::GMRES;
     int autorestart=0;
     bool return_on_error = false;
+    bool with_jtimes = true;
     double * xyout = (double*)malloc((odesys.get_ny() + 1)*sizeof(double));
     int td = 1;
     xyout[0] = 0;
@@ -40,8 +41,7 @@ TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec", "[simple_adaptive]" ) {
     auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {atol}, rtol, cvodes_cxx::LMM::BDF, tend, root_indices,
                                                mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
                                                maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes);
-    REQUIRE( odesys.current_info.nfo_int["njvev"] > 0 );
-    REQUIRE( odesys.current_info.nfo_int["njev"] == 0 );
-    REQUIRE( odesys.current_info.nfo_int["success"] );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
+    REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
     free(xyout);
 }
