@@ -4,7 +4,7 @@
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
-from cvodes_cxx cimport LMM, IterType
+from cvodes_cxx cimport LMM, IterType, LinSol
 
 cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
     cdef int simple_adaptive[U](
@@ -22,7 +22,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         double,
         bool,
         IterType,
-        int,
+        LinSol,
         int,
         double,
         unsigned,
@@ -51,7 +51,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         double,
         bool,
         IterType,
-        int,
+        LinSol,
         int,
         double,
         unsigned,

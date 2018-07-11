@@ -134,10 +134,43 @@ inline IterType iter_type_from_name(std::string name){
     else
         throw std::runtime_error(StreamFmt() << "Unknown iter_type: " << name);
 }
+
+enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7};
 enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
 enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
         Right=PREC_RIGHT, Both=PREC_BOTH};
 enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
+
+inline LinSol linear_solver_from_name(std::string name) {
+    if (name == "default")
+        return LinSol::DEFAULT;
+    else if (name == "dense")
+        return LinSol::DENSE;
+    else if (name == "banded")
+        return LinSol::BANDED;
+    else if (name == "gmres")
+        return LinSol::GMRES;
+    else if (name == "gmres_classic")
+        return LinSol::GMRES_CLASSIC;
+    else if (name == "bicgstab")
+        return LinSol::BICGSTAB;
+    else if (name == "tfqmr")
+        return LinSol::TFQMR;
+    else
+        throw std::runtime_error(StreamFmt() << "Unknown linear solver: " << name);
+}
+
+inline bool is_iterative_linear_solver(LinSol linsol) {
+    switch(linsol) {
+        case LinSol::GMRES:
+        case LinSol::GMRES_CLASSIC:
+        case LinSol::BICGSTAB:
+        case LinSol::TFQMR:
+            return true;
+        default:
+            return false;
+    }
+}
 
 inline void check_flag(int flag) {
     switch (flag){
@@ -1205,7 +1238,7 @@ inline void update_integration_info(std::unordered_map<std::string, int> &info_i
                                     std::unordered_map<std::string, std::vector<double>> &info_vecdbl,
                                     std::unordered_map<std::string, std::vector<int>> &info_vecint,
                                     const Integrator& integrator,
-                                    const IterType iter_type, const int linear_solver)
+                                    const IterType iter_type, const LinSol linear_solver)
 {
     info_int["n_steps"] += integrator.get_n_steps();
     info_int["n_root_evals"] += integrator.get_n_root_evals();
@@ -1215,7 +1248,7 @@ inline void update_integration_info(std::unordered_map<std::string, int> &info_i
     info_int["n_nonlin_solv_iters"] += integrator.get_n_nonlin_solv_iters();
     info_int["n_nonlin_solv_conv_fails"] += integrator.get_n_nonlin_solv_conv_fails();
     if (iter_type == IterType::Newton){
-        if (linear_solver >= 10) {  // iterative linear solver
+        if (cvodes_cxx::is_iterative_linear_solver(linear_solver)) {  // iterative linear solver
             info_int["krylov_n_lin_iters"] += integrator.get_n_lin_iters();
             info_int["krylov_n_prec_evals"] += integrator.get_n_prec_evals();
             info_int["krylov_n_prec_solves"] += integrator.get_n_prec_solves();

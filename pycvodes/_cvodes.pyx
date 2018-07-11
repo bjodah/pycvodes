@@ -5,12 +5,11 @@ import warnings
 from cpython.object cimport PyObject
 from libc.stdlib cimport malloc
 from libcpp cimport bool
-from libcpp.string cimport string
 from libcpp.vector cimport vector
 cimport numpy as cnp
 
 from anyode_numpy cimport PyOdeSys
-from cvodes_cxx cimport lmm_from_name, iter_type_from_name, fpes as _fpes
+from cvodes_cxx cimport lmm_from_name, iter_type_from_name, linear_solver_from_name, fpes as _fpes
 from cvodes_anyode cimport simple_adaptive, simple_predefined
 
 import numpy as np
@@ -22,9 +21,6 @@ cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
-
-iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
-linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
@@ -47,7 +43,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
              double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
              double dx_max=0.0, quads=None, roots=None, cb_kwargs=None, int lband=-1, int uband=-1,
              int nquads=0, int nroots=0,
-             str iter_type="undecided", int linear_solver=0, const int maxl=0,
+             str iter_type="undecided", str linear_solver="default", const int maxl=0,
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
@@ -113,8 +109,9 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
         nout = simple_adaptive[PyOdeSys](
             &xyqout, &td, odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
             xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
-            iter_type_from_name(iter_type.lower().encode('UTF-8')), linear_solver, maxl,
-            eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
+            iter_type_from_name(iter_type.lower().encode('UTF-8')),
+            linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
+            maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
             tidx, &ew_ele_out if ew_ele else NULL)
 
         xyqout_dims[0] = nout + 1
@@ -158,7 +155,7 @@ def predefined(rhs, jac,
                cnp.ndarray[cnp.float64_t, ndim=1] xout, atol,
                double rtol, str method='bdf', int nsteps=500, double dx0=0.0, double dx_min=0.0,
                double dx_max=0.0, quads=None, roots=None, cb_kwargs=None, int lband=-1, int uband=-1,
-               int nquads=0, int nroots=0, str iter_type="undecided", int linear_solver=0, const int maxl=0,
+               int nquads=0, int nroots=0, str iter_type="undecided", str linear_solver="default", const int maxl=0,
                const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
@@ -208,7 +205,8 @@ def predefined(rhs, jac,
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &yq0[0],
             xout.size, &xout[0], <double *>yqout.data, root_indices, roots_output, nsteps,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
-            linear_solver, maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes,
+            linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
+            maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes,
             <double *>ew_ele_arr.data if ew_ele else NULL)
         info = get_last_info(odesys, success=False if return_on_error and nreached < xout.size else True)
         info['nreached'] = nreached

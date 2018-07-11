@@ -64,7 +64,7 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     const realtype dx_max=0.0;
     const bool with_jacobian=true;
     cvodes_cxx::IterType iter_type=cvodes_cxx::IterType::Undecided;
-    int linear_solver=0;
+    cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::DEFAULT;
     const int maxl=0;
     const realtype eps_lin=0.0;
     const unsigned nderiv=0;

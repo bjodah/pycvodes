@@ -25,7 +25,7 @@ TEST_CASE( "adaptive_tricky_svd", "[simple_adaptive]" ) {
 
     double atol=1e-8, rtol=1e-8;
 
-    int linear_solver=10; // 10 => GMRES
+    cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::GMRES;
     int autorestart=0;
     bool return_on_error = false;
     bool with_jtimes = false;
