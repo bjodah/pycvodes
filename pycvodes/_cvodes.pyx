@@ -21,6 +21,7 @@ cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
+iterative_linsols = ('gmres','gmres_classic', 'bicgstab', 'tfqmr')
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
@@ -76,10 +77,12 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     rhs(0, yq0[..., :ny], np.empty(ny))  # fail early if rhs does not work
 
     if method.lower() in requires_jac and jac is None:
-        if linear_solver < 10:
+        if linear_solver.lower() not in iterative_linsols:
             warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
-        elif linear_solver >= 10 and jtimes is None:
+        elif jtimes is None:
             warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
+        warnings.warn("No full jacobian provided; disabling preconditioning.")
+
     if np.isinf([x0, xend]).any(): raise ValueError("+/-Inf found in x0/xend")
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
@@ -183,10 +186,12 @@ def predefined(rhs, jac,
             atol_vec.push_back(at)
 
     if method.lower() in requires_jac and jac is None:
-        if linear_solver < 10:
+        if linear_solver.lower() not in iterative_linsols:
             warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
-        elif linear_solver >= 10 and jtimes is None:
+        elif jtimes is None:
             warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
+        warnings.warn("No full jacobian provided; disabling preconditioning.")
+
     if np.isinf(xout).any(): raise ValueError("+/-Inf found in xout")
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
