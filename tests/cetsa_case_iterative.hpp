@@ -208,8 +208,8 @@ AnyODE::Status OdeSys::jtimes(const double * const ANYODE_RESTRICT v,
                               double t,
                               const double * const ANYODE_RESTRICT y,
                               const double * const ANYODE_RESTRICT fy,
-                              void * user_data=nullptr,
-                              double * const ANYODE_RESTRICT tmp=nullptr
+                              void * user_data,
+                              double * const ANYODE_RESTRICT tmp
                               ) {
     // The AnyODE::ignore(...) calls below are used to generate code free from compiler warnings.
     AnyODE::ignore(fy);  // Currently we are not using fy (could be done through extensive pattern matching)
