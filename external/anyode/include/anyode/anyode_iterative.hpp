@@ -17,15 +17,19 @@ namespace AnyODE {
         std::unique_ptr<JacMat_t> m_M_cache {nullptr};
         std::unique_ptr<Decomp_t> m_decomp_cache {nullptr};
 
-        virtual Status jac_times_vec(const Real_t * const ANYODE_RESTRICT vec,
-                                     Real_t * const ANYODE_RESTRICT out,
-                                     Real_t t,
-                                     const Real_t * const ANYODE_RESTRICT y,
-                                     const Real_t * const ANYODE_RESTRICT fy
-                                     ) override
+        virtual Status jtimes(const Real_t * const ANYODE_RESTRICT vec,
+                              Real_t * const ANYODE_RESTRICT out,
+                              Real_t t,
+                              const Real_t * const ANYODE_RESTRICT y,
+                              const Real_t * const ANYODE_RESTRICT fy,
+                              void * user_data=nullptr,
+                              Real_t * const ANYODE_RESTRICT tmp=nullptr
+                              ) override
         {
             // See "Jacobian information (matrix-vector product)"
             //     (4.6.8 in cvs_guide.pdf for sundials 2.7.0)
+            ignore(user_data);
+            ignore(tmp);
             auto status = AnyODE::Status::success;
             const int ny = this->get_ny();
             auto jac = make_unique<JacMat_t>(nullptr, ny, ny, ny);
