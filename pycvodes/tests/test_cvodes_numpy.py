@@ -3,6 +3,7 @@ from math import exp, pi
 import os
 import numpy as np
 import pytest
+import itertools as it
 
 from pycvodes import (
     integrate_adaptive, integrate_predefined, requires_jac, get_include
@@ -95,7 +96,7 @@ methods = [('adams', 1.8, False),
            ('bdf', 10, False),
            ('bdf', 10, True)]
 
-sparse_linear_solvers = [10, 11, 20, 30]
+iterative_linear_solvers = ["gmres", "bicgstab", "tfqmr"]
 
 
 def bandify(cb, mlower, mupper):
@@ -571,8 +572,11 @@ def test_adaptive_ew_ele():
     assert np.all(abs_ew_ele < 1)
 
 
-@pytest.mark.parametrize("linear_solver", sparse_linear_solvers)
-def test_jtimes_adaptive(linear_solver):
+jtimes_params = it.product(iterative_linear_solvers, [True, False])
+
+
+@pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
+def test_jtimes_adaptive(linear_solver, with_jac):
     g = 9.81
     y0 = [1000.0, 0.0]
     atol, rtol = 1e-8, 1e-8
@@ -580,16 +584,17 @@ def test_jtimes_adaptive(linear_solver):
     kwargs = dict(atol=atol, rtol=rtol,
                   method='bdf', linear_solver=linear_solver,
                   jtimes=jtimes)
-    tout, yout, info = integrate_adaptive(f, jac, y0, 0, 10, **kwargs)
+    tout, yout, info = integrate_adaptive(f, jac if with_jac else None, y0, 0, 10, **kwargs)
     yref = gravity_analytic(g, y0, tout)
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
     assert info['success']
     assert info['njvev'] > 0
-    assert info['njev'] == 0
+    if not with_jac:
+        assert info['njev'] == 0
 
 
-@pytest.mark.parametrize("linear_solver", sparse_linear_solvers)
-def test_jtimes_predefined(linear_solver):
+@pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
+def test_jtimes_predefined(linear_solver, with_jac):
     g = 9.81
     y0 = [1000.0, 0.0]
     atol, rtol = 1e-8, 1e-8
@@ -598,9 +603,10 @@ def test_jtimes_predefined(linear_solver):
                   method='bdf', linear_solver=linear_solver,
                   jtimes=jtimes)
     tout = np.linspace(0, 10, 100)
-    yout, info = integrate_predefined(f, jac, y0, tout, **kwargs)
+    yout, info = integrate_predefined(f, jac if with_jac else None, y0, tout, **kwargs)
     yref = gravity_analytic(g, y0, tout)
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
     assert info['success']
     assert info['njvev'] > 0
-    assert info['njev'] == 0
+    if not with_jac:
+        assert info['njev'] == 0
