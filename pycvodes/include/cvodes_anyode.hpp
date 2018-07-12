@@ -151,7 +151,7 @@ int jtimes_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
     AnyODE::Status status = odesys.jtimes(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y),
-                                          NV_DATA_S(fy), user_data, NV_DATA_S(tmp));
+                                          NV_DATA_S(fy));
     if (status == AnyODE::Status::recoverable_error)
         throw std::runtime_error("There are only unrecoverable errors for JacTimesVec().");
     static_cast<Integrator*>(odesys.integrator)->time_jtimes += std::chrono::duration<double>(

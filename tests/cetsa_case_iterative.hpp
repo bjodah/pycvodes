@@ -26,9 +26,7 @@ struct OdeSys : public AnyODE::OdeSysIterativeBase<double> {
                           double * const ANYODE_RESTRICT out,
                           double t,
                           const double * const ANYODE_RESTRICT y,
-                          const double * const ANYODE_RESTRICT fy,
-                          void * user_data=nullptr,
-                          double * const ANYODE_RESTRICT tmp=nullptr
+                          const double * const ANYODE_RESTRICT fy
                           ) override;
 };
 
@@ -207,15 +205,11 @@ AnyODE::Status OdeSys::jtimes(const double * const ANYODE_RESTRICT v,
                               double * const ANYODE_RESTRICT Jv,
                               double t,
                               const double * const ANYODE_RESTRICT y,
-                              const double * const ANYODE_RESTRICT fy,
-                              void * user_data,
-                              double * const ANYODE_RESTRICT tmp
+                              const double * const ANYODE_RESTRICT fy
                               ) {
     // The AnyODE::ignore(...) calls below are used to generate code free from compiler warnings.
     AnyODE::ignore(fy);  // Currently we are not using fy (could be done through extensive pattern matching)
     AnyODE::ignore(t);
-    AnyODE::ignore(tmp);
-    AnyODE::ignore(user_data);
 
     const double x0 = 0.120272395808565/m_p[0];
     const double x1 = -m_p[9];
