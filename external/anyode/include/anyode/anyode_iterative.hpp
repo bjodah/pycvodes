@@ -4,7 +4,6 @@
 
 #include <anyode/anyode.hpp>
 #include <anyode/anyode_buffer.hpp> // make_unique
-#include <anyode/anyode_blas_lapack.hpp>  // dgemv, dgesvd
 #include <anyode/anyode_matrix.hpp> // DenseMatrix
 #include <anyode/anyode_decomposition.hpp>  // SVD
 
