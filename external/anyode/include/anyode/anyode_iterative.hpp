@@ -5,11 +5,11 @@
 #include <anyode/anyode.hpp>
 #include <anyode/anyode_buffer.hpp> // make_unique
 #include <anyode/anyode_matrix.hpp> // DenseMatrix
-#include <anyode/anyode_decomposition.hpp>  // SVD
+#include <anyode/anyode_decomposition.hpp>  // LU
 
 namespace AnyODE {
 
-    template <typename Real_t=double, typename JacMat_t=DenseMatrix<Real_t>, typename Decomp_t=SVD<Real_t>>
+    template <typename Real_t=double, typename JacMat_t=DenseMatrix<Real_t>, typename Decomp_t=DenseLU<Real_t>>
     struct OdeSysIterativeBase : public OdeSysBase<Real_t> {
         int m_njacvec_dot=0, m_nprec_setup=0, m_nprec_solve=0;
         std::unique_ptr<JacMat_t> m_jac_cache {nullptr};

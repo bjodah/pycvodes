@@ -2,10 +2,12 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include <anyode/anyode.hpp>
+#include <anyode/anyode_iterative.hpp>
+#include <anyode/anyode_matrix.hpp> // DenseMatrix
+#include <anyode/anyode_decomposition.hpp>  // DenseLU
 
 BEGIN_NAMESPACE(AnyODE)
-struct PyOdeSys : public AnyODE::OdeSysBase<double> {
+struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>, DenseLU<double>> {
     int ny;
     PyObject *py_rhs, *py_jac, *py_jtimes, *py_quads, *py_roots, *py_kwargs, *py_dx0cb, *py_dx_max_cb;
     int mlower, mupper, nquads, nroots;
