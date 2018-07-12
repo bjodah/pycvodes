@@ -20,15 +20,11 @@ namespace AnyODE {
                               Real_t * const ANYODE_RESTRICT out,
                               Real_t t,
                               const Real_t * const ANYODE_RESTRICT y,
-                              const Real_t * const ANYODE_RESTRICT fy,
-                              void * user_data=nullptr,
-                              Real_t * const ANYODE_RESTRICT tmp=nullptr
+                              const Real_t * const ANYODE_RESTRICT fy
                               ) override
         {
             // See "Jacobian information (matrix-vector product)"
             //     (4.6.8 in cvs_guide.pdf for sundials 2.7.0)
-            ignore(user_data);
-            ignore(tmp);
             auto status = AnyODE::Status::success;
             const int ny = this->get_ny();
             auto jac = make_unique<JacMat_t>(nullptr, ny, ny, ny);

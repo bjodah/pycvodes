@@ -194,8 +194,7 @@ struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>
         return handle_status_(py_result, "jac");
     }
     AnyODE::Status jtimes(const double * const v, double * const Jv,
-                          double x, const double * const y, const double * const fy,
-                          void * user_data=nullptr, double * const tmp=nullptr) override {
+                          double x, const double * const y, const double * const fy) override {
         npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
         const auto type_tag = NPY_DOUBLE;
         PyObject * py_yarr = PyArray_SimpleNewFromData(1, ydims, type_tag, const_cast<double *>(y));
@@ -210,8 +209,8 @@ struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>
         } else {
             py_fy = Py_BuildValue(""); // Py_None with incref
         }
-        // Call jtimes with signature: (v[:], Jv[:], x, y[:], fy[:], user_data=None, tmp=None)
-        PyObject * py_arglist = Py_BuildValue("(OOdOOOO)", py_varr, py_Jv, (double) x, py_yarr, py_fy, user_data, tmp);
+        // Call jtimes with signature: (v[:], Jv[:], x, y[:], fy[:])
+        PyObject * py_arglist = Py_BuildValue("(OOdOO)", py_varr, py_Jv, (double) x, py_yarr, py_fy);
         PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_jtimes, py_arglist, this->py_kwargs);
         Py_DECREF(py_arglist);
         Py_DECREF(py_fy);

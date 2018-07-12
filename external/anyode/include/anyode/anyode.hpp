@@ -198,17 +198,13 @@ struct OdeSysBase {
                           Real_t * const ANYODE_RESTRICT out,
                           Real_t t,
                           const Real_t * const ANYODE_RESTRICT y,
-                          const Real_t * const ANYODE_RESTRICT fy,
-                          void * user_data=nullptr,
-                          Real_t * const ANYODE_RESTRICT tmp=nullptr
+                          const Real_t * const ANYODE_RESTRICT fy
                           ) {
         ignore(vec);
         ignore(out);
         ignore(t);
         ignore(y);
         ignore(fy);
-        ignore(user_data);
-        ignore(tmp);
         return Status::unrecoverable_error;
     }
     virtual Status prec_setup(Real_t t,
