@@ -76,10 +76,11 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
             atol_vec.push_back(at)
     rhs(0, yq0[..., :ny], np.empty(ny))  # fail early if rhs does not work
 
-    if method.lower() in requires_jac and jac is None:
+    if method.lower() in requires_jac and not with_jacobian:
+        warnings.warn("No full jacobian provided; disabling default preconditioning.")
         if linear_solver.lower() not in iterative_linsols:
             warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
-        elif jtimes is None:
+        elif not with_jtimes:
             warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
 
     if np.isinf([x0, xend]).any(): raise ValueError("+/-Inf found in x0/xend")
@@ -184,10 +185,11 @@ def predefined(rhs, jac,
         for at in atol:
             atol_vec.push_back(at)
 
-    if method.lower() in requires_jac and jac is None:
+    if method.lower() in requires_jac and not with_jacobian:
+        warnings.warn("No full jacobian provided; disabling default preconditioning.")
         if linear_solver.lower() not in iterative_linsols:
             warnings.warn("Method requires jacobian, no callback provided: using finite differences (may be inaccurate).")
-        elif jtimes is None:
+        elif not with_jtimes:
             warnings.warn("Method requires jacobian or jacobian-vector product, no callback provided: using finite differences (may be inaccurate).")
 
     if np.isinf(xout).any(): raise ValueError("+/-Inf found in xout")

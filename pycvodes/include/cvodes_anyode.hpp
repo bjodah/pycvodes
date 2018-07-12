@@ -296,11 +296,15 @@ std::unique_ptr<Integrator> get_integrator(
             throw std::runtime_error("Invalid linear_solver");
         }
         if (cvodes_cxx::is_iterative_linear_solver(linear_solver)) {
-            integr.set_prec_type(PrecType::Left);
+            if (with_jacobian) {
+                integr.set_prec_type(PrecType::Left);
+                integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
+            } else {
+                integr.set_prec_type(PrecType::None);
+            }
             integr.set_iter_eps_lin(eps_lin);
             if (with_jtimes)
-                integr.set_jac_times_vec_fn(jtimes_cb<OdeSys>);
-            integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
+                integr.set_jtimes_fn(jtimes_cb<OdeSys>);
             if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
                 integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
             else if (linear_solver == LinSol::BICGSTAB or linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
