@@ -144,13 +144,14 @@ int jac_band_cb(
 
 
 template <typename OdeSys>
-int jac_times_vec_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
-                     N_Vector fy, void *user_data, N_Vector tmp){
+int jtimes_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
+                     N_Vector fy, void * user_data, N_Vector tmp){
     // callback of req. signature wrapping OdeSys method.
     AnyODE::ignore(tmp);
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
-    AnyODE::Status status = odesys.jac_times_vec(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y), NV_DATA_S(fy));
+    AnyODE::Status status = odesys.jtimes(NV_DATA_S(v), NV_DATA_S(Jv), t, NV_DATA_S(y),
+                                          NV_DATA_S(fy));
     if (status == AnyODE::Status::recoverable_error)
         throw std::runtime_error("There are only unrecoverable errors for JacTimesVec().");
     static_cast<Integrator*>(odesys.integrator)->time_jtimes += std::chrono::duration<double>(
@@ -295,11 +296,15 @@ std::unique_ptr<Integrator> get_integrator(
             throw std::runtime_error("Invalid linear_solver");
         }
         if (cvodes_cxx::is_iterative_linear_solver(linear_solver)) {
-            integr.set_prec_type(PrecType::Left);
+            if (with_jacobian) {
+                integr.set_prec_type(PrecType::Left);
+                integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
+            } else {
+                integr.set_prec_type(PrecType::None);
+            }
             integr.set_iter_eps_lin(eps_lin);
             if (with_jtimes)
-                integr.set_jac_times_vec_fn(jac_times_vec_cb<OdeSys>);
-            integr.set_preconditioner(prec_setup_cb<OdeSys>, prec_solve_cb<OdeSys>);
+                integr.set_jtimes_fn(jtimes_cb<OdeSys>);
             if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
                 integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
             else if (linear_solver == LinSol::BICGSTAB or linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
@@ -313,7 +318,7 @@ std::unique_ptr<Integrator> get_integrator(
 
 template <class OdeSys>
 int
-simple_adaptive(realtype ** xyqout,
+        simple_adaptive(realtype ** xyqout,
                 int * td,  // trailing dimension of xyqout ( == len(x) )
                 OdeSys * const odesys,
                 std::vector<realtype> atol,
@@ -369,7 +374,6 @@ simple_adaptive(realtype ** xyqout,
 
     std::time_t cput0 = std::clock();
     auto t_start = std::chrono::high_resolution_clock::now();
-
     int result = integr->adaptive(
         xyqout, td, xend, nderiv, root_indices, return_on_root, autorestart,
         return_on_error, (
@@ -393,6 +397,7 @@ simple_adaptive(realtype ** xyqout,
         *integr, iter_type, linear_solver);
     odesys->current_info.nfo_int["nfev"] = odesys->nfev;
     odesys->current_info.nfo_int["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["njvev"] = odesys->njvev;
     return result;
 }
 
@@ -471,6 +476,7 @@ int simple_predefined(OdeSys * const odesys,
         *integr, iter_type, linear_solver);
     odesys->current_info.nfo_int["nfev"] = odesys->nfev;
     odesys->current_info.nfo_int["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["njvev"] = odesys->njvev;
     return nreached;
 }
 
@@ -605,6 +611,7 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
         *integr, iter_type, linear_solver);
     odesys->current_info.nfo_int["nfev"] = odesys->nfev;
     odesys->current_info.nfo_int["njev"] = odesys->njev;
+    odesys->current_info.nfo_int["njvev"] = odesys->njvev;
 
     auto result = AnyODE::make_unique<AnyODE::Result>(
         ntot, odesys->ny, odesys->nquads, odesys->nroots, xyqout);

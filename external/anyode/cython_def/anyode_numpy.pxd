@@ -6,7 +6,7 @@ from anyode cimport Info
 
 cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
     cdef cppclass PyOdeSys:
-        PyOdeSys(int, PyObject*, PyObject*, PyObject*, PyObject*, PyObject*, int, int, int, int, PyObject*, PyObject*)
+        PyOdeSys(int, PyObject*, PyObject*, PyObject*, PyObject*, PyObject*, PyObject*, int, int, int, int, PyObject*, PyObject*)
         int get_ny()
         int get_nquads()
         int get_nroots()
@@ -21,5 +21,5 @@ cdef extern from "anyode/anyode_numpy.hpp" namespace "AnyODE":
         bool record_steps
         int mlower, mupper, nroots
         Info current_info
-        int nfev, njev
+        int nfev, njev, njvev
         void * integrator

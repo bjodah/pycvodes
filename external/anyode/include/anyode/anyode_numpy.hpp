@@ -2,18 +2,22 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include <anyode/anyode.hpp>
+#include <anyode/anyode_iterative.hpp>
+#include <anyode/anyode_matrix.hpp> // DenseMatrix
+#include <anyode/anyode_decomposition.hpp>  // DenseLU
 
 BEGIN_NAMESPACE(AnyODE)
-struct PyOdeSys : public AnyODE::OdeSysBase<double> {
+struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>, DenseLU<double>> {
     int ny;
-    PyObject *py_rhs, *py_jac, *py_quads, *py_roots, *py_kwargs, *py_dx0cb, *py_dx_max_cb;
+    PyObject *py_rhs, *py_jac, *py_jtimes, *py_quads, *py_roots, *py_kwargs, *py_dx0cb, *py_dx_max_cb;
     int mlower, mupper, nquads, nroots;
-    PyOdeSys(int ny, PyObject * py_rhs, PyObject * py_jac=nullptr, PyObject * py_quads=nullptr,
+    PyOdeSys(int ny, PyObject * py_rhs, PyObject * py_jac=nullptr, PyObject * py_jtimes=nullptr,
+             PyObject * py_quads=nullptr,
              PyObject * py_roots=nullptr, PyObject * py_kwargs=nullptr, int mlower=-1,
              int mupper=-1, int nquads=0, int nroots=0, PyObject * py_dx0cb=nullptr,
              PyObject * py_dx_max_cb=nullptr) :
-        ny(ny), py_rhs(py_rhs), py_jac(py_jac), py_quads(py_quads), py_roots(py_roots),
+        ny(ny), py_rhs(py_rhs), py_jac(py_jac), py_jtimes(py_jtimes),
+        py_quads(py_quads), py_roots(py_roots),
         py_kwargs(py_kwargs), py_dx0cb(py_dx0cb), py_dx_max_cb(py_dx_max_cb),
         mlower(mlower), mupper(mupper), nquads(nquads), nroots(nroots)
     {
@@ -25,6 +29,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         }
         Py_INCREF(py_rhs);
         Py_XINCREF(py_jac);
+        Py_XINCREF(py_jtimes);
         Py_XINCREF(py_quads);
         Py_XINCREF(py_roots);
         if (py_kwargs == Py_None){
@@ -37,6 +42,7 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
     virtual ~PyOdeSys() {
         Py_DECREF(py_rhs);
         Py_XDECREF(py_jac);
+        Py_XDECREF(py_jtimes);
         Py_XDECREF(py_quads);
         Py_XDECREF(py_roots);
         Py_XDECREF(py_kwargs);
@@ -186,6 +192,32 @@ struct PyOdeSys : public AnyODE::OdeSysBase<double> {
         Py_DECREF(py_yarr);
         this->njev++;
         return handle_status_(py_result, "jac");
+    }
+    AnyODE::Status jtimes(const double * const v, double * const Jv,
+                          double x, const double * const y, const double * const fy) override {
+        npy_intp ydims[1] { static_cast<npy_intp>(this->ny) };
+        const auto type_tag = NPY_DOUBLE;
+        PyObject * py_yarr = PyArray_SimpleNewFromData(1, ydims, type_tag, const_cast<double *>(y));
+        PyArray_CLEARFLAGS(reinterpret_cast<PyArrayObject*>(py_yarr), NPY_ARRAY_WRITEABLE);  // make yarr read-only
+        PyObject * py_varr = PyArray_SimpleNewFromData(1, ydims, type_tag, const_cast<double *>(v));
+        PyArray_CLEARFLAGS(reinterpret_cast<PyArrayObject*>(py_varr), NPY_ARRAY_WRITEABLE);  // make varr read-only
+        PyObject * py_Jv = PyArray_SimpleNewFromData(1, ydims, type_tag, const_cast<double *> (Jv));
+        PyObject * py_fy;
+        if (fy) {
+            py_fy = PyArray_SimpleNewFromData(1, ydims, type_tag, const_cast<double *>(fy));
+            PyArray_CLEARFLAGS(reinterpret_cast<PyArrayObject*>(py_fy), NPY_ARRAY_WRITEABLE);  // make fy read-only
+        } else {
+            py_fy = Py_BuildValue(""); // Py_None with incref
+        }
+        // Call jtimes with signature: (v[:], Jv[:], x, y[:], fy[:])
+        PyObject * py_arglist = Py_BuildValue("(OOdOO)", py_varr, py_Jv, (double) x, py_yarr, py_fy);
+        PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_jtimes, py_arglist, this->py_kwargs);
+        Py_DECREF(py_arglist);
+        Py_DECREF(py_fy);
+        Py_DECREF(py_yarr);
+        Py_DECREF(py_varr);
+        this->njvev++;
+        return handle_status_(py_result, "jtimes");
     }
     AnyODE::Status dense_jac_cmaj(double t, const double * const y, const double * const fy,
                                   double * const jac, long int ldim, double * const dfdt=nullptr) override {

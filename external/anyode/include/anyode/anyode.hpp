@@ -133,7 +133,7 @@ enum class Status : int {success = 0, recoverable_error = 1, unrecoverable_error
 
 template <typename Real_t=double>
 struct OdeSysBase {
-    int nfev=0, njev=0;
+    int nfev=0, njev=0, njvev=0;
     void * integrator = nullptr;
     void * user_data = nullptr;  // for those who don't want to subclass
     Info current_info;
@@ -194,13 +194,12 @@ struct OdeSysBase {
         throw std::runtime_error("banded_jac_cmaj not implemented.");
         return Status::unrecoverable_error;
     }
-    virtual Status jac_times_vec(const Real_t * const ANYODE_RESTRICT vec,
-                                 Real_t * const ANYODE_RESTRICT out,
-                                 Real_t t,
-                                 const Real_t * const ANYODE_RESTRICT y,
-                                 const Real_t * const ANYODE_RESTRICT fy
-                                 )
-    {
+    virtual Status jtimes(const Real_t * const ANYODE_RESTRICT vec,
+                          Real_t * const ANYODE_RESTRICT out,
+                          Real_t t,
+                          const Real_t * const ANYODE_RESTRICT y,
+                          const Real_t * const ANYODE_RESTRICT fy
+                          ) {
         ignore(vec);
         ignore(out);
         ignore(t);
