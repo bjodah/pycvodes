@@ -582,7 +582,7 @@ def test_jtimes_adaptive(linear_solver, with_jac):
     atol, rtol = 1e-8, 1e-8
     f, jac, jtimes = _gravity_f_j_jtimes(g)
     if not with_jac:
-        jac=None
+        jac = None
     kwargs = dict(atol=atol, rtol=rtol,
                   method='bdf', linear_solver=linear_solver,
                   jtimes=jtimes)
