@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include "anyode/anyode.hpp"
 #include "anyode/anyode_parallel.hpp"
 #include "cvodes_anyode.hpp"
 
@@ -37,7 +38,7 @@ namespace cvodes_anyode_parallel {
                    bool with_jtimes=false
                    ){
         const int ny = odesys[0]->get_ny();
-        ignore(ny);
+        AnyODE::ignore(ny);
         const int nsys = odesys.size();
         auto results = std::vector<std::pair<int, std::vector<int>>>(nsys);
         anyode_parallel::ThreadException te;
