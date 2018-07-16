@@ -37,6 +37,7 @@ namespace cvodes_anyode_parallel {
                    bool with_jtimes=false
                    ){
         const int ny = odesys[0]->get_ny();
+        ignore(ny);
         const int nsys = odesys.size();
         auto results = std::vector<std::pair<int, std::vector<int>>>(nsys);
         anyode_parallel::ThreadException te;

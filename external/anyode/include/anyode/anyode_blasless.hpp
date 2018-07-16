@@ -61,7 +61,8 @@ namespace AnyODE {
         void operator()(const char * trans, const int * n, const int * nrhs, Real_t * a,
                         const int * lda, int * ipiv, Real_t * b, const int * ldb, int * info,
                         int sundials__=0) const noexcept {
-
+            ignore(trans);
+            ignore(sundials__);
             *info = 0;
             if (*n < 0)  *info = -1;
             if (*nrhs < 0)  *info = -2;
@@ -93,9 +94,12 @@ namespace AnyODE {
 
     template <typename Real_t = double> struct gemv_callback {
         void operator()(const char* trans, int * m, int * n, const Real_t * alpha,
-                        Real_t * a, int* lda, const Real_t * x, int * incx,
-                        const Real_t * beta, Real_t * y, int* incy, int sundials__=0) const noexcept {
-            std::function<Real_t& (const int, const int)> A;
+                        Real_t * a, int * lda, const Real_t * x, int * incx,
+                        const Real_t * beta, Real_t * y, int * incy, int sundials__=0) const noexcept {
+            ignore(incx);
+            ignore(incy);
+            ignore(sundials__);
+            td::function<Real_t& (const int, const int)> A;
             if (*trans == 'T')
                 A = [&](const int ri, const int ci) -> Real_t& { return a[ri*(*lda) + ci]; };
             else
