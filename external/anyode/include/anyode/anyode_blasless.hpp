@@ -99,7 +99,7 @@ namespace AnyODE {
             ignore(incx);
             ignore(incy);
             ignore(sundials__);
-            td::function<Real_t& (const int, const int)> A;
+            std::function<Real_t& (const int, const int)> A;
             if (*trans == 'T')
                 A = [&](const int ri, const int ci) -> Real_t& { return a[ri*(*lda) + ci]; };
             else
