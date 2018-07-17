@@ -107,6 +107,45 @@ int jac_dense_cb(
     return handle_status_(status);
 }
 
+template <class OdeSys>
+int jac_sparse_cb(
+#if SUNDIALS_VERSION_MAJOR < 3
+    long int N,
+#endif
+    realtype t,
+    N_Vector y, N_Vector fy,
+#if SUNDIALS_VERSION_MAJOR < 3
+    SlsMat Jac,
+#else
+    SUNMatrix Jac,
+#endif
+    void *user_data,
+    N_Vector tmp1, N_Vector tmp2, N_Vector tmp3
+    ){
+    // callback of req. signature wrapping OdeSys method.
+#if SUNDIALS_VERSION_MAJOR < 3
+    AnyODE::ignore(N);
+#endif
+    AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
+    auto t_start = std::chrono::high_resolution_clock::now();
+    auto& odesys = *static_cast<OdeSys*>(user_data);
+    if (odesys.record_jac_xvals)
+        odesys.current_info.nfo_vecdbl["jac_xvals"].push_back(t);
+    AnyODE::Status status = odesys.sparse_jac_csc(t, NV_DATA_S(y), NV_DATA_S(fy),
+#if SUNDIALS_VERSION_MAJOR < 3
+                                                  Jac->data, Jac->indexptrs, Jac->indexvals,
+#else
+                                                  SUNSparseMatrix_Data(Jac),
+                                                  SUNSparseMatrix_IndexPointers(Jac),
+                                                  SUNSparseMatrix_IndexValues(Jac)
+#endif
+                                                  );
+
+    static_cast<Integrator*>(odesys.integrator)->time_jac += std::chrono::duration<double>(
+        std::chrono::high_resolution_clock::now() - t_start).count();
+    return handle_status_(status);
+}
+
 template <typename OdeSys>
 int jac_band_cb(
 #if SUNDIALS_VERSION_MAJOR < 3
@@ -224,6 +263,7 @@ std::unique_ptr<Integrator> get_integrator(
     const bool with_jtimes=false)
 {
     const int ny = odesys->get_ny();
+    const int nnz = odesys->get_nnz();
     const int nroots = odesys->get_nroots();
     const int nq = odesys->get_nquads();
     auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type);
@@ -292,6 +332,11 @@ std::unique_ptr<Integrator> get_integrator(
             integr.set_linear_solver_to_iterative(IterLinSolEnum::BICGSTAB, maxl); break;
         case LinSol::TFQMR:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR, maxl); break;
+        case LinSol::KLU:
+            if (with_jacobian)
+                integr.set_linear_solver_to_sparse(ny, nnz);
+                integr.set_sparse_jac_fn(jac_sparse_cb<OdeSys >);
+            break;
         default:
             throw std::runtime_error("Invalid linear_solver");
         }

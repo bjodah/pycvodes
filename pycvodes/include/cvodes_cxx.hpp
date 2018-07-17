@@ -39,11 +39,13 @@
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
+#include <sunlinsol/sunlinsol_klu.h>
 #else
 #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
+#include <cvodes/cvodes_klu.h>
 #if !defined(USE_LAPACK)
 #  if defined(SUNDIALS_BLAS_LAPACK)
 #    define USE_LAPACK 1
@@ -135,10 +137,10 @@ inline IterType iter_type_from_name(std::string name){
         throw std::runtime_error(StreamFmt() << "Unknown iter_type: " << name);
 }
 
-enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7};
+enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7, KLU=8};
 enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
 enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
-        Right=PREC_RIGHT, Both=PREC_BOTH};
+                           Right=PREC_RIGHT, Both=PREC_BOTH};
 enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
 
 inline LinSol linear_solver_from_name(std::string name) {
@@ -156,6 +158,8 @@ inline LinSol linear_solver_from_name(std::string name) {
         return LinSol::BICGSTAB;
     else if (name == "tfqmr")
         return LinSol::TFQMR;
+    else if (name == "klu")
+        return LinSol::KLU;
     else
         throw std::runtime_error(StreamFmt() << "Unknown linear solver: " << name);
 }
@@ -166,6 +170,15 @@ inline bool is_iterative_linear_solver(LinSol linsol) {
         case LinSol::GMRES_CLASSIC:
         case LinSol::BICGSTAB:
         case LinSol::TFQMR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline bool is_sparse_linear_solver(LinSol linsol) {
+    switch(linsol) {
+        case LinSol::KLU:
             return true;
         default:
             return false;
@@ -214,10 +227,10 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (this->y_)
             N_VDestroy(this->y_);
-        if (this->LS_)
-            SUNLinSolFree(this->LS_);
         if (this->A_)
             SUNMatDestroy(this->A_);
+        if (this->LS_)
+            SUNLinSolFree(this->LS_);
 #endif
     }
     // init
@@ -463,6 +476,7 @@ public:
         }
 #endif
     }
+
     void set_dense_jac_fn(
 #if SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
@@ -526,6 +540,7 @@ public:
                 );
 #endif
     }
+
     void set_band_jac_fn(
 #if SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
@@ -544,6 +559,54 @@ public:
         status = CVDlsSetBandJacFn(this->mem, djac);
         if (status < 0)
             throw std::runtime_error("CVDlsSetBandJacFn failed.");
+#endif
+    }
+
+     // sparse jacobian
+    void set_linear_solver_to_sparse(int ny, int nnz){
+        int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+        if (A_ == nullptr){
+            if (A_)
+                throw std::runtime_error("matrix already set");
+            A_ = SUNSparseMatrix(ny, ny, nnz, CSC_MAT);
+            if (!A_)
+                throw std::runtime_error("SUNSparseMatrix failed.");
+        }
+        if (LS_ == nullptr){
+            if (LS_)
+                throw std::runtime_error("linear solver already set");
+            LS_ = SUNKLU(y_, A_);
+            if (!LS_)
+                throw std::runtime_error("SUNKLU failed.");
+        }
+        status = CVDlsSetLinearSolver(this->mem, LS_, A_);
+        if (status < 0)
+            throw std::runtime_error("CVDlsSetLinearSolver failed.");
+#else
+        status = CVKLU(this->mem, ny, nnz);
+        if (status != CVSLS SUCCESS) {
+            throw std::runtime_error("CVKLU failed");
+        }
+#endif
+    }
+
+    void set_sparse_jac_fn(
+    #if SUNDIALS_VERSION_MAJOR >= 3
+        CVDlsJacFn
+#else
+        CVSlsSparseJacFn
+#endif
+        djac) {
+        int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+        status = CVDlsSetJacFn(this->mem, djac);
+        if (status < 0)
+            throw std::runtime_error("CVDlsSetJacFn failed.");
+#else
+        status = CVSlsSetSparseJacFn(this->mem, djac);
+        if (status < 0)
+            throw std::runtime_error(" CVSlsSetSparseJacFn failed.");
 #endif
     }
 
