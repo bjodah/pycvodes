@@ -3,7 +3,7 @@
 
 import warnings
 from cpython.object cimport PyObject
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc
 from libcpp cimport bool
 from libcpp.vector cimport vector
 cimport numpy as cnp
