@@ -4,12 +4,27 @@ from __future__ import division
 
 import numpy as np
 
+valid_nonnull_opt_sets = [{}, {"lband", "uband"}, {"nnz"}]
 
-def _get_jmat_out(ny, lband=None, uband=None):
-    if lband is not None:
-        return np.empty((1+lband+uband, ny))
+def _check_jac_type(**kwargs):
+    nonnull_opts = dict((k, v) for k, v in kwargs.items() if v is not None)
+    if any(map(set(nonnull_opts).__eq__, valid_nonnull_opt_sets)):
+        pass
     else:
-        return np.empty((ny, ny))
+        raise ValueError("Couldn't determine jacobian type from given non-default options: {}".format(nonnull_opts))
+
+
+def _get_jmat_out(ny, lband=None, uband=None,
+                  nnz=None):
+    if lband is None and nnz is None:
+        # jmat_out, dfdx_out
+        return np.empty((ny, ny)), np.empty(ny)
+    elif nnz is None:
+        # jmat_out, dfdx_out
+        return np.empty((1 + lband + uband, ny)), np.empty(ny)
+    else:
+        # data, colptrs, rowvals
+        return np.empty(nnz), np.empty(ny + 1), np.empty(nnz)
 
 
 def _check_callable(f, j, x0, y0, lband=None, uband=None):
@@ -22,16 +37,28 @@ def _check_callable(f, j, x0, y0, lband=None, uband=None):
     if j is None:
         return  # Not all methods require a jacobian
 
-    _jmat_out = _get_jmat_out(ny, lband, uband)
-    _dfdx_out = np.empty(ny)
-    _ret = j(x0, y0, _jmat_out, _dfdx_out)
+    args = _get_jmat_out(ny, lband=lband, uband=uband,
+                         nnz=nnz)
+    _ret = j(x0, y0, *args)
     if _ret is not None:
         raise ValueError("j() must return None")
 
 
-def _check_indexing(f, j, x0, y0, lband=None, uband=None):
+def _get_jmat_out_short(ny, lband=None, uband=None, nnz=None):
+    if lband is None and nnz is None:
+        # jmat_out, dfdx_out
+        return np.empty((ny, ny - 1)), np.empty(ny)
+    elif nnz is None:
+        # jmat_out, dfdx_out
+        return np.empty((1 + lband + uband, ny - 1)), np.empty(ny)
+    else:
+        # data, colptrs, rowvals
+        return np.empty(nnz - 1), np.empty(ny), np.empty(nnz-1)
+
+
+def _check_indexing(f, j, x0, y0, lband=None, uband=None, nnz=None):
     ny = len(y0)
-    _fout_short = np.empty(ny-1)
+    _fout_short = np.empty(ny - 1)
     try:
         f(x0, y0, _fout_short)
     except (IndexError, ValueError):
@@ -42,20 +69,13 @@ def _check_indexing(f, j, x0, y0, lband=None, uband=None):
     if j is None:
         return  # Not all methods require a jacobian
 
-    _dfdx_out = np.empty(ny)
-    _jmat_out_short = np.empty((ny, ny-1))
+    args = _get_jmat_out_short(ny, lband=lband, uband=uband, nnz=nnz)
     try:
-        j(x0, y0, _jmat_out_short, _dfdx_out)
+        j(x0, y0, *args)
     except (IndexError, ValueError):
         pass
     else:
-        raise ValueError("All elements in Jout not assigned in j()")
-
-    _jmat_out = _get_jmat_out(ny, lband, uband)
-    _dfdx_out_short = np.empty(ny-1)
-    try:
-        j(x0, y0, _jmat_out, _dfdx_out_short)
-    except (IndexError, ValueError):
-        pass
-    else:
-        raise ValueError("All elements in dfdx_out not assigned in j()")
+        if nnz:
+            raise ValueError("In one of (data, colptrs, rowvals), not all elements assigned in j()")
+        else:
+            raise ValueError("In either jmat_out or dfdx_out, not all elements assigned in j()")
