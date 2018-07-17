@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Python.h>
-#include <cstdint>
 #include <numpy/arrayobject.h>
 #include <anyode/anyode_iterative.hpp>
 #include <anyode/anyode_matrix.hpp> // DenseMatrix
