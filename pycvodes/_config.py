@@ -146,8 +146,8 @@ if env is None:
 
     env = {
         'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
-        'SUNDIALS_LIBS': 'sundials_cvodes,sundials_nvecserial' + (
-            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if (_r['_sun3'] and _r['_lapack_ok']) else ((
+        'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_cvodes' + (
+            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband,sundials_sunlinsolklu' if (_r['_sun3'] and _r['_lapack_ok']) else ((
                 ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
                 'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
             ) if (_r['_sun3'] and not _r['_lapack_ok']) else '')
