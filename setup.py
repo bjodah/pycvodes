@@ -36,8 +36,8 @@ ext_modules = []
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    env = None  # silence pyflakes, 'env' is actually set on the next line
     _PYCVODES_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
+    env = None  # silence pyflakes, 'env' is actually set on the next line
     exec(open(config_py_path).read())
     for k, v in list(env.items()):
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
@@ -57,7 +57,11 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     if env['LAPACK'] not in ('', '0'):
         ext_modules[0].libraries += env['LAPACK'].split(',')
 
-    ext_modules[0].define_macros += [('USE_LAPACK', '1' if env['LAPACK'] not in ('', '0') else '0')]
+    _USE_LAPACK = env['LAPACK'] not in ('', '0')
+    ext_modules[0].define_macros += [
+        ('USE_LAPACK', '1' if _USE_LAPACK else '0'),
+        ('ANYODE_NO_LAPACK', '0' if _USE_LAPACK else '1')
+    ]
 
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
