@@ -8,7 +8,11 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
-export CPATH=${2}/include LIBRARY_PATH=${2}/lib LD_LIBRARY_PATH=${2}/lib  # SUNDIALS_ROOT=${2}
+for p in "${@:2}"
+do
+export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
+done
+
 git clean -xfd
 
 python3 setup.py sdist

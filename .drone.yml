@@ -12,8 +12,8 @@ build:
     - git fetch -tq  # used by ``git describe``
     - apt-get update --quiet && apt-get install --quiet -y libsuitesparse-dev
     - if [ ! -d /drone/sundials-3.1.1-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-klu -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t"; fi
-    - if [ ! -d /drone/sundials-3.1.1-nolapack-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-nolapack-klu -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF; fi
-    - if [ ! -d /drone/sundials-2.7.0-nolapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sundials-2.7.0-nolapack-klu -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sundials-3.1.1-nolapack-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-nolapack-klu -DLAPACK_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sundials-2.7.0-nolapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sundials-2.7.0-nolapack-klu -DLAPACK_ENABLE:BOOL=OFF; fi
     - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-klu
     - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-nolapack-klu
