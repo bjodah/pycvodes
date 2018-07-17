@@ -1319,8 +1319,8 @@ inline void update_integration_info(std::unordered_map<std::string, int> &info_i
             info_int["krylov_n_jac_times_evals"] += integrator.get_n_jac_times_evals();
             info_int["krylov_n_iter_rhs"] += integrator.get_n_iter_rhs();
         } else { // direct linear solver
-            info_int["dense_n_dls_jac_evals"] += integrator.get_n_dls_jac_evals();
-            info_int["dense_n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
+            info_int["n_dls_jac_evals"] += integrator.get_n_dls_jac_evals();
+            info_int["n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
         }
     }
     info_dbl["time_rhs"] += integrator.time_rhs;
