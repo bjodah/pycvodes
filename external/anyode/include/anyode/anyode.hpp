@@ -21,6 +21,7 @@
 
 
 #include <memory>
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
@@ -131,7 +132,7 @@ template<class T> void ignore( const T& ) { } // ignore unused parameter compile
 
 enum class Status : int {success = 0, recoverable_error = 1, unrecoverable_error = -1};
 
-template <typename Real_t=double>
+template <typename Real_t=double, typename Index_t=int>
 struct OdeSysBase {
     int nfev=0, njev=0, njvev=0;
     void * integrator = nullptr;
@@ -149,6 +150,7 @@ struct OdeSysBase {
     virtual int get_ny() const = 0;
     virtual int get_mlower() const { return -1; } // -1 denotes "not banded"
     virtual int get_mupper() const { return -1; } // -1 denotes "not banded"
+    virtual Index_t get_nnz() const { return -1; } // -1 denotes "not sparse"
     virtual int get_nquads() const { return 0; } // Do not track quadratures by default;
     virtual int get_nroots() const { return 0; } // Do not look for roots by default;
     virtual Real_t get_dx0(Real_t /* t */,
@@ -194,6 +196,27 @@ struct OdeSysBase {
         throw std::runtime_error("banded_jac_cmaj not implemented.");
         return Status::unrecoverable_error;
     }
+    virtual Status sparse_jac_csc(Real_t t,
+                                  const Real_t * const ANYODE_RESTRICT y,
+                                  const Real_t * const ANYODE_RESTRICT fy,
+                                  Real_t * const ANYODE_RESTRICT data,
+                                  Index_t * const colptrs,
+                                  Index_t * const rowvals
+                                  ) {
+        ignore(t); ignore(y); ignore(fy); ignore(data); ignore(colptrs); ignore(rowvals);
+        return Status::unrecoverable_error;
+    }
+    virtual Status sparse_jac_csr(Real_t t,
+                                  const Real_t * const ANYODE_RESTRICT y,
+                                  const Real_t * const ANYODE_RESTRICT fy,
+                                  Real_t * const ANYODE_RESTRICT data,
+                                  Index_t * const rowptrs,
+                                  Index_t * const colvals
+                                  ) {
+        ignore(t); ignore(y); ignore(fy); ignore(data); ignore(rowptrs); ignore(colvals);
+        return Status::unrecoverable_error;
+    }
+
     virtual Status jtimes(const Real_t * const ANYODE_RESTRICT vec,
                           Real_t * const ANYODE_RESTRICT out,
                           Real_t t,

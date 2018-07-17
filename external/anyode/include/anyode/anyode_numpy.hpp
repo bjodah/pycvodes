@@ -1,25 +1,29 @@
 #pragma once
 
 #include <Python.h>
+#include <cstdint>
 #include <numpy/arrayobject.h>
 #include <anyode/anyode_iterative.hpp>
 #include <anyode/anyode_matrix.hpp> // DenseMatrix
 #include <anyode/anyode_decomposition.hpp>  // DenseLU
 
+
 BEGIN_NAMESPACE(AnyODE)
-struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>, DenseLU<double>> {
+struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, int, DenseMatrix<double>, DenseLU<double>> {
     int ny;
     PyObject *py_rhs, *py_jac, *py_jtimes, *py_quads, *py_roots, *py_kwargs, *py_dx0cb, *py_dx_max_cb;
     int mlower, mupper, nquads, nroots;
+    int nnz;
     PyOdeSys(int ny, PyObject * py_rhs, PyObject * py_jac=nullptr, PyObject * py_jtimes=nullptr,
              PyObject * py_quads=nullptr,
              PyObject * py_roots=nullptr, PyObject * py_kwargs=nullptr, int mlower=-1,
              int mupper=-1, int nquads=0, int nroots=0, PyObject * py_dx0cb=nullptr,
-             PyObject * py_dx_max_cb=nullptr) :
+             PyObject * py_dx_max_cb=nullptr, int nnz=-1) :
         ny(ny), py_rhs(py_rhs), py_jac(py_jac), py_jtimes(py_jtimes),
         py_quads(py_quads), py_roots(py_roots),
         py_kwargs(py_kwargs), py_dx0cb(py_dx0cb), py_dx_max_cb(py_dx_max_cb),
-        mlower(mlower), mupper(mupper), nquads(nquads), nroots(nroots)
+        mlower(mlower), mupper(mupper), nquads(nquads), nroots(nroots),
+        nnz(nnz)
     {
         if (py_rhs == nullptr){
             throw std::runtime_error("py_rhs must not be nullptr");
@@ -50,6 +54,7 @@ struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>
     int get_ny() const override { return ny; }
     int get_mlower() const override { return mlower; }
     int get_mupper() const override { return mupper; }
+    int get_nnz() const override { return nnz; }
     int get_nquads() const override { return nquads; }
     int get_nroots() const override { return nroots; }
     double get_dx0(double t, const double * const y) override {
@@ -213,6 +218,7 @@ struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>
         PyObject * py_arglist = Py_BuildValue("(OOdOO)", py_varr, py_Jv, (double) x, py_yarr, py_fy);
         PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_jtimes, py_arglist, this->py_kwargs);
         Py_DECREF(py_arglist);
+        Py_DECREF(py_Jv);
         Py_DECREF(py_fy);
         Py_DECREF(py_yarr);
         Py_DECREF(py_varr);
@@ -251,6 +257,37 @@ struct PyOdeSys : public AnyODE::OdeSysIterativeBase<double, DenseMatrix<double>
         AnyODE::Status status = call_py_jac(t, y, fy, py_jmat, dfdt);
         Py_DECREF(py_jmat);
         return status;
+    }
+    AnyODE::Status sparse_jac_csc(double t, const double * const y, const double * const fy,
+                                  double * const data, int * const colptrs, int * const rowvals) override {
+        npy_intp y_dims[1] { static_cast<npy_intp>(this->ny) };
+        npy_intp data_dims[1] { static_cast<npy_intp>(this->nnz) };
+        npy_intp colptrs_dims[1] { static_cast<npy_intp>(this->ny + 1) };
+
+        PyObject * py_yarr = PyArray_SimpleNewFromData(1, y_dims, NPY_DOUBLE, const_cast<double *>(y));
+        PyArray_CLEARFLAGS(reinterpret_cast<PyArrayObject*>(py_yarr), NPY_ARRAY_WRITEABLE);  // make yarr read-only
+        PyObject * py_fy;
+        if (fy) {
+            py_fy = PyArray_SimpleNewFromData(1, y_dims, NPY_DOUBLE, const_cast<double *>(fy));
+            PyArray_CLEARFLAGS(reinterpret_cast<PyArrayObject*>(py_fy), NPY_ARRAY_WRITEABLE);  // make fy read-only
+        } else {
+            py_fy = Py_BuildValue(""); // Py_None with incref
+        }
+        PyObject * py_data = PyArray_SimpleNewFromData(1, data_dims, NPY_DOUBLE, static_cast<double *>(data));
+        PyObject * py_colptrs = PyArray_SimpleNewFromData(1, colptrs_dims, NPY_INT, static_cast<int *>(colptrs));
+        PyObject * py_rowvals = PyArray_SimpleNewFromData(1, data_dims, NPY_INT, static_cast<int *>(rowvals));
+
+        // Call sparse jac with signature: (t, y[:], data[:], colptrs[:], rowvals[:]
+        PyObject * py_arglist = Py_BuildValue("(dOOOO)", (double) t, py_yarr, py_data, py_colptrs, py_rowvals);
+        PyObject * py_result = PyEval_CallObjectWithKeywords(this->py_jac, py_arglist, this->py_kwargs);
+        Py_DECREF(py_arglist);
+        Py_DECREF(py_fy);
+        Py_DECREF(py_yarr);
+        Py_DECREF(py_data);
+        Py_DECREF(py_colptrs);
+        Py_DECREF(py_rowvals);
+        this->njev++;
+        return handle_status_(py_result, "jac");
     }
     AnyODE::Status banded_jac_cmaj(double t, const double * const y, const double * const fy,
                                    double * const jac, long int ldim) override {
