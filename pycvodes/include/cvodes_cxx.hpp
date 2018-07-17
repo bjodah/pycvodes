@@ -42,6 +42,7 @@
 #include <sunlinsol/sunlinsol_klu.h>
 #else
 #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+#include <cvodes/cvodes_sparse.h>
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
@@ -547,7 +548,7 @@ public:
 #else
         CVDlsBandJacFn
 #endif
-        djac){
+    djac){
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (A_ == nullptr || LS_ == nullptr)
@@ -584,15 +585,15 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-        status = CVKLU(this->mem, ny, nnz);
-        if (status != CVSLS SUCCESS) {
+        status = CVKLU(this->mem, ny, nnz, CSC_MAT);
+        if (status != CVSLS_SUCCESS) {
             throw std::runtime_error("CVKLU failed");
         }
 #endif
     }
 
     void set_sparse_jac_fn(
-    #if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVSlsSparseJacFn

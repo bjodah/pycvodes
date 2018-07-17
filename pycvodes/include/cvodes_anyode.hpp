@@ -109,9 +109,6 @@ int jac_dense_cb(
 
 template <class OdeSys>
 int jac_sparse_cb(
-#if SUNDIALS_VERSION_MAJOR < 3
-    long int N,
-#endif
     realtype t,
     N_Vector y, N_Vector fy,
 #if SUNDIALS_VERSION_MAJOR < 3
@@ -123,9 +120,6 @@ int jac_sparse_cb(
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3
     ){
     // callback of req. signature wrapping OdeSys method.
-#if SUNDIALS_VERSION_MAJOR < 3
-    AnyODE::ignore(N);
-#endif
     AnyODE::ignore(tmp1); AnyODE::ignore(tmp2); AnyODE::ignore(tmp3);
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
@@ -133,7 +127,7 @@ int jac_sparse_cb(
         odesys.current_info.nfo_vecdbl["jac_xvals"].push_back(t);
     AnyODE::Status status = odesys.sparse_jac_csc(t, NV_DATA_S(y), NV_DATA_S(fy),
 #if SUNDIALS_VERSION_MAJOR < 3
-                                                  Jac->data, Jac->indexptrs, Jac->indexvals,
+                                                  Jac->data, Jac->indexptrs, Jac->indexvals
 #else
                                                   SUNSparseMatrix_Data(Jac),
                                                   SUNSparseMatrix_IndexPointers(Jac),
