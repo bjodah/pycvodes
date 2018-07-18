@@ -1,3 +1,8 @@
+clone:
+  depth: 2
+  recursive: true
+  submodule_override:
+    external/anyode: git://github.com/bjodah/anyode.git
 cache:
   mount:
     - /drone/sundials-3.1.1-klu
