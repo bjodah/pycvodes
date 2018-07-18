@@ -349,7 +349,7 @@ std::unique_ptr<Integrator> get_integrator(
                 integr.set_jtimes_fn(jtimes_cb<OdeSys>);
             if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
                 integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
-            else if (linear_solver == LinSol::BICGSTAB or linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
+            else if (linear_solver == LinSol::BICGSTAB || linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
                 ;
             else
                 throw std::runtime_error("Unknown linear_solver.");
