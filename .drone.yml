@@ -1,8 +1,8 @@
 cache:
   mount:
-    - /drone/sundials-3.1.1
-    - /drone/sundials-3.1.1-nolapack
-    - /drone/sundials-2.7.0-nolapack
+    - /drone/sundials-3.1.1-klu
+    - /drone/sundials-3.1.1-nolapack-klu
+    - /drone/sundials-2.7.0-nolapack-klu
 build:
   image: bjodah/bjodahimg18dev:v1.2
   environment:
@@ -10,16 +10,19 @@ build:
     - ASAN_OPTIONS=symbolize=1
   commands:
     - git fetch -tq  # used by ``git describe``
-    - if [ ! -d /drone/sundials-3.1.1 ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t"; fi
-    - if [ ! -d /drone/sundials-3.1.1-nolapack ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-nolapack -DLAPACK_ENABLE:BOOL=OFF; fi
-    - if [ ! -d /drone/sundials-2.7.0-nolapack ]; then .ci/get_sundials.sh 2.7.0 /drone/sundials-2.7.0-nolapack -DLAPACK_ENABLE:BOOL=OFF; fi
-    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1
-    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-nolapack
-    - .ci/run_ci.sh pycvodes /drone/sundials-2.7.0-nolapack
+    - apt-get update --quiet && apt-get install --quiet -y libsuitesparse-dev
+    - if [ ! -d /drone/sundials-3.1.1-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-klu -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t"; fi
+    - if [ ! -d /drone/sundials-3.1.1-nolapack-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sundials-3.1.1-nolapack-klu -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sundials-2.7.0-nolapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sundials-2.7.0-nolapack-klu -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF; fi
+    - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-klu
+    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-nolapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sundials-2.7.0-nolapack-klu
+    - unset C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
     - python3 -m pip install wurlitzer
     - .ci/run_ci.sh pycvodes /usr
-    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1
+    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-klu
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - python3 -m pip install --user -e .[docs]
     - python3 -m pytest --pep8
