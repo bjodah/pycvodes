@@ -54,10 +54,12 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].language = 'c++'
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
-    if env['LAPACK'] not in ('', '0'):
+    if env['LAPACK'] in ('', '0'):
+        _USE_LAPACK = False
+    else:
+        _USE_LAPACK = True
         ext_modules[0].libraries += env['LAPACK'].split(',')
 
-    _USE_LAPACK = env['LAPACK'] not in ('', '0')
     ext_modules[0].define_macros += [
         ('USE_LAPACK', '1' if _USE_LAPACK else '0'),
         ('ANYODE_NO_LAPACK', '0' if _USE_LAPACK else '1')

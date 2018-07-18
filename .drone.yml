@@ -29,6 +29,7 @@ build:
     - .ci/run_ci.sh pycvodes /usr
     - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.1-klu
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
+    - git clean -xfd
     - python3 -m pip install --user -e .[docs]
     - python3 -m pytest --pep8
     - ./scripts/generate_docs.sh
