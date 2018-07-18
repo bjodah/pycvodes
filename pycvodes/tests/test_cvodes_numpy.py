@@ -74,7 +74,7 @@ def _get_f_j_sparse(k):
     _rowvals = [0, 1, 1, 2, 2]
 
     def j(t, y, data, colptrs, rowvals):
-        data[:] -k0, k0, -k1, k1, -k2
+        data[:] = -k0, k0, -k1, k1, -k2
         colptrs[:] = _colptrs
         rowvals[:] = _rowvals
 
