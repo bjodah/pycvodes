@@ -327,9 +327,12 @@ std::unique_ptr<Integrator> get_integrator(
         case LinSol::TFQMR:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR, maxl); break;
         case LinSol::KLU:
-            if (with_jacobian)
+            if (with_jacobian) {
                 integr.set_linear_solver_to_sparse(ny, nnz);
                 integr.set_sparse_jac_fn(jac_sparse_cb<OdeSys >);
+            } else{
+                throw std::runtime_error("with_jacobian cannot be False with linear solver KLU");
+            }
             break;
         default:
             throw std::runtime_error("Invalid linear_solver");

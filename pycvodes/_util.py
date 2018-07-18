@@ -4,18 +4,17 @@ from __future__ import division
 
 import numpy as np
 
-valid_nonnull_opt_sets = [{}, {"lband", "uband"}, {"nnz"}]
+valid_arg_combs= [{}, {"lband", "uband"}, {"nnz"}]
 
 def _check_jac_type(**kwargs):
     nonnull_opts = dict((k, v) for k, v in kwargs.items() if v is not None)
-    if any(map(set(nonnull_opts).__eq__, valid_nonnull_opt_sets)):
+    if any(map(set(nonnull_opts).__eq__, valid_arg_combs)):
         pass
     else:
         raise ValueError("Couldn't determine jacobian type from given non-default options: {}".format(nonnull_opts))
 
 
-def _get_jmat_out(ny, lband=None, uband=None,
-                  nnz=None):
+def _get_jmat_out(ny, lband=None, uband=None, nnz=None):
     if lband is None and nnz is None:
         # jmat_out, dfdx_out
         return np.empty((ny, ny)), np.empty(ny)
@@ -27,7 +26,7 @@ def _get_jmat_out(ny, lband=None, uband=None,
         return np.empty(nnz), np.empty(ny + 1), np.empty(nnz)
 
 
-def _check_callable(f, j, x0, y0, lband=None, uband=None):
+def _check_callable(f, j, x0, y0, lband=None, uband=None, nnz=None):
     ny = len(y0)
     _fout = np.empty(ny)
     _ret = f(x0, y0, _fout)

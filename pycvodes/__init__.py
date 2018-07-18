@@ -251,6 +251,7 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, jac_type="dense",
 
     """
     # Sanity checks to reduce risk of having a segfault:
+    x0 = xout[0]
     lband, uband = kwargs.get('lband', None), kwargs.get('uband', None)
     nnz = kwargs.get('nnz', None)
     _check_jac_type(lband=lband, uband=uband, nnz=nnz)
