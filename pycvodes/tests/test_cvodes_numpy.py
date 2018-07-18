@@ -62,6 +62,25 @@ def _get_f_j(k):
     return f, j
 
 
+def _get_f_j_sparse(k):
+    k0, k1, k2 = k
+
+    def f(t, y, fout):
+        fout[0] = -k0*y[0]
+        fout[1] = k0*y[0] - k1*y[1]
+        fout[2] = k1*y[1] - k2*y[2]
+
+    _colptrs = [0, 2, 4, 5]
+    _rowvals = [0, 1, 1, 2, 2]
+
+    def j(t, y, data, colptrs, rowvals):
+        data[:] = -k0, k0, -k1, k1, -k2
+        colptrs[:] = _colptrs
+        rowvals[:] = _rowvals
+
+    return f, j, len(_rowvals)
+
+
 def _gravity_f_j_jtimes(g):
     """ RHS, jacobian, and jacobian-vector product for
         particle falling under influence of gravity"""
@@ -612,6 +631,41 @@ def test_jtimes_predefined(linear_solver, with_jac):
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
     assert info['success']
     assert info['njvev'] > 0
-    print(info['njvev'])
     if not with_jac:
         assert info['njev'] == 0
+
+
+def test_sparse_jac_adaptive():
+    from .._config import env
+    if env['LAPACK'] in ('', '0'):
+        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
+    f, j, nnz = _get_f_j_sparse(k)
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(atol=atol, rtol=rtol, method='bdf',
+                  linear_solver='klu', nnz=nnz)
+    xout, yout, info = integrate_adaptive(f, j, y0, 0, 10, **kwargs)
+    yref = decay_get_Cref(k, y0, xout - xout[0])
+    assert info['success']
+    assert info['njev'] > 0
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+
+
+def test_sparse_jac_predefined():
+    from .._config import env
+    if env['LAPACK'] in ('', '0'):
+        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
+    else:
+        print("env['LAPACK'] = %s" % env['LAPACK'])  # debug
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
+    xout = np.linspace(0, 3, 31)
+    f, j, nnz = _get_f_j_sparse(k)
+    atol, rtol = 1e-8, 1e-8
+    kwargs = dict(method='bdf', linear_solver='klu', nnz=nnz)
+    yout, info = integrate_predefined(f, j, y0, xout, 1.0e-8, 1.0e-8, **kwargs)
+    yref = decay_get_Cref(k, y0, xout - xout[0])
+    assert info['success']
+    assert info['njev'] > 0
+    assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)

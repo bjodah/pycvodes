@@ -48,8 +48,8 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
              const double eps_lin=0.0, const unsigned nderiv=0, bool return_on_root=False,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
-             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False, int nprealloc=500,
-             jtimes=None, bool ew_ele=False):
+             bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
+             int nprealloc=500, jtimes=None, bool ew_ele=False, int nnz=-1):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
@@ -100,7 +100,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
 
     odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
                           <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
-                          <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+                          <PyObject *>dx0cb, <PyObject *>dx_max_cb, nnz)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals
@@ -152,7 +152,6 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     finally:
         del odesys
 
-
 def predefined(rhs, jac,
                cnp.ndarray[cnp.float64_t, mode='c'] yq0,
                cnp.ndarray[cnp.float64_t, ndim=1] xout, atol,
@@ -163,7 +162,7 @@ def predefined(rhs, jac,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
                bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-               jtimes=None, bool ew_ele=False):
+               jtimes=None, bool ew_ele=False, int nnz=-1):
     cdef:
         int nyq = yq0.shape[yq0.ndim - 1]
         int ny = nyq - nquads
@@ -196,8 +195,10 @@ def predefined(rhs, jac,
     if np.isnan(xout).any(): raise ValueError("NaN found in xout")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
     if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads, <PyObject *>roots,
-                          <PyObject *>cb_kwargs, lband, uband, nquads, nroots, <PyObject *>dx0cb, <PyObject *>dx_max_cb)
+
+    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
+                          <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
+                          <PyObject *>dx0cb, <PyObject *>dx_max_cb, nnz)
     odesys.autonomous_exprs = autonomous_exprs
     odesys.record_rhs_xvals = record_rhs_xvals
     odesys.record_jac_xvals = record_jac_xvals

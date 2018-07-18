@@ -8,7 +8,11 @@ if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
-export CPATH=${2}/include LIBRARY_PATH=${2}/lib LD_LIBRARY_PATH=${2}/lib  # SUNDIALS_ROOT=${2}
+for p in "${@:2}"
+do
+export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
+done
+
 git clean -xfd
 
 python3 setup.py sdist
@@ -16,8 +20,7 @@ python3 setup.py sdist
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
 
-PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
-./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+PYTHONPATH=$(pwd) ./scripts/run_tests.sh
 
 # Make sure repo is pip installable from git-archive zip
 git archive -o /tmp/$PKG_NAME.zip HEAD

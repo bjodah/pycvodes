@@ -32,6 +32,7 @@
 #if USE_LAPACK == 1
 #  include <sunlinsol/sunlinsol_lapackdense.h>
 #  include <sunlinsol/sunlinsol_lapackband.h>
+#  include <sunlinsol/sunlinsol_klu.h>
 #else
 #  include <sunlinsol/sunlinsol_dense.h>
 #  include <sunlinsol/sunlinsol_band.h>
@@ -41,6 +42,7 @@
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 #else
 #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+#include <cvodes/cvodes_sparse.h>
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
@@ -51,6 +53,7 @@
 #endif
 #if USE_LAPACK == 1
 #  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#  include <cvodes/cvodes_klu.h>
 #else
 #  include <cvodes/cvodes_dense.h>
 #  include <cvodes/cvodes_band.h>
@@ -135,10 +138,10 @@ inline IterType iter_type_from_name(std::string name){
         throw std::runtime_error(StreamFmt() << "Unknown iter_type: " << name);
 }
 
-enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7};
+enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7, KLU=8};
 enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
 enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
-        Right=PREC_RIGHT, Both=PREC_BOTH};
+                           Right=PREC_RIGHT, Both=PREC_BOTH};
 enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
 
 inline LinSol linear_solver_from_name(std::string name) {
@@ -156,6 +159,8 @@ inline LinSol linear_solver_from_name(std::string name) {
         return LinSol::BICGSTAB;
     else if (name == "tfqmr")
         return LinSol::TFQMR;
+    else if (name == "klu")
+        return LinSol::KLU;
     else
         throw std::runtime_error(StreamFmt() << "Unknown linear solver: " << name);
 }
@@ -166,6 +171,15 @@ inline bool is_iterative_linear_solver(LinSol linsol) {
         case LinSol::GMRES_CLASSIC:
         case LinSol::BICGSTAB:
         case LinSol::TFQMR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline bool is_sparse_linear_solver(LinSol linsol) {
+    switch(linsol) {
+        case LinSol::KLU:
             return true;
         default:
             return false;
@@ -214,10 +228,10 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (this->y_)
             N_VDestroy(this->y_);
-        if (this->LS_)
-            SUNLinSolFree(this->LS_);
         if (this->A_)
             SUNMatDestroy(this->A_);
+        if (this->LS_)
+            SUNLinSolFree(this->LS_);
 #endif
     }
     // init
@@ -463,6 +477,7 @@ public:
         }
 #endif
     }
+
     void set_dense_jac_fn(
 #if SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
@@ -526,13 +541,14 @@ public:
                 );
 #endif
     }
+
     void set_band_jac_fn(
 #if SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVDlsBandJacFn
 #endif
-        djac){
+    djac){
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (A_ == nullptr || LS_ == nullptr)
@@ -544,6 +560,59 @@ public:
         status = CVDlsSetBandJacFn(this->mem, djac);
         if (status < 0)
             throw std::runtime_error("CVDlsSetBandJacFn failed.");
+#endif
+    }
+
+     // sparse jacobian
+    void set_linear_solver_to_sparse(int ny, int nnz){
+#if USE_LAPACK == 1
+    int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+        if (A_ == nullptr){
+            if (A_)
+                throw std::runtime_error("matrix already set");
+            A_ = SUNSparseMatrix(ny, ny, nnz, CSC_MAT);
+            if (!A_)
+                throw std::runtime_error("SUNSparseMatrix failed.");
+        }
+        if (LS_ == nullptr){
+            if (LS_)
+                throw std::runtime_error("linear solver already set");
+            LS_ = SUNKLU(y_, A_);
+            if (!LS_)
+                throw std::runtime_error("SUNKLU failed.");
+        }
+        status = CVDlsSetLinearSolver(this->mem, LS_, A_);
+        if (status < 0)
+            throw std::runtime_error("CVDlsSetLinearSolver failed.");
+#else
+        status = CVKLU(this->mem, ny, nnz, CSC_MAT);
+        if (status != CVSLS_SUCCESS) {
+            throw std::runtime_error("CVKLU failed");
+        }
+#endif
+#else
+        ignore(ny); ignore(nnz);
+        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with BLAS/LAPACK.");
+#endif
+    }
+
+    void set_sparse_jac_fn(
+#if SUNDIALS_VERSION_MAJOR >= 3
+        CVDlsJacFn
+#else
+        CVSlsSparseJacFn
+#endif
+        djac) {
+        int status;
+#if SUNDIALS_VERSION_MAJOR >= 3
+        status = CVDlsSetJacFn(this->mem, djac);
+        if (status < 0)
+            throw std::runtime_error("CVDlsSetJacFn failed.");
+#else
+        status = CVSlsSetSparseJacFn(this->mem, djac);
+        if (status < 0)
+            throw std::runtime_error(" CVSlsSetSparseJacFn failed.");
 #endif
     }
 
@@ -1256,8 +1325,8 @@ inline void update_integration_info(std::unordered_map<std::string, int> &info_i
             info_int["krylov_n_jac_times_evals"] += integrator.get_n_jac_times_evals();
             info_int["krylov_n_iter_rhs"] += integrator.get_n_iter_rhs();
         } else { // direct linear solver
-            info_int["dense_n_dls_jac_evals"] += integrator.get_n_dls_jac_evals();
-            info_int["dense_n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
+            info_int["n_dls_jac_evals"] += integrator.get_n_dls_jac_evals();
+            info_int["n_dls_rhs_evals"] += integrator.get_n_dls_rhs_evals();
         }
     }
     info_dbl["time_rhs"] += integrator.time_rhs;
