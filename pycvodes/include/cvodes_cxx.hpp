@@ -32,6 +32,7 @@
 #if USE_LAPACK == 1
 #  include <sunlinsol/sunlinsol_lapackdense.h>
 #  include <sunlinsol/sunlinsol_lapackband.h>
+#  include <sunlinsol/sunlinsol_klu.h>
 #else
 #  include <sunlinsol/sunlinsol_dense.h>
 #  include <sunlinsol/sunlinsol_band.h>
@@ -39,14 +40,12 @@
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunlinsol/sunlinsol_spbcgs.h>
 #include <sunlinsol/sunlinsol_sptfqmr.h>
-#include <sunlinsol/sunlinsol_klu.h>
 #else
 #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
 #include <cvodes/cvodes_sparse.h>
 #include <cvodes/cvodes_spgmr.h>
 #include <cvodes/cvodes_spbcgs.h>
 #include <cvodes/cvodes_sptfqmr.h>
-#include <cvodes/cvodes_klu.h>
 #if !defined(USE_LAPACK)
 #  if defined(SUNDIALS_BLAS_LAPACK)
 #    define USE_LAPACK 1
@@ -54,6 +53,7 @@
 #endif
 #if USE_LAPACK == 1
 #  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#  include <cvodes/cvodes_klu.h>
 #else
 #  include <cvodes/cvodes_dense.h>
 #  include <cvodes/cvodes_band.h>
@@ -565,8 +565,9 @@ public:
 
      // sparse jacobian
     void set_linear_solver_to_sparse(int ny, int nnz){
-        int status;
+#if USE_LAPACK == 1
 #if SUNDIALS_VERSION_MAJOR >= 3
+        int status;
         if (A_ == nullptr){
             if (A_)
                 throw std::runtime_error("matrix already set");
@@ -589,6 +590,10 @@ public:
         if (status != CVSLS_SUCCESS) {
             throw std::runtime_error("CVKLU failed");
         }
+#endif
+#else
+        ignore(ny); ignore(nnz);
+        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with BLAS/LAPACK.");
 #endif
     }
 

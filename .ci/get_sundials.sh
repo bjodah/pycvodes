@@ -8,7 +8,7 @@
 
 VERSION=$1
 PREFIX=$2
-#if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
+if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
 if [[ $VERSION == "3.1.1" ]]; then
     SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
     SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
@@ -43,9 +43,6 @@ for URL in "${SUNDIALS_URLS[@]}"; do
               -DEXAMPLES_ENABLE_C:BOOL=OFF \
               -DEXAMPLES_INSTALL:BOOL=OFF \
               -DOPENMP_ENABLE:BOOL=OFF \
-              -DKLU_ENABLE:BOOL=ON \
-              -DKLU_INCLUDE_DIR=/usr/include/suitesparse \
-              -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu \
               "${@:3}" ../sundials-${VERSION}/
         make -j 2 >/dev/null 2>&1
         make install

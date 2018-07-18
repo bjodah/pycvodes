@@ -637,7 +637,7 @@ def test_jtimes_predefined(linear_solver, with_jac):
 
 def test_sparse_jac_adaptive():
     from .._config import env
-    if not (env['LAPACK'] and env['PYCVODES_LAPACK']):
+    if not env['LAPACK']:
         pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -654,7 +654,7 @@ def test_sparse_jac_adaptive():
 
 def test_sparse_jac_predefined():
     from .._config import env
-    if not (env['LAPACK'] and env['PYCVODES_LAPACK']):
+    if not env['LAPACK']:
         pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
