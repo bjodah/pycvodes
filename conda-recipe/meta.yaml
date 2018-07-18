@@ -20,7 +20,7 @@ requirements:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20*  # [not win]
     - sundials
-    - suitesparse 4.5.4
+    - suitesparse 4.5.4  # [not win]
     - python
     - setuptools
     - pip
@@ -32,7 +32,7 @@ requirements:
     - sundials
     - python
     - numpy >=1.11
-    - suitesparse 4.5.4
+    - suitesparse 4.5.4  # [not win]
 
 test:
   imports:
