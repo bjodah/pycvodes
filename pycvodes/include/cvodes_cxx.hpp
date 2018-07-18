@@ -566,6 +566,7 @@ public:
      // sparse jacobian
     void set_linear_solver_to_sparse(int ny, int nnz){
 #if USE_LAPACK == 1
+    int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         int status;
         if (A_ == nullptr){
