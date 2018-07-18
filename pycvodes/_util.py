@@ -4,7 +4,8 @@ from __future__ import division
 
 import numpy as np
 
-valid_arg_combs= [{}, {"lband", "uband"}, {"nnz"}]
+valid_arg_combs = [{}, {"lband", "uband"}, {"nnz"}]
+
 
 def _check_jac_type(**kwargs):
     nonnull_opts = dict((k, v) for k, v in kwargs.items() if v is not None)
