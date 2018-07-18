@@ -1,11 +1,11 @@
 # This file is replaced by setup.py in distributions for tagged releases
-import shutil
-import os
 import logging
-import warnings
+import os
+import pickle
+import shutil
 import sys
 import tempfile
-import pickle
+import warnings
 
 try:
     import appdirs
@@ -48,7 +48,7 @@ def _compiles_ok(codestring):
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
         source_path = os.path.join(folder, 'complier_test_source.cpp')
-        with open(source_path, 'wt', encoding='utf-8') as ofh:
+        with open(source_path, 'wt') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
         customize_compiler(compiler)

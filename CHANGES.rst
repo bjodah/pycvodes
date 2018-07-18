@@ -1,6 +1,7 @@
-v0.10.8
+v0.11.0
 =======
 - Enhanced _config.py
+- Support for sparse jacobian
 
 v0.10.7
 =======
