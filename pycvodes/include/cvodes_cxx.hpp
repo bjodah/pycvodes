@@ -568,7 +568,6 @@ public:
 #if USE_LAPACK == 1
     int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
-        int status;
         if (A_ == nullptr){
             if (A_)
                 throw std::runtime_error("matrix already set");
