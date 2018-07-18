@@ -23,10 +23,8 @@ install:
     - cmd: set PYTHONUNBUFFERED=1
 
     - cmd: conda config --set show_channel_urls true
-    - cmd: conda config --remove channels defaults
-    - cmd: conda config --add channels defaults
-    - cmd: conda config --add channels conda-forge
     - cmd: conda install --yes --quiet conda-build
+    - cmd: conda config --add channels conda-forge
 
 # Skip .NET project specific build phase.
 build: off
