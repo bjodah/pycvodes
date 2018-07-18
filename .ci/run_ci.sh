@@ -20,8 +20,7 @@ python3 setup.py sdist
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
 
-PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
-./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+PYTHONPATH=$(pwd) ./scripts/run_tests.sh
 
 # Make sure repo is pip installable from git-archive zip
 git archive -o /tmp/$PKG_NAME.zip HEAD

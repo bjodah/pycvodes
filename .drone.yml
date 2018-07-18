@@ -31,7 +31,9 @@ build:
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - git clean -xfd
     - python3 -m pip install --user -e .[docs]
-    - python3 -m pytest --pep8
+    - python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
+    - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+    - python3 setup.py sdist
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - apt-get remove -qq -y libsundials-dev
