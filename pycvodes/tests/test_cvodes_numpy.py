@@ -639,6 +639,8 @@ def test_sparse_jac_adaptive():
     from .._config import env
     if env['LAPACK'] in ('', '0'):
         pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
+    if env['NO_KLU'] == '1':
+        pytest.skip("sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
     f, j, nnz = _get_f_j_sparse(k)
