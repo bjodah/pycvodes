@@ -19,9 +19,9 @@
 #include <sundials/sundials_config.h>
 #if !defined(PYCVODES_NO_KLU)
 #  if defined(SUNDIALS_KLU)
-#    define PYCVODES_NO_KLU=0
+#    define PYCVODES_NO_KLU 0
 #  else
-#    define PYCVODES_NO_KLU=1
+#    define PYCVODES_NO_KLU 1
 #  endif
 #endif
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
