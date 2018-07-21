@@ -20,49 +20,57 @@
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <cvodes/cvodes_spils.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
-#include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
-#include <sunmatrix/sunmatrix_dense.h>
-#include <sunmatrix/sunmatrix_band.h>
-#include <sunmatrix/sunmatrix_sparse.h>
-#if !defined(USE_LAPACK)
-#  if defined(SUNDIALS_BLAS_LAPACK)
-#    define USE_LAPACK 1
+#  include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#  include <sunmatrix/sunmatrix_dense.h>
+#  include <sunmatrix/sunmatrix_band.h>
+#  include <sunmatrix/sunmatrix_sparse.h>
+#  if !defined(PYCVODES_NO_LAPACK)
+#    if defined(SUNDIALS_BLAS_LAPACK)
+#      define PYCVODES_NO_LAPACK 0
+#    else
+#      define PYCVODES_NO_LAPACK 1
+#    endif
 #  endif
-#endif
-#if USE_LAPACK == 1
-#  include <sunlinsol/sunlinsol_lapackdense.h>
-#  include <sunlinsol/sunlinsol_lapackband.h>
-#  include <sunlinsol/sunlinsol_klu.h>
-#else
-#  include <sunlinsol/sunlinsol_dense.h>
-#  include <sunlinsol/sunlinsol_band.h>
-#endif
-#include <sunlinsol/sunlinsol_spgmr.h>
-#include <sunlinsol/sunlinsol_spbcgs.h>
-#include <sunlinsol/sunlinsol_sptfqmr.h>
-#else
-#if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
-#include <cvodes/cvodes_sparse.h>
-#include <cvodes/cvodes_spgmr.h>
-#include <cvodes/cvodes_spbcgs.h>
-#include <cvodes/cvodes_sptfqmr.h>
-#if !defined(USE_LAPACK)
-#  if defined(SUNDIALS_BLAS_LAPACK)
-#    define USE_LAPACK 1
+#  if PYCVODES_NO_LAPACK == 1
+#    include <sunlinsol/sunlinsol_dense.h>
+#    include <sunlinsol/sunlinsol_band.h>
+#  else
+#    include <sunlinsol/sunlinsol_lapackdense.h>
+#    include <sunlinsol/sunlinsol_lapackband.h>
+#    if PYCVODES_NO_KLU != 1
+#      include <sunlinsol/sunlinsol_klu.h>
+#    endif
 #  endif
-#endif
-#if USE_LAPACK == 1
-#  include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
-#  include <cvodes/cvodes_klu.h>
+#  include <sunlinsol/sunlinsol_spgmr.h>
+#  include <sunlinsol/sunlinsol_spbcgs.h>
+#  include <sunlinsol/sunlinsol_sptfqmr.h>
 #else
-#  include <cvodes/cvodes_dense.h>
-#  include <cvodes/cvodes_band.h>
-#endif
-#define SUNTRUE TRUE
-#define SUNFALSE FALSE
-#else
-#error "Unkown sundials version"
-#endif
+#  if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+#    include <cvodes/cvodes_sparse.h>
+#    include <cvodes/cvodes_spgmr.h>
+#    include <cvodes/cvodes_spbcgs.h>
+#    include <cvodes/cvodes_sptfqmr.h>
+#    if !defined(PYCVODES_NO_LAPACK)
+#      if defined(SUNDIALS_BLAS_LAPACK)
+#        define PYCVODES_NO_LAPACK 0
+#      else
+#        define PYCVODES_NO_LAPACK 1
+#      endif
+#    endif
+#    if PYCVODES_NO_LAPACK == 1
+#      include <cvodes/cvodes_dense.h>
+#      include <cvodes/cvodes_band.h>
+#    else
+#      include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
+#      if PYCVODES_NO_KLU != 1
+#        include <cvodes/cvodes_klu.h>
+#      endif
+#    endif
+#    define SUNTRUE TRUE
+#    define SUNFALSE FALSE
+#  else
+#    error "Unkown sundials version"
+#  endif
 #endif
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
@@ -449,10 +457,10 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if USE_LAPACK == 1
-            LS_ = SUNLapackDense(y_, A_);
-#else
+#if PYCVODES_NO_LAPACK == 1
             LS_ = SUNDenseLinearSolver(y_, A_);
+#else
+            LS_ = SUNLapackDense(y_, A_);
 #endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
@@ -461,17 +469,17 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-#if USE_LAPACK == 1
-        status = CVLapackDense(this->mem, ny);
-#else
+#if PYCVODES_NO_LAPACK == 1
         status = CVDense(this->mem, ny);
+#else
+        status = CVLapackDense(this->mem, ny);
 #endif
         if (status != CVDLS_SUCCESS) {
             throw std::runtime_error(
-#if USE_LAPACK == 1
-                "CVLapackDense failed"
-#else
+#if PYCVODES_NO_LAPACK == 1
                 "CVDense failed"
+#else
+                "CVLapackDense failed"
 #endif
                 );
         }
@@ -513,10 +521,10 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if USE_LAPACK == 1
-            LS_ = SUNLapackBand(y_, A_);
-#else
+#if PYCVODES_NO_LAPACK == 1
             LS_ = SUNBandLinearSolver(y_, A_);
+#else
+            LS_ = SUNLapackBand(y_, A_);
 #endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
@@ -526,17 +534,17 @@ public:
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
         status =
-#if USE_LAPACK == 1
-        CVLapackBand(this->mem, N, mupper, mlower);
-#else
+#if PYCVODES_NO_LAPACK == 1
         CVBand(this->mem, N, mupper, mlower);
+#else
+        CVLapackBand(this->mem, N, mupper, mlower);
 #endif
         if (status != CVDLS_SUCCESS)
             throw std::runtime_error(
-#if USE_LAPACK == 1
-                "CVLapackBand failed"
-#else
+#if PYCVODES_NO_LAPACK == 1
                 "CVBand failed"
+#else
+                "CVLapackBand failed"
 #endif
                 );
 #endif
@@ -565,7 +573,10 @@ public:
 
      // sparse jacobian
     void set_linear_solver_to_sparse(int ny, int nnz){
-#if USE_LAPACK == 1
+#if PYCVODES_NO_LAPACK == 1 || PYCVODES_NO_KLU == 1
+        ignore(ny); ignore(nnz);
+        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with BLAS/LAPACK & KLU.");
+#else
     int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (A_ == nullptr){
@@ -591,9 +602,6 @@ public:
             throw std::runtime_error("CVKLU failed");
         }
 #endif
-#else
-        ignore(ny); ignore(nnz);
-        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with BLAS/LAPACK.");
 #endif
     }
 
