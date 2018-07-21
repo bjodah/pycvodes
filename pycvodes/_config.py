@@ -120,7 +120,12 @@ def _attempt_compilation():
             _warn("Unknown sundials version:\n%s" % _sun2_out)
     if _lapack_ok:
         _klu_ok, _klu_out = _compiles_ok("""
-        #include <klu.h>
+    #include <sundials/sundials_config.h>
+    #if defined(SUNDIALS_KLU)
+    #include <klu.h>
+    #else
+    #error "KLU was not enabled for this sundials build"
+    #endif
 """)
     return locals()
 
@@ -158,6 +163,7 @@ if env is None:
                  'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
              ) if (_r['_sun3'] and not _r['_lapack_ok']) else '')
         ),
+        'NO_KLU': '0' if _r['_klu_ok'] else '1'
     }
     if appdirs:
         cfg_dir = os.path.dirname(cfg)
