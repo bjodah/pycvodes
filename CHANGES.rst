@@ -1,3 +1,8 @@
+v0.11.1
+=======
+- Macro USE_LAPACK renamed (with inverted logic) to PYCVODES_NO_LAPACK
+- New Macro: PYCVODES_NO_KLU (for compiling with LAPACK but without KLU)
+
 v0.11.0
 =======
 - Enhanced _config.py
