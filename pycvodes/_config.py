@@ -91,7 +91,7 @@ def _attempt_compilation():
     #endif
     """)
 
-    _sun3, _lapack_ok = False, False
+    _sun3, _lapack_ok, _klu_ok = False, False, False
     if _sun3_ok:
         _lapack_ok, _lapack_out = _compiles_ok("""
     #include <stdio.h>
@@ -118,6 +118,15 @@ def _attempt_compilation():
                 _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
         else:
             _warn("Unknown sundials version:\n%s" % _sun2_out)
+    if _lapack_ok:
+        _klu_ok, _klu_out = _compiles_ok("""
+    #include <sundials/sundials_config.h>
+    #if defined(SUNDIALS_KLU)
+    #include <klu.h>
+    #else
+    #error "KLU was not enabled for this sundials build"
+    #endif
+""")
     return locals()
 
 logger = logging.getLogger(__name__)
@@ -147,13 +156,16 @@ if env is None:
     env = {
         'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
         'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_cvodes' + (
-            ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband,sundials_sunlinsolklu' if (
-                _r['_sun3'] and _r['_lapack_ok']
-            ) else ((
-                ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
-                'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband'
-            ) if (_r['_sun3'] and not _r['_lapack_ok']) else '')
+            (',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' +
+             (',sundials_sunlinsolklu' if _r['_klu_ok'] else '')) if (_r['_sun3'] and _r['_lapack_ok'])
+            else (
+                    (',sundials_sunlinsoldense,sundials_sunlinsolband,'
+                     'sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
+                     'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband')
+                    if (_r['_sun3'] and not _r['_lapack_ok']) else ''
+            )
         ),
+        'NO_KLU': '0' if _r['_klu_ok'] else '1'
     }
     if appdirs:
         cfg_dir = os.path.dirname(cfg)

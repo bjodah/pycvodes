@@ -7,5 +7,5 @@ def make_ext(modname, pyxfilename):
     ext = cythonize([pyxfilename], include_path=['../pycvodes/include', '../external/anyode/cython_def'])[0]
     ext.libraries = [l for l in (env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(',')) if l != '']
     ext.include_dirs=['../pycvodes/include', '../external/anyode/include', np.get_include()]
-    ext.define_macros += [('USE_LAPACK', '1' if env['LAPACK'] else '0')]
+    ext.define_macros += [('PYCVODES_NO_LAPACK', '0' if env['LAPACK'] else '1')]
     return ext

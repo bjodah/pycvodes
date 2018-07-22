@@ -18,14 +18,11 @@ git clean -xfd
 python3 setup.py sdist
 (cd dist/; python3 -m pip install $PKG_NAME-$(python3 ../setup.py --version).tar.gz)
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
+(cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
+
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
 
 PYTHONPATH=$(pwd) ./scripts/run_tests.sh
-
-# Make sure repo is pip installable from git-archive zip
-git archive -o /tmp/$PKG_NAME.zip HEAD
-python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
-(cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
 cd tests/; make; make clean; cd -
 cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -

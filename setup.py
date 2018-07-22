@@ -3,6 +3,7 @@
 
 
 import io
+import logging
 import os
 import pprint
 import re
@@ -41,7 +42,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     exec(open(config_py_path).read())
     for k, v in list(env.items()):
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
-
+    logger = logging.getLogger(__name__)
+    logger.info("Config for pycvodes: %s" % str(env))
     ext = '.pyx' if USE_CYTHON else '.cpp'
     sources = [os.path.join(pkg_name, '_cvodes'+ext)]
     ext_modules = [Extension('%s._cvodes' % pkg_name, sources)]
@@ -61,7 +63,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         ext_modules[0].libraries += env['LAPACK'].split(',')
 
     ext_modules[0].define_macros += [
-        ('USE_LAPACK', '1' if _USE_LAPACK else '0'),
+        ('PYCVODES_NO_LAPACK', '0' if _USE_LAPACK else '1'),
+        ('PYCVODES_NO_KLU', env['NO_KLU']),
         ('ANYODE_NO_LAPACK', '0' if _USE_LAPACK else '1')
     ]
 
