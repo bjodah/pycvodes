@@ -127,6 +127,8 @@ def _attempt_compilation():
     #error "KLU was not enabled for this sundials build"
     #endif
 """)
+        if not _klu_ok:
+            _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
 
 logger = logging.getLogger(__name__)
