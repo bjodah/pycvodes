@@ -21,7 +21,7 @@ cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
-iterative_linsols = ('gmres','gmres_classic', 'bicgstab', 'tfqmr')
+iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 

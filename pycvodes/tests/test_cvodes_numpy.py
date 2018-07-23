@@ -6,7 +6,7 @@ import pytest
 import itertools as it
 
 from pycvodes import (
-    integrate_adaptive, integrate_predefined, requires_jac, get_include
+    integrate_adaptive, integrate_predefined, requires_jac, get_include, iterative_linsols
 )
 
 
@@ -114,8 +114,6 @@ methods = [('adams', 1.8, False),
            ('adams', 1.8, True),
            ('bdf', 10, False),
            ('bdf', 10, True)]
-
-iterative_linear_solvers = ["gmres", "bicgstab", "tfqmr"]
 
 
 def bandify(cb, mlower, mupper):
@@ -591,7 +589,7 @@ def test_adaptive_ew_ele():
     assert np.all(abs_ew_ele < 1)
 
 
-jtimes_params = list(it.product(iterative_linear_solvers, [True, False]))
+jtimes_params = list(it.product(iterative_linsols, [True, False]))
 
 
 @pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
