@@ -3,6 +3,10 @@
 from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 
+cdef extern from "cvodes_cxx.hpp":
+    ctypedef int indextype
+    ctypedef double realtype
+
 cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx":
     cdef unordered_map[string, int] fpes
     cdef cppclass LMM:

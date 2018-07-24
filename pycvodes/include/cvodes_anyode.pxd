@@ -4,59 +4,59 @@
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
-from cvodes_cxx cimport LMM, IterType, LinSol
+from cvodes_cxx cimport LMM, IterType, LinSol, realtype
 
 cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
     cdef int simple_adaptive[U](
-        double **,
+        realtype **,
         int *,
         U * const,
-        vector[double],
-        double,
+        vector[realtype],
+        realtype,
         LMM,
-        const double,
+        const realtype,
         vector[int]&,
         long int,
-        double,
-        double,
-        double,
+        realtype,
+        realtype,
+        realtype,
         bool,
         IterType,
         LinSol,
         int,
-        double,
+        realtype,
         unsigned,
         bool,
         int,
         bool,
         bool,
         int,
-        double **
+        realtype **
     ) except +
 
     cdef int simple_predefined[U](
         U * const,
-        vector[double],
-        double,
-        LMM,
-        const double * const,
+        vector[realtype],
+        const realtype,
+        const LMM,
+        const realtype * const,
         size_t,
-        const double * const,
-        double * const,
+        const realtype * const,
+        realtype * const,
         vector[int]&,
-        vector[double]&,
-        long int,
-        double,
-        double,
-        double,
-        bool,
+        vector[realtype]&,
+        const long int,
+        realtype,
+        const realtype,
+        const realtype,
+        const bool,
         IterType,
         LinSol,
-        int,
-        double,
-        unsigned,
-        int,
-        bool,
-        bool,
-        double *
+        const int,
+        const realtype,
+        const unsigned,
+        const int,
+        const bool,
+        const bool,
+        realtype *
     ) except +

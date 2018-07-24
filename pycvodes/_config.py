@@ -101,13 +101,13 @@ def _attempt_compilation():
         _sun3 = True
     else:
         _sun2_ok, _sun2_out = _compiles_ok("""
-    #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
-    #include <cvodes/cvodes_spgmr.h>
-    #else
-    #error "Unkown sundials version"
-    #endif
-    """)
+            #include <sundials/sundials_config.h>
+            #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+            #include <cvodes/cvodes_spgmr.h>
+            #else
+            #error "Unkown sundials version"
+            #endif
+            """)
         if _sun2_ok:
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
@@ -118,17 +118,17 @@ def _attempt_compilation():
                 _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
         else:
             _warn("Unknown sundials version:\n%s" % _sun2_out)
-    if _lapack_ok:
-        _klu_ok, _klu_out = _compiles_ok("""
-    #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_KLU)
-    #include <klu.h>
-    #else
-    #error "KLU was not enabled for this sundials build"
-    #endif
-""")
-        if not _klu_ok:
-            _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
+
+    _klu_ok, _klu_out = _compiles_ok("""
+        #include <sundials/sundials_config.h>
+        #if defined(SUNDIALS_KLU)
+        #include <klu.h>
+        #else
+        #error "KLU was not enabled for this sundials build"
+        #endif
+        """)
+    if not _klu_ok:
+        _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
 
 logger = logging.getLogger(__name__)

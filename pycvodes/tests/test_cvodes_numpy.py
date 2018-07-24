@@ -37,7 +37,7 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
-def _get_f_j(k):
+def _get_f_j(k, with_sparse=False):
     k0, k1, k2 = k
 
     def f(t, y, fout):
@@ -59,26 +59,19 @@ def _get_f_j(k):
             dfdx_out[0] = 0
             dfdx_out[1] = 0
             dfdx_out[2] = 0
-    return f, j
-
-
-def _get_f_j_sparse(k):
-    k0, k1, k2 = k
-
-    def f(t, y, fout):
-        fout[0] = -k0*y[0]
-        fout[1] = k0*y[0] - k1*y[1]
-        fout[2] = k1*y[1] - k2*y[2]
 
     _colptrs = [0, 2, 4, 5]
     _rowvals = [0, 1, 1, 2, 2]
 
-    def j(t, y, data, colptrs, rowvals):
+    def j_sparse(t, y, data, colptrs, rowvals):
         data[:] = -k0, k0, -k1, k1, -k2
         colptrs[:] = _colptrs
         rowvals[:] = _rowvals
 
-    return f, j, len(_rowvals)
+    if with_sparse:
+        return f, j, j_sparse, len(_rowvals)
+    else:
+        return f, j
 
 
 def _gravity_f_j_jtimes(g):
@@ -153,7 +146,7 @@ def test_integrate_predefined(method, forgiveness, banded):
         assert np.allclose(yout, yref,
                            rtol=forgiveness*rtol,
                            atol=forgiveness*atol)
-        assert nfo['atol'] == [1e-8, 3e-9, 2e-9] and nfo['rtol'] == 1e-8
+        assert np.allclose(nfo['atol'], [1e-8, 3e-9, 2e-9]) and np.isclose(nfo['rtol'], 1e-8)
         assert nfo['nfev'] > 0
         if method in requires_jac and j is not None:
             assert nfo['njev'] > 0
@@ -202,7 +195,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert info['nfev'] > 0
     if method in requires_jac:
         assert info['njev'] > 0
-    assert info['atol'] == [1e-8] and info['rtol'] == 1e-8
+    assert np.allclose(info['atol'], [1e-8]) and np.isclose(info['rtol'], 1e-8)
 
     with pytest.raises(RuntimeError) as excinfo:
         kw = kwargs.copy()
@@ -632,39 +625,57 @@ def test_jtimes_predefined(linear_solver, with_jac):
     if not with_jac:
         assert info['njev'] == 0
 
-
-def test_sparse_jac_adaptive():
+def _requires_klu(_test):
     from .._config import env
-    if env['LAPACK'] in ('', '0'):
-        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
-    if env['NO_KLU'] == '1':
-        pytest.skip("sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")
+    return pytest.mark.skipif(env['NO_KLU'] == 1, reason="sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")(_test)
+
+
+@_requires_klu
+def test_sparse_equals_dense():
+    try:
+        from scipy.sparse import csc_matrix
+    except ImportError:
+        pytest.skip("Need scipy.sparse to compare sparse/dense jacobian output")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
-    f, j, nnz = _get_f_j_sparse(k)
+    f, j, j_sparse, nnz = _get_f_j(k, with_sparse=True)
+
+    n = len(y0)
+    J_dense = np.empty((n, n))
+    data = np.empty(nnz)
+    colptrs = np.empty(n + 1)
+    rowvals = np.empty(nnz)
+    j(0, y0, J_dense)
+    j_sparse(0, y0, data, colptrs, rowvals)
+
+    J_sparse = csc_matrix((data, rowvals, colptrs), shape=(n, n)).toarray()
+    assert np.allclose(J_sparse, J_dense)
+
+
+@_requires_klu
+def test_sparse_jac_adaptive():
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
     atol, rtol = 1e-8, 1e-8
+    f, _, j_sparse, nnz = _get_f_j(k, with_sparse=True)
     kwargs = dict(atol=atol, rtol=rtol, method='bdf',
                   linear_solver='klu', nnz=nnz)
-    xout, yout, info = integrate_adaptive(f, j, y0, 0, 10, **kwargs)
+    xout, yout, info = integrate_adaptive(f, j_sparse, y0, 0, 10, **kwargs)
     yref = decay_get_Cref(k, y0, xout - xout[0])
     assert info['success']
     assert info['njev'] > 0
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
 
 
+@_requires_klu
 def test_sparse_jac_predefined():
-    from .._config import env
-    if env['LAPACK'] in ('', '0'):
-        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
-    if env['NO_KLU'] == '1':
-        pytest.skip("sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
     xout = np.linspace(0, 3, 31)
-    f, j, nnz = _get_f_j_sparse(k)
     atol, rtol = 1e-8, 1e-8
+    f, _, j_sparse, nnz = _get_f_j(k, with_sparse=True)
     kwargs = dict(method='bdf', linear_solver='klu', nnz=nnz)
-    yout, info = integrate_predefined(f, j, y0, xout, 1.0e-8, 1.0e-8, **kwargs)
+    yout, info = integrate_predefined(f, j_sparse, y0, xout, 1.0e-8, 1.0e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout - xout[0])
     assert info['success']
     assert info['njev'] > 0

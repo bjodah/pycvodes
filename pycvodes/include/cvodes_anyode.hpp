@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sundials/sundials_config.h>
+#include <sundials/sundials_types.h>
 #include <chrono>
 #include <ctime>
 #include <functional>
@@ -7,7 +9,12 @@
 
 #include "anyode/anyode.hpp"
 #include "anyode/anyode_buffer.hpp"
+#include "anyode/anyode_iterative.hpp"
 #include "cvodes_cxx.hpp"
+
+BEGIN_NAMESPACE(AnyODE)
+struct CvodesOdeSysBase : public AnyODE::OdeSysIterativeBase<realtype, indextype> {};
+END_NAMESPACE(AnyODE)
 
 BEGIN_NAMESPACE(cvodes_anyode)
 
@@ -205,7 +212,7 @@ int prec_solve_cb(realtype t, N_Vector y, N_Vector fy, N_Vector r,
     AnyODE::ignore(tmp);  // delta used for iterative methods
 #endif
     auto t_start = std::chrono::high_resolution_clock::now();
-    double * ewt {nullptr};
+    realtype * ewt {nullptr};
     auto& odesys = *static_cast<OdeSys*>(user_data);
     if (lr != 1)
         throw std::runtime_error("Only left preconditioning implemented.");
@@ -257,7 +264,9 @@ std::unique_ptr<Integrator> get_integrator(
     const bool with_jtimes=false)
 {
     const int ny = odesys->get_ny();
+#if PYCVODES_NO_KLU != 1
     const int nnz = odesys->get_nnz();
+#endif
     const int nroots = odesys->get_nroots();
     const int nq = odesys->get_nquads();
     auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type);
@@ -326,6 +335,7 @@ std::unique_ptr<Integrator> get_integrator(
             integr.set_linear_solver_to_iterative(IterLinSolEnum::BICGSTAB, maxl); break;
         case LinSol::TFQMR:
             integr.set_linear_solver_to_iterative(IterLinSolEnum::TFQMR, maxl); break;
+#if PYCVODES_NO_KLU != 1
         case LinSol::KLU:
             if (with_jacobian) {
                 integr.set_linear_solver_to_sparse(ny, nnz);
@@ -334,6 +344,7 @@ std::unique_ptr<Integrator> get_integrator(
                 throw std::runtime_error("with_jacobian cannot be False with linear solver KLU");
             }
             break;
+#endif
         default:
             throw std::runtime_error("Invalid linear_solver");
         }
@@ -453,7 +464,7 @@ int simple_predefined(OdeSys * const odesys,
                       const realtype * const xout,
                       realtype * const yqout,
                       std::vector<int>& root_indices,
-                      std::vector<double>& root_out,
+                      std::vector<realtype>& root_out,
                       const long int mxsteps=0,
                       realtype dx0=0.0,
                       const realtype dx_min=0.0,
@@ -464,9 +475,9 @@ int simple_predefined(OdeSys * const odesys,
                       const int maxl=0,
                       const realtype eps_lin=0.0,
                       const unsigned nderiv=0,
-                      int autorestart=0,
-                      bool return_on_error=false,
-                      bool with_jtimes=false,
+                      const int autorestart=0,
+                      const bool return_on_error=false,
+                      const bool with_jtimes=false,
                       realtype * ew_ele=nullptr
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
@@ -524,10 +535,10 @@ int simple_predefined(OdeSys * const odesys,
 
 
 struct SolverSettings{
-    double rtol {1e-8};
-    std::vector<double> atol {1e-8};
+    realtype rtol {1e-8};
+    std::vector<realtype> atol {1e-8};
     int mxsteps {0};
-    double dx0{0}, dx_min{0}, dx_max{0};
+    realtype dx0{0}, dx_min{0}, dx_max{0};
     std::string method {"bdf"}, iter_type {"undecided"}, linear_solver {"default"};
     int maxl {0};
     realtype eps_lin {0.0};
@@ -549,8 +560,8 @@ template <class OdeSys>
 std::unique_ptr<AnyODE::Result> chained_predefined(
     OdeSys * const odesys,
     const std::vector<double> durations,
-    const std::vector<double> &yq0,
-    const std::vector<double> &varied_values,
+    const std::vector<realtype> &yq0,
+    const std::vector<realtype> &varied_values,
     const std::vector<int> &varied_indices,
     int npoints,
     const SolverSettings &settings)
@@ -562,8 +573,8 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
     LinSol linear_solver = cvodes_cxx::linear_solver_from_name(settings.linear_solver);
     if (linear_solver == LinSol::DEFAULT)
         linear_solver = (odesys->get_mlower() == -1) ? LinSol::DENSE : LinSol::BANDED;
-    double dx0 = settings.dx0;
-    double x0 = 0.0;
+    realtype dx0 = settings.dx0;
+    realtype x0 = 0.0;
     if (dx0 == 0.0)
         dx0 = odesys->get_dx0(x0, yq0);
     auto integr = get_integrator<OdeSys>(
@@ -585,7 +596,7 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
     if (durations.size() != varied_values.size())
         throw std::logic_error("durations and varied_values have different lengths");
     int ndur = durations.size();
-    double * xyqout = (double *)std::malloc((ndur*npoints+1)*(1+ny+nq)*sizeof(double));
+    realtype * xyqout = (realtype *)std::malloc((ndur*npoints+1)*(1+ny+nq)*sizeof(realtype));
     xyqout[0] = 0;
     for (int i=0; i < ny + nq; ++i){
         xyqout[i+1] = yq0[i];
@@ -594,9 +605,9 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
         for (int j=0; j < npoints; ++j)
             xyqout[i*(1+ny+nq)*npoints + (j+1)*(1+ny+nq)] = xyqout[i*(1+ny+nq)*npoints] + (j+1)*durations[i]/npoints;
     }
-    std::vector<double> tbuffer(npoints+1, 0.0), yqbuffer((npoints+1)*(ny+nq));
+    std::vector<realtype> tbuffer(npoints+1, 0.0), yqbuffer((npoints+1)*(ny+nq));
     std::vector<int> root_indices;
-    std::vector<double> roots_out;
+    std::vector<realtype> roots_out;
     bool success = true;
     AnyODE::Info info;
     int ntot = 1;
