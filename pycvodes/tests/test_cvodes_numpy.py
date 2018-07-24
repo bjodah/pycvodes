@@ -625,9 +625,10 @@ def test_jtimes_predefined(linear_solver, with_jac):
     if not with_jac:
         assert info['njev'] == 0
 
+
 def _requires_klu(_test):
     from .._config import env
-    return pytest.mark.skipif(env['NO_KLU'] == 1, reason="sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")(_test)
+    return pytest.mark.skipif(not env['KLU'], reason="sparse jacobian tests require KLU to be enabled")(_test)
 
 
 @_requires_klu

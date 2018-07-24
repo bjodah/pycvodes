@@ -3,7 +3,7 @@
 #include <vector>
 #include "anyode/anyode.hpp"
 #include "cvodes_anyode.hpp"
-#include "cvodes_cxx.h"
+#include "cvodes_cxx.hpp"
 #include "cetsa_case.hpp"
 
 
