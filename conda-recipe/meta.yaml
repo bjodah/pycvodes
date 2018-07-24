@@ -19,8 +19,8 @@ requirements:
     - toolchain
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20*  # [not win]
-    - sundials ==2.7.0
-    - suitesparse 4.5.4  # [not win]
+    - sundials 3.1.*
+    - suitesparse 4.5.*  # [not win]
     - python
     - setuptools
     - pip
@@ -29,10 +29,10 @@ requirements:
   run:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20|0.2.20.*  # [not win]
-    - sundials ==2.7.0
+    - sundials 3.1.*
     - python
     - numpy >=1.11
-    - suitesparse 4.5.4  # [not win]
+    - suitesparse 4.5.*  # [not win]
 
 test:
   imports:
