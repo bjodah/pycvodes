@@ -1,6 +1,6 @@
 // C++11 source code.
 #include "catch.hpp"
-#include "sundials_cxx.hpp"
+#include "sundials_cxx.hpp" // realtype
 #include <vector>
 
 using sundials_cxx::nvector_serial::Vector;
@@ -18,7 +18,7 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
     vec1[2] = 7;
     REQUIRE(vec1[2] == 7);
     REQUIRE(vec2[2] == 42);
-    std::vector<double> a(3, 9);
+    std::vector<realtype> a(3, 9);
     vec2.load(&a[0]);
     REQUIRE(vec2[0] == 9);
 }
@@ -33,7 +33,7 @@ TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
     vec1[2] = 7;
     REQUIRE(vec1[2] == 7);
     REQUIRE(vec2[2] == 7);
-    std::vector<double> a(3, 9);
+    std::vector<realtype> a(3, 9);
     vec2.load(&a[0]);
     REQUIRE(vec1[0] == 9);
 }

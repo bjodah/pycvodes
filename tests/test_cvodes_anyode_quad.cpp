@@ -4,32 +4,32 @@
 #include "anyode/anyode.hpp"
 #include "cvodes_anyode.hpp"
 
-struct OdeSys : public AnyODE::OdeSysBase<double> {
-    int get_ny() const override {
+struct OdeSys : public AnyODE::CvodesOdeSysBase {
+    indextype get_ny() const override {
         return 1;
     }
     int get_nquads() const override {
         return 2;
     }
-    AnyODE::Status rhs(double /* t */,
-                       const double * const ANYODE_RESTRICT y,
-                       double * const ANYODE_RESTRICT f) override
+    AnyODE::Status rhs(realtype /* t */,
+                       const realtype * const ANYODE_RESTRICT y,
+                       realtype * const ANYODE_RESTRICT f) override
     {
         f[0] = -0.7*y[0]; // y(t) = y(0)*exp(-0.7*t)
         return AnyODE::Status::success;
     }
-    AnyODE::Status dense_jac_cmaj(double /* t */,
-                                  const double * const ANYODE_RESTRICT /* y */,
-                                  const double * const ANYODE_RESTRICT /* fy */,
-                                  double * const ANYODE_RESTRICT jac,
+    AnyODE::Status dense_jac_cmaj(realtype /* t */,
+                                  const realtype * const ANYODE_RESTRICT /* y */,
+                                  const realtype * const ANYODE_RESTRICT /* fy */,
+                                  realtype * const ANYODE_RESTRICT jac,
                                   long int /* ldim */,
-                                  double * const ANYODE_RESTRICT /*dfdt*/=nullptr) override
+                                  realtype * const ANYODE_RESTRICT /*dfdt*/=nullptr) override
     {
         jac[0] = -0.7;
         return AnyODE::Status::success;
     }
 
-    AnyODE::Status quads(double xval, const double * const y, double * const out) override {
+    AnyODE::Status quads(realtype xval, const realtype * const y, realtype * const out) override {
         out[0] = xval*y[0]; //
         out[1] = y[0]*y[0];
         return AnyODE::Status::success;
@@ -37,25 +37,25 @@ struct OdeSys : public AnyODE::OdeSysBase<double> {
 
 };
 
-double integral_A_t_exp_minus_k_t(double A, double k, double t){
+realtype integral_A_t_exp_minus_k_t(realtype A, realtype k, realtype t){
     return A/pow(k, 2) + (-A*pow(k, 2)*t - A*k)*exp(-k*t)/pow(k, 3);
 }
 
-double integral_A_exp_minus_k_t__squared(double A, double k, double t){
+realtype integral_A_exp_minus_k_t__squared(realtype A, realtype k, realtype t){
     return (1.0L/2.0L)*pow(A, 2)/k - 1.0L/2.0L*pow(A, 2)*exp(-2*k*t)/k;
 }
 
 TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     auto odesys = OdeSys();
     int td = 1;
-    double * xyqout = (double*)malloc(td*(odesys.get_ny()+odesys.get_nquads()+1)*sizeof(double));
-    double A = 42.0;
-    double k = 0.7;
+    realtype * xyqout = (realtype*)malloc(td*(odesys.get_ny()+odesys.get_nquads()+1)*sizeof(realtype));
+    realtype A = 42.0;
+    realtype k = 0.7;
     xyqout[0] = 0; // t0
     xyqout[1] = A; // y0
     xyqout[2] = 2.0; // q0
     xyqout[3] = 3.0; // q1
-    double t0=0, tend=4.0;
+    realtype t0=0, tend=4.0;
     std::vector<int> root_indices;
 
     const long int mxsteps=0;
@@ -78,10 +78,10 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     REQUIRE((nout + 1) == td);
 
     for (int i=0; i < nout; ++i){
-        double t = xyqout[i*4];
+        realtype t = xyqout[i*4];
         REQUIRE( std::abs(xyqout[i*4+1] - 42*exp(-k*t)) < 1e-6 );
-        double q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
-        double q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
+        realtype q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
+        realtype q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
         REQUIRE( std::abs(xyqout[i*4+2] - q0) < 1e-4 );
         REQUIRE( std::abs(xyqout[i*4+3] - q1) < 1e-4 );
     }
@@ -95,19 +95,19 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
 TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
     auto odesys = OdeSys();
     int nt = 37;
-    double t0=0, tend=4.0;
-    std::vector<double> tout(nt);
-    std::vector<double> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
+    realtype t0=0, tend=4.0;
+    std::vector<realtype> tout(nt);
+    std::vector<realtype> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
     for (int i=0; i<nt; ++i){
         tout[i] = t0 + i*(tend - t0)/(nt-1);
     }
-    double A = 42.0;
-    double k = 0.7;
+    realtype A = 42.0;
+    realtype k = 0.7;
     yqout[0] = A; // y0
     yqout[1] = 2.0; // q0
     yqout[2] = 3.0; // q1
     std::vector<int> root_indices;
-    std::vector<double> root_out;
+    std::vector<realtype> root_out;
 
     auto nout = cvodes_anyode::simple_predefined(
         &odesys, {1e-10, 1e-11, 1e-10}, 1e-10, cvodes_cxx::LMM::BDF, yqout.data(), nt, tout.data(),
@@ -115,10 +115,10 @@ TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
     REQUIRE(nout == nt);
 
     for (int i=0; i < nt; ++i){
-        double t = tout[i];
+        realtype t = tout[i];
         REQUIRE( std::abs(yqout[i*3] - 42*exp(-k*t)) < 1e-6 );
-        double q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
-        double q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
+        realtype q0 = 2 + integral_A_t_exp_minus_k_t(A, k, t);
+        realtype q1 = 3 + integral_A_exp_minus_k_t__squared(A, k, t);
         REQUIRE( std::abs(yqout[i*3+1] - q0) < 1e-4 );
         REQUIRE( std::abs(yqout[i*3+2] - q1) < 1e-4 );
     }

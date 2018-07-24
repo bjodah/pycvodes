@@ -1,19 +1,18 @@
 //#include <unordered_map>
-#include "cvodes_cxx.hpp"
+#include "cvodes_anyode.hpp" // CvodesOdeSysBase, realtype, indextype
 #include "anyode/anyode.hpp"
 
-template <typename T>
-struct Decay : public AnyODE::OdeSysBase<T> {
-    T m_k;
+struct Decay : public AnyODE::CvodesOdeSysBase {
+    realtype m_k;
 
-    Decay(T k) : m_k(k) {}
-    int get_ny() const override { return 1; }
-    AnyODE::Status rhs(T t, const T * const ANYODE_RESTRICT y, T * const ANYODE_RESTRICT f) override {
+    Decay(realtype k) : m_k(k) {}
+    indextype get_ny() const override { return 1; }
+    AnyODE::Status rhs(realtype t, const realtype * const ANYODE_RESTRICT y, realtype * const ANYODE_RESTRICT f) override {
         AnyODE::ignore(t);
         f[0] = -y[0];
         return AnyODE::Status::success;
     }
-    T get_dx_max(T /* t */, const T * const /* y */) override{
+    realtype get_dx_max(realtype /* t */, const realtype * const /* y */) override{
         return 1e-3;
     }
 };

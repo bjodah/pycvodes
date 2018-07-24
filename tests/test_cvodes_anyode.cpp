@@ -4,10 +4,10 @@
 #include "testing_utils.hpp"
 
 TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
-    Decay<double> odesys(1.0);
+    Decay odesys(1.0);
     std::vector<int> root_indices;
     int td = 1;
-    double * xyout = (double *)malloc(td*(odesys.get_ny()+1)*sizeof(double));
+    realtype * xyout = (realtype *)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
@@ -25,11 +25,11 @@ TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
 }
 
 TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
-    Decay<double> odesys(1.0);
+    Decay odesys(1.0);
     std::vector<int> root_indices;
     int td = 1;
-    double * xyout = (double *)malloc(td*(odesys.get_ny()+1)*sizeof(double));
-    double * ew_ele = (double *)malloc(2*td*odesys.get_ny()*sizeof(double));
+    realtype * xyout = (realtype *)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
+    realtype * ew_ele = (realtype *)malloc(2*td*odesys.get_ny()*sizeof(realtype));
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
@@ -66,19 +66,19 @@ TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
 }
 
 TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
-    Decay<double> odesys(1.0);
+    Decay odesys(1.0);
     int nt = 37;
-    double t0=0, tend=4.0;
-    std::vector<double> tout(nt);
-    std::vector<double> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
-    std::vector<double> ew_ele(2*nt*odesys.get_ny());
+    realtype t0=0, tend=4.0;
+    std::vector<realtype> tout(nt);
+    std::vector<realtype> yqout(nt*(odesys.get_ny()+odesys.get_nquads()));
+    std::vector<realtype> ew_ele(2*nt*odesys.get_ny());
 
     for (int i=0; i<nt; ++i){
         tout[i] = t0 + i*(tend - t0)/(nt-1);
     }
     yqout[0] = 1.0;
     std::vector<int> root_indices;
-    std::vector<double> root_out;
+    std::vector<realtype> root_out;
     const long int mxsteps=0;
     realtype dx0=0.0;
     const realtype dx_min=0.0;
@@ -100,7 +100,7 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
     REQUIRE(nout == nt);
 
     for (int i=0; i < nt; ++i){
-        double t = tout[i];
+        realtype t = tout[i];
         REQUIRE( std::abs(yqout[i] - 1.0*exp(-t)) < 1e-6 );
         REQUIRE( std::abs(ew_ele[2*i] * ew_ele[2*i + 1]) < 1.0 );
     }
@@ -109,12 +109,12 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
 }
 
 TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
-    Decay<double> odesys(1.0);
-    double y0 = 1.0;
+    Decay odesys(1.0);
+    realtype y0 = 1.0;
     std::vector<int> root_indices;
     odesys.use_get_dx_max = true;
     int td = 1;
-    double * xyout = (double *)malloc(td*(odesys.get_ny()+1)*sizeof(double));
+    realtype * xyout = (realtype *)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
@@ -131,11 +131,11 @@ TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
 
 
 TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
-    Decay<double> odesys(1.0);
-    double y0 = 1.0;
+    Decay odesys(1.0);
+    realtype y0 = 1.0;
     std::vector<int> root_indices;
     int td = 1;
-    double * xyout = (double *)malloc(td*(odesys.get_ny()+1)*sizeof(double));
+    realtype * xyout = (realtype *)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
