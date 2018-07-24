@@ -1,3 +1,7 @@
+v0.11.2
+=======
+- New AnyODE version
+
 v0.11.1
 =======
 - Macro USE_LAPACK renamed (with inverted logic) to PYCVODES_NO_LAPACK
