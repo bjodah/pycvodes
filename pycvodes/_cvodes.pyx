@@ -19,13 +19,15 @@ cdef extern from "numpy/arrayobject.h":
 
 cnp.import_array()  # Numpy C-API initialization
 
+ctypedef PyOdeSys[double, int] PyOdeSys_t
+
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
 iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
-cdef dict get_last_info(PyOdeSys * odesys, success=True):
+cdef dict get_last_info(PyOdeSys_t * odesys, success=True):
     info = {str(k.decode('utf-8')): v for k, v in dict(odesys.current_info.nfo_int).items()}
     info.update({str(k.decode('utf-8')): v for k, v in dict(odesys.current_info.nfo_dbl).items()})
     info.update({str(k.decode('utf-8')): np.array(v, dtype=np.float64) for k, v in dict(odesys.current_info.nfo_vecdbl).items()})
@@ -55,7 +57,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
         int ny = nyq - nquads
         bool with_jacobian = jac is not None
         bool with_jtimes = jtimes is not None
-        PyOdeSys * odesys
+        PyOdeSys_t * odesys
         vector[int] root_indices
         vector[double] atol_vec
         int td = nprealloc
@@ -98,7 +100,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     for i in range(nquads):
         xyqout[1+ny*(nderiv+1)+i] = 0.0;
 
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
+    odesys = new PyOdeSys_t(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
                           <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
                           <PyObject *>dx0cb, <PyObject *>dx_max_cb, nnz)
     odesys.autonomous_exprs = autonomous_exprs
@@ -109,7 +111,7 @@ def adaptive(rhs, jac, cnp.ndarray[cnp.float64_t, mode='c'] yq0, double x0, doub
     odesys.record_steps = record_steps
 
     try:
-        nout = simple_adaptive[PyOdeSys](
+        nout = simple_adaptive[PyOdeSys_t](
             &xyqout, &td, odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')),
             xend, root_indices, nsteps, dx0, dx_min, dx_max, with_jacobian,
             iter_type_from_name(iter_type.lower().encode('UTF-8')),
@@ -171,7 +173,7 @@ def predefined(rhs, jac,
         bool with_jacobian = jac is not None
         bool with_jtimes = jtimes is not None
         int nreached
-        PyOdeSys * odesys
+        PyOdeSys_t * odesys
         vector[int] root_indices
         vector[double] roots_output
         vector[double] atol_vec
@@ -196,7 +198,7 @@ def predefined(rhs, jac,
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
     if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
 
-    odesys = new PyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
+    odesys = new PyOdeSys_t(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
                           <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
                           <PyObject *>dx0cb, <PyObject *>dx_max_cb, nnz)
     odesys.autonomous_exprs = autonomous_exprs
@@ -207,7 +209,7 @@ def predefined(rhs, jac,
     odesys.record_steps = record_steps
 
     try:
-        nreached = simple_predefined[PyOdeSys](
+        nreached = simple_predefined[PyOdeSys_t](
             odesys, atol_vec, rtol, lmm_from_name(method.lower().encode('UTF-8')), &yq0[0],
             xout.size, &xout[0], <double *>yqout.data, root_indices, roots_output, nsteps,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
