@@ -74,7 +74,7 @@ def _get_sun_precision():
     codestring = """#include <sundials/sundials_config.h>
                     #ifndef SUNDIALS_{0}_PRECISION
                         #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
-                    #endif 
+                    #endif
                  """
     for prec in ['single', 'double', 'extended']:
         _ok, _ = _compiles_ok(codestring.format(prec.upper()))

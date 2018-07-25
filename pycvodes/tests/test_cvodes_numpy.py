@@ -17,7 +17,8 @@ def requires_klu(_test):
 
 def high_precision(_test):
     from .._config import env
-    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] == "single", reason="test atol and/or rtol is too high for single precision")(_test)
+    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] == "single",
+                              reason="test atol and/or rtol is too high for single precision")(_test)
 
 
 def test_get_include():
@@ -127,6 +128,7 @@ def bandify(cb, mlower, mupper):
             for ri in range(max(0, ci-mupper), min(len(y), ci+mlower+1)):
                 jmat_out[ri - ci + mupper, ci] = jmat[ri, ci]
     return j
+
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_predefined(method, forgiveness, banded):
