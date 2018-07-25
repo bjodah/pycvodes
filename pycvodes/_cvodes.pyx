@@ -155,8 +155,8 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
         xout = xyqout_arr[:, 0]
         yout = xyqout_arr[:, 1:1+ny*(nderiv+1)]
         if return_on_error:
-            if return_on_root and root_indices[root_indices.size() - 1] == len(xout) - 1:
-                success = True
+            if return_on_root and root_indices.size() > 0:
+                success = root_indices[root_indices.size() - 1] == len(xout) - 1
             else:
                 success = xout[-1] == xend
         else:
