@@ -47,7 +47,7 @@ def _compiles_ok(codestring):
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
-        source_path = os.path.join(folder, 'complier_test_source.cpp')
+        source_path = os.path.join(folder, 'compiler_test_source.cpp')
         with open(source_path, 'wt') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
@@ -68,6 +68,19 @@ def _compiles_ok(codestring):
         else:
             _ok = True
     return _ok, out
+
+
+def _get_sun_precision():
+    codestring = """#include <sundials/sundials_config.h>
+                    #ifndef SUNDIALS_{0}_PRECISION
+                        #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
+                    #endif 
+                 """
+    for prec in ['single', 'double', 'extended']:
+        _ok, _ = _compiles_ok(codestring.format(prec.upper()))
+        if _ok:
+            return prec
+    return ''
 
 
 def _attempt_compilation():
@@ -173,6 +186,11 @@ if env is None:
     else:
         if _r['_klu_ok']:
             env['SUNDIALS_LIBS'] += ',klu'
+
+    prec = _get_sun_precision()
+    env['SUNDIALS_PRECISION'] = prec
+    if not prec:
+        _warn("Couldn't determine sundials precision from sundials/sundials_config.h")
 
     if appdirs:
         cfg_dir = os.path.dirname(cfg)
