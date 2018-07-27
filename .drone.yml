@@ -5,10 +5,23 @@ clone:
     external/anyode: git://github.com/bjodah/anyode.git
 cache:
   mount:
-    - /drone/sund-3.1.1
-    - /drone/sund-3.1.1-klu
-    - /drone/sund-3.1.1-nolapack
-    - /drone/sund-2.7.0-nolapack
+      # changing int type used for index only available in 3.1+
+      # changing real type available in both 2.7 and 3.1
+      # HOWEVER lapack and some of the stuff compiled with sundials (KLU, arkODE, etc.) don't like this
+      # so skip fiddling wih realtype, inttype except in 3.1 and sans lapack, klu, etc.
+      - /drone/sund-3.1.1-lapack-klu
+      - /drone/sund-3.1.1-nolapack-klu
+      - /drone/sund-3.1.1-lapack-noklu
+      - /drone/sund-3.1.1-nolapack-noklu
+      - /drone/sund-2.7.0-lapack-klu
+      - /drone/sund-2.7.0-nolapack-klu
+      - /drone/sund-2.7.0-lapack-noklu
+      - /drone/sund-2.7.0-nolapack-noklu
+      - /drone/sund-3.1.1-nolapack-noklu-extended-int64
+      - /drone/sund-3.1.1-nolapack-noklu-extended-int32
+      - /drone/sund-3.1.1-nolapack-noklu-single-int64
+      - /drone/sund-3.1.1-nolapack-noklu-single-int32
+    volumes:
 build:
   image: bjodah/bjodahimg18dev:v1.2
   environment:
@@ -18,14 +31,30 @@ build:
     - git fetch -tq  # used by ``git describe``
     - apt-get update --quiet && apt-get install --quiet -y libsuitesparse-dev
     - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-    - if [ ! -d /drone/sund-3.1.1 ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_ENABLE:BOOL=OFF; fi
-    - if [ ! -d /drone/sund-3.1.1-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-klu -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
-    - if [ ! -d /drone/sund-3.1.1-nolapack ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=OFF; fi
-    - if [ ! -d /drone/sund-2.7.0-nolapack ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-nolapack -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=OFF; fi
-    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1
-    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-klu
-    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack
-    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-nolapack
+    - if [ ! -d /drone/sund-3.1.1-lapack-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-lapack-klu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-klu ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-klu -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
+    - if [ ! -d /drone/sund-3.1.1-lapack-noklu ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-lapack-noklu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=OFF -DSUNDIALS_INDEX_TYPE:STRING="int32_t"; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-noklu ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-noklu -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sund-2.7.0-lapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-lapack-klu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
+    - if [ ! -d /drone/sund-2.7.0-nolapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-nolapack-klu -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
+    - if [ ! -d /drone/sund-2.7.0-lapack-noklu ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-lapack-noklu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sund-2.7.0-nolapack-noklu ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-nolapack-noklu -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-noklu-extended-int64 ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-noklu-extended-int64  -DSUNDIALS_INDEX_TYPE:STRING="int64_t"  -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="extended"; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-noklu-extended-int32 ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-noklu-extended-int32  -DSUNDIALS_INDEX_TYPE:STRING="int32_t"  -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="extended"; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-noklu-single-int64 ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-noklu-single-int64  -DSUNDIALS_INDEX_TYPE:STRING="int64_t"  -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="single"; fi
+    - if [ ! -d /drone/sund-3.1.1-nolapack-noklu-single-int32 ]; then .ci/get_sundials.sh 3.1.1 /drone/sund-3.1.1-nolapack-noklu-single-int32  -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="single"; fi
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-lapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-lapack-noklu
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu
+    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-lapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-nolapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-lapack-noklu
+    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-nolapack-noklu
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-extended-int64
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-extended-int32
+    - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-single-int32
+    - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-single-int64
     - unset C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH
     - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sund-3.1.1-klu
     - apt-get remove -qq -y libsuitesparse-dev
