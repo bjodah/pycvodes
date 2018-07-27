@@ -33,9 +33,9 @@ namespace cvodes_anyode_parallel {
                    const realtype eps_lin=0.0,
                    const unsigned nderiv=0,
                    bool return_on_root=false,
-                   int autorestart=0, // must be autonomous!
-                   bool return_on_error=false,
-                   bool with_jtimes=false
+                   const int autorestart=0, // must be autonomous!
+                   const bool return_on_error=false,
+                   const bool with_jtimes=false
                    ){
         const indextype ny = odesys[0]->get_ny();
         AnyODE::ignore(ny);
@@ -82,9 +82,9 @@ namespace cvodes_anyode_parallel {
                      const int maxl=0,
                      const realtype eps_lin=0.0,
                      const unsigned nderiv=0,
-                     int autorestart=0, // must be autonomous!
-                     bool return_on_error=false,
-                     bool with_jtimes=false
+                     const int autorestart=0, // must be autonomous!
+                     const bool return_on_error=false,
+                     const bool with_jtimes=false
                      ){
         const indextype ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
