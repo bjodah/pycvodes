@@ -173,7 +173,7 @@ if env is None:
         'KLU': 'klu' if _r['_klu_ok'] else '',
         'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_cvodes',
         'PYCVODES_NO_LAPACK': '0' if _r['_lapack_ok'] else '1',
-        'PYCVODES_NO_KLU': '0' if _r['klu_ok'] else '1'
+        'PYCVODES_NO_KLU': '0' if _r['_klu_ok'] else '1'
     }
     if _r['_sun3']:
         if _r['_lapack_ok']:
