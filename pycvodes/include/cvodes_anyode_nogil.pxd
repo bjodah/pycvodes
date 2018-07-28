@@ -5,59 +5,55 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
 from cvodes_cxx cimport LMM, IterType
-from cvodes_cxx cimport realtype
 
 cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
-    cdef pair[vector[realtype], vector[realtype]] simple_adaptive[U](
-        realtype **,
-        int *,
+    cdef pair[vector[double], vector[double]] simple_adaptive[U](
         U * const,
-        vector[realtype],
-        realtype,
+        vector[double],
+        double,
         LMM,
-        const realtype,
+        const double * const,
+        double,
+        const double,
         vector[int]&,
         long int,
-        realtype,
-        const realtype,
-        const realtype,
+        double,
+        double,
+        double,
         bool,
         IterType,
         LinSol,
         int,
-        const realtype,
+        double,
         unsigned,
         bool,
         int,
         bool,
-        bool,
-        int,
-        realtype **
+        bool
     ) nogil except +
 
     cdef int simple_predefined[U](
         U * const,
-        vector[realtype],
-        realtype,
+        vector[double],
+        double,
         LMM,
-        const realtype * const,
+        const double * const,
         size_t,
-        const realtype * const,
-        realtype * const,
+        const double * const,
+        double * const,
         vector[int]&,
-        vector[realtype]&,
+        vector[double]&,
         long int,
-        realtype,
-        const realtype,
-        const realtype,
+        double,
+        double,
+        double,
         bool,
         IterType,
         LinSol,
         int,
-        const realtype,
+        double,
         unsigned,
         int,
         bool,
-        bool,
-        realtype *
+        bool
     ) nogil except +
