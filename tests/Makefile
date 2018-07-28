@@ -1,7 +1,7 @@
 CXX ?= g++
 LIBS ?=$(shell python3 -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
-PYCVODES_NO_LAPACK=$(shell python3 -c "from pycvodes._config import env; print('1' if env['LAPACK'] == '' else '0')")
-PYCVODES_NO_KLU=$(shell python3 -c "from pycvodes._config import env; print('1' if env['KLU'] == '' else '0')")
+PYCVODES_NO_LAPACK=$(shell python3 -c "from pycvodes._config import env; print(env.get('PYCVODES_NO_LAPACK', '0'))")
+PYCVODES_NO_KLU=$(shell python3 -c "from pycvodes._config import env; print(env.get('PYCVODES_NO_KLU', '0'))")
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)

@@ -10,7 +10,8 @@ cat <<EOF>pycvodes/_config.py
 env = {
     'LAPACK': "${PYCVODES_LAPACK}",
     'SUNDIALS_LIBS': "${PYCVODES_SUNDIALS_LIBS}",
-    'KLU': 'klu',
+    'PYCVODES_NO_KLU': '0',
+    'PYCVODES_NO_LAPACK': '1',
     'SUNDIALS_PRECISION': 'double'
 }
 EOF
