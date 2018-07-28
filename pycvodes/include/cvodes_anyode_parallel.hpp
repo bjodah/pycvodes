@@ -32,7 +32,7 @@ namespace cvodes_anyode_parallel {
                    const int maxl=0,
                    const realtype eps_lin=0.0,
                    const unsigned nderiv=0,
-                   bool return_on_root=false,
+                   const bool return_on_root=false,
                    const int autorestart=0, // must be autonomous!
                    const bool return_on_error=false,
                    const bool with_jtimes=false
