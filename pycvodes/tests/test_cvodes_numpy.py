@@ -12,7 +12,8 @@ from pycvodes import (
 
 def requires_klu(_test):
     from .._config import env
-    return pytest.mark.skipif(not env['KLU'], reason="sparse jacobian tests require KLU to be enabled")(_test)
+    return pytest.mark.skipif(env.get('PYCVODES_NO_KLU', '0') == '1',
+                              reason="sparse jacobian tests require KLU to be enabled")(_test)
 
 
 def high_precision(_test):
