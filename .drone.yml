@@ -54,8 +54,8 @@ build:
     - .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-extended-int32
     - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-single-int32
     - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-noklu-single-int64
+    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sund-3.1.1-nolapack-klu
     - unset C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH
-    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sund-3.1.1-klu
     - apt-get remove -qq -y libsuitesparse-dev
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
     - python3 -m pip install wurlitzer
