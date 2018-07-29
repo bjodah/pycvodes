@@ -63,7 +63,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         ext_modules[0].libraries += env['LAPACK'].split(',')
 
     ext_modules[0].define_macros += [
-        ('PYCVODES_NO_KLU', env.get('PYCVODES_NO_KLU', '0')),
+        ('PYCVODES_NO_KLU', env.get('NO_KLU', '0')),
         ('PYCVODES_NO_LAPACK', '0' if _USE_LAPACK else '1'),
         ('ANYODE_NO_LAPACK', '0' if _USE_LAPACK else '1')
     ]
