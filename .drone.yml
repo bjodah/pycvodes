@@ -21,7 +21,6 @@ cache:
       - /drone/sund-3.1.1-nolapack-noklu-extended-int32
       - /drone/sund-3.1.1-nolapack-noklu-single-int64
       - /drone/sund-3.1.1-nolapack-noklu-single-int32
-    volumes:
 build:
   image: bjodah/bjodahimg18dev:v1.2
   environment:
