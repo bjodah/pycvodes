@@ -8,7 +8,7 @@
 #include "cetsa_case.hpp"
 
 TEST_CASE( "adaptive_sparse_jac", "[simple_adaptive]" ) {
-    std::vector<double> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
+    std::vector<realtype> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
     OdeSys odesys(&p[0]);
     std::vector<int> root_indices;
 
@@ -23,15 +23,15 @@ TEST_CASE( "adaptive_sparse_jac", "[simple_adaptive]" ) {
     const unsigned nderiv=0;
     bool return_on_root=false;
 
-    double atol=1e-8, rtol=1e-8;
+    realtype atol=1e-8, rtol=1e-8;
 
     cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::KLU;
     int autorestart=0;
     bool return_on_error = false;
     bool with_jtimes = false;
-    double * xyout = (double*)malloc((odesys.get_ny() + 1)*sizeof(double));
+    realtype * xyout = (realtype*)malloc((odesys.get_ny() + 1)*sizeof(realtype));
     int td = 1;
-    double tend=5.0;
+    realtype tend=5.0;
     xyout[0] = 0; // t0
     xyout[1] = 8.99937e-07;
     xyout[2] = 0.000693731;
@@ -40,13 +40,13 @@ TEST_CASE( "adaptive_sparse_jac", "[simple_adaptive]" ) {
     xyout[5] = 4.11575e-05;
 
     // Test equivalence of dense and sparse jacs
-    const int ny = odesys.get_ny();
+    const indextype ny = odesys.get_ny();
     const int ldim = ny;
-    const int nnz = odesys.get_nnz();
-    int * colptrs = (int *) malloc((ny + 1) * sizeof(int));
-    int * rowvals = (int *) malloc(nnz * sizeof(int));
-    double * data = (double *) malloc(nnz * sizeof(double));
-    double * J = (double *) malloc(ny * ny * sizeof(double));
+    const indextype nnz = odesys.get_nnz();
+    indextype * colptrs = (indextype *) malloc((ny + 1) * sizeof(indextype));
+    indextype * rowvals = (indextype *) malloc(nnz * sizeof(indextype));
+    realtype * data = (realtype *) malloc(nnz * sizeof(realtype));
+    realtype * J = (realtype *) malloc(ny * ny * sizeof(realtype));
 
     odesys.dense_jac_cmaj(0.0, &xyout[1], nullptr, J, ldim);
     odesys.sparse_jac_csc(0.0, &xyout[1], nullptr, data, colptrs, rowvals);

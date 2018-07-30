@@ -32,12 +32,12 @@ namespace cvodes_anyode_parallel {
                    const int maxl=0,
                    const realtype eps_lin=0.0,
                    const unsigned nderiv=0,
-                   bool return_on_root=false,
-                   int autorestart=0, // must be autonomous!
-                   bool return_on_error=false,
-                   bool with_jtimes=false
+                   const bool return_on_root=false,
+                   const int autorestart=0, // must be autonomous!
+                   const bool return_on_error=false,
+                   const bool with_jtimes=false
                    ){
-        const int ny = odesys[0]->get_ny();
+        const indextype ny = odesys[0]->get_ny();
         AnyODE::ignore(ny);
         const int nsys = odesys.size();
         auto results = std::vector<std::pair<int, std::vector<int>>>(nsys);
@@ -63,15 +63,15 @@ namespace cvodes_anyode_parallel {
     }
 
     template <class OdeSys>
-    std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<double>>>>
+    std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<realtype>>>>
     multi_predefined(std::vector<OdeSys *> odesys,  // vectorized
                      const std::vector<realtype> atol,
                      const realtype rtol,
                      const LMM lmm,
-                     const realtype * const y0, // vectorized
+                     realtype * y0, // vectorized
                      const std::size_t nout,
-                     const realtype * const tout, // vectorized
-                     realtype * const yout,  // vectorized
+                     realtype * tout, // vectorized
+                     realtype * yout,  // vectorized
                      const long int mxsteps,
                      const realtype * dx0,  // vectorized
                      const realtype * dx_min,  // vectorized
@@ -82,14 +82,14 @@ namespace cvodes_anyode_parallel {
                      const int maxl=0,
                      const realtype eps_lin=0.0,
                      const unsigned nderiv=0,
-                     int autorestart=0, // must be autonomous!
-                     bool return_on_error=false,
-                     bool with_jtimes=false
+                     const int autorestart=0, // must be autonomous!
+                     const bool return_on_error=false,
+                     const bool with_jtimes=false
                      ){
-        const int ny = odesys[0]->get_ny();
+        const indextype ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
 
-        auto nreached_roots = std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<double>>>>(nsys);
+        auto nreached_roots = std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<realtype>>>>(nsys);
 
         anyode_parallel::ThreadException te;
         char * num_threads_var = std::getenv("ANYODE_NUM_THREADS");

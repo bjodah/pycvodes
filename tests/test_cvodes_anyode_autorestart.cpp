@@ -3,21 +3,22 @@
 #include <vector>
 #include "anyode/anyode.hpp"
 #include "cvodes_anyode.hpp"
+#include "cvodes_cxx.hpp"
 #include "cetsa_case.hpp"
 
 
 TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
-    std::vector<double> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
+    std::vector<realtype> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
     OdeSys odesys(&p[0]);
     int td = 1;
-    double * xyout = (double*)malloc(td*(odesys.get_ny()+1)*sizeof(double));
+    realtype * xyout = (realtype*)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
     xyout[0] = 0; // t0
     xyout[1] = 8.99937e-07;
     xyout[2] = 0.000693731;
     xyout[3] = 0.000264211;
     xyout[4] = 0.000340312;
     xyout[5] = 4.11575e-05;
-    double t0=0, tend=60;
+    realtype t0=0, tend=60;
     std::vector<int> root_indices;
 
     const long int mxsteps=0;
@@ -34,8 +35,8 @@ TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
     int autorestart=2;
 
     auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {1e-8}, 1e-8, cvodes_cxx::LMM::BDF, tend, root_indices,
-                                                    mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
-                                                    maxl, eps_lin, nderiv, return_on_root, autorestart);
+                                               mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
+                                               maxl, eps_lin, nderiv, return_on_root, autorestart);
     REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
     REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
     REQUIRE( nout > 1 );

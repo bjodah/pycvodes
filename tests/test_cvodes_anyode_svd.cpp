@@ -6,7 +6,7 @@
 #include "cetsa_case_iterative.hpp"
 
 TEST_CASE( "adaptive_tricky_svd", "[simple_adaptive]" ) {
-    std::vector<double> p = {{321.14999999999998, 39390, -135.30000000000001, 18010, 44960, 48.200000000000003,
+    std::vector<realtype> p = {{321.14999999999998, 39390, -135.30000000000001, 18010, 44960, 48.200000000000003,
                               49320, -114.59999999999999, 1780, -34400.547966379738, -2.865040967667511,
                               93065.338440593958, 5.7581184659305222}};
     OdeSys odesys(&p[0]);
@@ -23,16 +23,16 @@ TEST_CASE( "adaptive_tricky_svd", "[simple_adaptive]" ) {
     const unsigned nderiv=0;
     bool return_on_root=false;
 
-    double atol=1e-8, rtol=1e-8;
+    realtype atol=1e-8, rtol=1e-8;
 
     cvodes_cxx::LinSol linear_solver=cvodes_cxx::LinSol::GMRES;
     int autorestart=0;
     bool return_on_error = false;
     bool with_jtimes = false;
-    double * xyout = (double*)malloc((odesys.get_ny() + 1)*sizeof(double));
+    realtype * xyout = (realtype*)malloc((odesys.get_ny() + 1)*sizeof(realtype));
     int td = 1;
     xyout[0] = 0;
-    double tend=180;
+    realtype tend=180;
     xyout[1] = 0.00043976285661326595;
     xyout[2] = 0.00010031950134333891;
     xyout[3] = 7.8448068109052759e-05;

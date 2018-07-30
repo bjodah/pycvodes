@@ -22,14 +22,16 @@ python3 setup.py sdist
 
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
 
-PYTHONPATH=$(pwd) ./scripts/run_tests.sh
+if [[ "${LOW_PRECISION:-1}" != "1" ]]; then
+    PYTHONPATH=$(pwd) ./scripts/run_tests.sh
+    cd tests/; make; make clean; cd -
+    cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
+    if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
+        cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+        cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+    fi
 
-cd tests/; make; make clean; cd -
-cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
-if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-    cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
-    cd tests/; make CXX=clang++-6.0 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+    (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    (cd examples/; ../scripts/render_index.sh *.html)
 fi
 
-(cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-(cd examples/; ../scripts/render_index.sh *.html)

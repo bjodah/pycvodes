@@ -10,6 +10,18 @@ from pycvodes import (
 )
 
 
+def requires_klu(_test):
+    from .._config import env
+    return pytest.mark.skipif(env.get('NO_KLU', '0') == '1',
+                              reason="sparse jacobian tests require KLU to be enabled")(_test)
+
+
+def high_precision(_test):
+    from .._config import env
+    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] == "single",
+                              reason="test atol and/or rtol is too high for single precision")(_test)
+
+
 def test_get_include():
     assert get_include().endswith('include')
     assert 'cvodes_cxx.hpp' in os.listdir(get_include())
@@ -37,7 +49,7 @@ def decay_get_Cref(k, y0, tout):
             min(3, len(k)+1))])
 
 
-def _get_f_j(k):
+def _get_f_j(k, with_sparse=False):
     k0, k1, k2 = k
 
     def f(t, y, fout):
@@ -59,26 +71,19 @@ def _get_f_j(k):
             dfdx_out[0] = 0
             dfdx_out[1] = 0
             dfdx_out[2] = 0
-    return f, j
-
-
-def _get_f_j_sparse(k):
-    k0, k1, k2 = k
-
-    def f(t, y, fout):
-        fout[0] = -k0*y[0]
-        fout[1] = k0*y[0] - k1*y[1]
-        fout[2] = k1*y[1] - k2*y[2]
 
     _colptrs = [0, 2, 4, 5]
     _rowvals = [0, 1, 1, 2, 2]
 
-    def j(t, y, data, colptrs, rowvals):
+    def j_sparse(t, y, data, colptrs, rowvals):
         data[:] = -k0, k0, -k1, k1, -k2
         colptrs[:] = _colptrs
         rowvals[:] = _rowvals
 
-    return f, j, len(_rowvals)
+    if with_sparse:
+        return f, j, j_sparse, len(_rowvals)
+    else:
+        return f, j
 
 
 def _gravity_f_j_jtimes(g):
@@ -128,6 +133,8 @@ def bandify(cb, mlower, mupper):
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_predefined(method, forgiveness, banded):
+    from .._config import env
+
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -145,15 +152,20 @@ def test_integrate_predefined(method, forgiveness, banded):
 
     for j in jac_callbacks:
         xout = np.linspace(0, 3, 31)
-        atol, rtol = 1e-8, 1e-8
+        if env['SUNDIALS_PRECISION'] == "single":
+            atol = [1e-4, 3e-5, 2e-5]
+            rtol = 1e-4
+        else:
+            atol = [1e-8, 3e-9, 2e-9]
+            rtol = 1e-8
         # Run twice to catch possible side-effects:
-        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
-        yout, nfo = integrate_predefined(f, j, y0, xout, [1e-8, 3e-9, 2e-9], 1e-8, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, atol, rtol, **kwargs)
+        yout, nfo = integrate_predefined(f, j, y0, xout, atol, rtol, **kwargs)
         yref = decay_get_Cref(k, y0, xout)
         assert np.allclose(yout, yref,
                            rtol=forgiveness*rtol,
-                           atol=forgiveness*atol)
-        assert nfo['atol'] == [1e-8, 3e-9, 2e-9] and nfo['rtol'] == 1e-8
+                           atol=forgiveness*max(atol))
+        assert np.allclose(nfo['atol'], atol) and np.isclose(nfo['rtol'], rtol)
         assert nfo['nfev'] > 0
         if method in requires_jac and j is not None:
             assert nfo['njev'] > 0
@@ -161,6 +173,7 @@ def test_integrate_predefined(method, forgiveness, banded):
                 assert nfo['time_jac'] >= 0
 
 
+@high_precision
 def test_integrate_adaptive_tstop0():
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -178,10 +191,15 @@ def test_integrate_adaptive_tstop0():
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_adaptive(method, forgiveness, banded):
+    from .._config import env
+
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
-    atol, rtol = 1e-8, 1e-8
+    if env['SUNDIALS_PRECISION'] == "single":
+        atol, rtol = 1e-4, 1e-4
+    else:
+        atol, rtol = 1e-8, 1e-8
     kwargs = dict(x0=0, xend=3, dx0=1e-10, atol=atol, rtol=rtol,
                   method=method, iter_type='newton')
     f, j = _get_f_j(k)
@@ -202,7 +220,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert info['nfev'] > 0
     if method in requires_jac:
         assert info['njev'] > 0
-    assert info['atol'] == [1e-8] and info['rtol'] == 1e-8
+    assert np.allclose(info['atol'], [atol]) and np.isclose(info['rtol'], rtol)
 
     with pytest.raises(RuntimeError) as excinfo:
         kw = kwargs.copy()
@@ -216,6 +234,7 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert '7' in str(excinfo.value).lower()
 
 
+@high_precision
 def test_derivative_1():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -235,6 +254,7 @@ def test_derivative_1():
     assert '7' in str(excinfo.value).lower()
 
 
+@high_precision
 def test_derivative_2():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -251,6 +271,7 @@ def test_derivative_2():
     assert np.allclose(yout, ref)
 
 
+@high_precision
 def test_derivative_3():
     def f(t, y, fout):
         fout[0] = y[1]
@@ -268,6 +289,7 @@ def test_derivative_3():
     assert np.allclose(discrepancy, 0, rtol=1e-6, atol=1e-6)
 
 
+@high_precision
 def test_roots_adaptive():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -282,6 +304,7 @@ def test_roots_adaptive():
     assert np.min(np.abs(xout - 1)) < 1e-11
 
 
+@high_precision
 def test_quads_adaptive():
     k = 0.7
 
@@ -303,6 +326,7 @@ def test_quads_adaptive():
     assert np.allclose(info['quads'][:, 1], q1)
 
 
+@high_precision
 def test_quads_predefined():
     k = 0.7
 
@@ -325,6 +349,7 @@ def test_quads_predefined():
     assert np.allclose(info['quads'][:, 1], q1)
 
 
+@high_precision
 def test_roots_predefined():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -341,6 +366,7 @@ def test_roots_predefined():
     assert info['root_indices'][0] == 2
 
 
+@high_precision
 def test_roots_predefined_autorestart():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -377,6 +403,7 @@ def test_adaptive_nderiv():
     assert np.allclose(discrepancy, 0, atol=1e-3)
 
 
+@high_precision
 def test_return_on_root():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -393,6 +420,7 @@ def test_return_on_root():
     assert info['success']
 
 
+@high_precision
 def test_predefined_roots_output():
     def f(t, y, fout):
         fout[0] = y[0]
@@ -421,6 +449,7 @@ def test_rhs_unrecoverable_error():
         yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
 
 
+@high_precision
 def test_rhs_recoverable_error():
     global idx
     idx = -2
@@ -435,6 +464,7 @@ def test_rhs_recoverable_error():
     yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
 
 
+@high_precision
 def test_adaptive_return_on_error():
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -456,6 +486,7 @@ def test_adaptive_return_on_error():
     assert xout[-1] < kwargs['xend']  # obviously not strict
 
 
+@high_precision
 def test_adaptive_autorestart():
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -477,6 +508,7 @@ def test_adaptive_autorestart():
     assert xout[-1] == kwargs['xend']
 
 
+@high_precision
 def test_predefined_autorestart():
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -500,6 +532,7 @@ def test_predefined_autorestart():
     assert xout[-1] == xend
 
 
+@high_precision
 def test_predefined_return_on_error():
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0., 0.]
@@ -520,6 +553,7 @@ def test_predefined_return_on_error():
     assert info['success'] is False
 
 
+@high_precision
 def test_dx0cb():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
@@ -536,6 +570,7 @@ def test_dx0cb():
     assert xout[-1] == xend
 
 
+@high_precision
 def test_dx_max_cb():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
@@ -552,6 +587,7 @@ def test_dx_max_cb():
     assert xout[-1] == xend
 
 
+@high_precision
 def test_predefined_ew_ele():
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0., 0.]
@@ -571,6 +607,7 @@ def test_predefined_ew_ele():
     assert np.all(abs_ew_ele < 1)
 
 
+@high_precision
 def test_adaptive_ew_ele():
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0., 0.]
@@ -592,6 +629,7 @@ def test_adaptive_ew_ele():
 jtimes_params = list(it.product(iterative_linsols, [True, False]))
 
 
+@high_precision
 @pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
 def test_jtimes_adaptive(linear_solver, with_jac):
     g = 9.81
@@ -612,6 +650,7 @@ def test_jtimes_adaptive(linear_solver, with_jac):
         assert info['njev'] == 0
 
 
+@high_precision
 @pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
 def test_jtimes_predefined(linear_solver, with_jac):
     g = 9.81
@@ -633,38 +672,55 @@ def test_jtimes_predefined(linear_solver, with_jac):
         assert info['njev'] == 0
 
 
-def test_sparse_jac_adaptive():
-    from .._config import env
-    if env['LAPACK'] in ('', '0'):
-        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
-    if env['NO_KLU'] == '1':
-        pytest.skip("sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")
+@high_precision
+@requires_klu
+def test_sparse_equals_dense():
+    try:
+        from scipy.sparse import csc_matrix
+    except ImportError:
+        pytest.skip("Need scipy.sparse to compare sparse/dense jacobian output")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
-    f, j, nnz = _get_f_j_sparse(k)
+    f, j, j_sparse, nnz = _get_f_j(k, with_sparse=True)
+
+    n = len(y0)
+    J_dense = np.empty((n, n))
+    data = np.empty(nnz)
+    colptrs = np.empty(n + 1)
+    rowvals = np.empty(nnz)
+    j(0, y0, J_dense)
+    j_sparse(0, y0, data, colptrs, rowvals)
+
+    J_sparse = csc_matrix((data, rowvals, colptrs), shape=(n, n)).toarray()
+    assert np.allclose(J_sparse, J_dense)
+
+
+@high_precision
+@requires_klu
+def test_sparse_jac_adaptive():
+    k = 2.0, 3.0, 4.0
+    y0 = [0.7, 0.3, 0.5]
     atol, rtol = 1e-8, 1e-8
+    f, _, j_sparse, nnz = _get_f_j(k, with_sparse=True)
     kwargs = dict(atol=atol, rtol=rtol, method='bdf',
                   linear_solver='klu', nnz=nnz)
-    xout, yout, info = integrate_adaptive(f, j, y0, 0, 10, **kwargs)
+    xout, yout, info = integrate_adaptive(f, j_sparse, y0, 0, 10, **kwargs)
     yref = decay_get_Cref(k, y0, xout - xout[0])
     assert info['success']
     assert info['njev'] > 0
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
 
 
+@high_precision
+@requires_klu
 def test_sparse_jac_predefined():
-    from .._config import env
-    if env['LAPACK'] in ('', '0'):
-        pytest.skip("sparse jacobian tests require BLAS/LAPACK for KLU solver")
-    if env['NO_KLU'] == '1':
-        pytest.skip("sparse jacobian tests require KLU to be enabled (-DPYCVODES_NO_KLU=0)")
     k = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
     xout = np.linspace(0, 3, 31)
-    f, j, nnz = _get_f_j_sparse(k)
     atol, rtol = 1e-8, 1e-8
+    f, _, j_sparse, nnz = _get_f_j(k, with_sparse=True)
     kwargs = dict(method='bdf', linear_solver='klu', nnz=nnz)
-    yout, info = integrate_predefined(f, j, y0, xout, 1.0e-8, 1.0e-8, **kwargs)
+    yout, info = integrate_predefined(f, j_sparse, y0, xout, 1.0e-8, 1.0e-8, **kwargs)
     yref = decay_get_Cref(k, y0, xout - xout[0])
     assert info['success']
     assert info['njev'] > 0

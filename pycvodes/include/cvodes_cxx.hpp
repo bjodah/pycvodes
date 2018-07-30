@@ -44,9 +44,9 @@
 #  else
 #    include <sunlinsol/sunlinsol_lapackdense.h>
 #    include <sunlinsol/sunlinsol_lapackband.h>
-#    if PYCVODES_NO_KLU != 1
+#  endif
+#  if PYCVODES_NO_KLU != 1
 #      include <sunlinsol/sunlinsol_klu.h>
-#    endif
 #  endif
 #  include <sunlinsol/sunlinsol_spgmr.h>
 #  include <sunlinsol/sunlinsol_spbcgs.h>
@@ -69,9 +69,9 @@
 #      include <cvodes/cvodes_band.h>
 #    else
 #      include <cvodes/cvodes_lapack.h>       /* prototype for CVDense */
-#      if PYCVODES_NO_KLU != 1
-#        include <cvodes/cvodes_klu.h>
-#      endif
+#    endif
+#    if PYCVODES_NO_KLU != 1
+#      include <cvodes/cvodes_klu.h>
 #    endif
 #    define SUNTRUE TRUE
 #    define SUNFALSE FALSE
@@ -82,6 +82,13 @@
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
+
+#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 1
+typedef sunindextype indextype;
+#else
+typedef int indextype;
+#endif
+
 
 #if !defined(BEGIN_NAMESPACE)
 #define BEGIN_NAMESPACE(s) namespace s{
@@ -127,7 +134,7 @@ static const std::unordered_map<std::string, int> fpes {{
 using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
 using SVectorV = sundials_cxx::nvector_serial::VectorView; // view of serial vector
 //using get_dx_max_fn = double(double, const double * const) *;
-using get_dx_max_fn = std::function<double(double, const double * const)>;
+using get_dx_max_fn = std::function<realtype(realtype, const realtype * const)>;
 // Wrapper for Revision 4306 of cvodes.c
 
 enum class LMM : int {Adams=CV_ADAMS, BDF=CV_BDF}; // Linear multistep method
@@ -153,8 +160,13 @@ inline IterType iter_type_from_name(std::string name){
         throw std::runtime_error(StreamFmt() << "Unknown iter_type: " << name);
 }
 
-enum class LinSol : int {DEFAULT=1, DENSE=2, BANDED=3, GMRES=4, GMRES_CLASSIC=5, BICGSTAB=6, TFQMR=7, KLU=8};
-enum class IterLinSolEnum : int {GMRES=1, BICGSTAB=2, TFQMR=3};
+enum class LinSol : int {DEFAULT, DENSE, BANDED, GMRES,
+                         GMRES_CLASSIC, BICGSTAB, TFQMR
+#if PYCVODES_NO_KLU != 1
+                        ,KLU
+#endif
+                        };
+enum class IterLinSolEnum : int {GMRES, BICGSTAB, TFQMR};
 enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
                            Right=PREC_RIGHT, Both=PREC_BOTH};
 enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
@@ -174,8 +186,10 @@ inline LinSol linear_solver_from_name(std::string name) {
         return LinSol::BICGSTAB;
     else if (name == "tfqmr")
         return LinSol::TFQMR;
+#if PYCVODES_NO_KLU != 1
     else if (name == "klu")
         return LinSol::KLU;
+#endif
     else
         throw std::runtime_error(StreamFmt() << "Unknown linear solver: " << name);
 }
@@ -194,8 +208,10 @@ inline bool is_iterative_linear_solver(LinSol linsol) {
 
 inline bool is_sparse_linear_solver(LinSol linsol) {
     switch(linsol) {
+#if PYCVODES_NO_KLU != 1
         case LinSol::KLU:
             return true;
+#endif
         default:
             return false;
     }
@@ -315,7 +331,7 @@ public:
         else
             check_flag(flag);
     }
-    void quad_init(CVQuadRhsFn fQ, std::vector<double>& yQ0){
+    void quad_init(CVQuadRhsFn fQ, std::vector<realtype>& yQ0){
         SVector yQ0_(yQ0.size(), yQ0.data());
         quad_init(fQ, yQ0_.n_vec);
     }
@@ -331,7 +347,7 @@ public:
     void quad_reinit(SVector& yQ0){
         quad_reinit(yQ0.n_vec);
     };
-    void quad_reinit(std::vector<double>& yQ0){
+    void quad_reinit(std::vector<realtype>& yQ0){
         SVector yQ0_(yQ0.size(), yQ0.data());
         quad_reinit(yQ0_.n_vec);
     }
@@ -580,9 +596,9 @@ public:
 
      // sparse jacobian
     void set_linear_solver_to_sparse(int ny, int nnz){
-#if PYCVODES_NO_LAPACK == 1 || PYCVODES_NO_KLU == 1
+#if PYCVODES_NO_KLU == 1
         ignore(ny); ignore(nnz);
-        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with BLAS/LAPACK & KLU.");
+        throw std::runtime_error("Sparse solver KLU requires pycvodes to be built with KLU.");
 #else
     int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -1100,7 +1116,7 @@ public:
                                 double mx = 0.0;
                                 int mxi = -1;
                                 for (unsigned i=0; i < ny; ++i){
-                                    const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                    const realtype cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
                                     if (cur > mx){
                                         mxi = i;
                                         mx = cur;
@@ -1122,7 +1138,7 @@ public:
                             this->set_max_num_steps(this->get_max_num_steps() + 500);
                         }
                         const int step_back = (tidx > 1) ? 2 : 1;
-                        const double last_x = xout(tidx - step_back);
+                        const realtype last_x = xout(tidx - step_back);
                         if (autonomous_exprs)
                             xout(tidx - step_back) = 0; // allows for smaller step sizes
                         auto inner = this->adaptive(xyqout, td, xend - last_x, nderiv, root_indices, return_on_root,
@@ -1284,7 +1300,7 @@ public:
                     if (this->verbosity > 0) std::cerr << __FILE__ << ":" << __LINE__ <<
                                                  ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                     this->set_max_num_steps(mxsteps + this->get_max_num_steps());
-                    std::vector<double> tout_;
+                    std::vector<realtype> tout_;
                     long int nleft = nt - iout + 1;
                     for (int i=0; i<nleft; ++i)
                         tout_.push_back(tout[iout + i - 1] - tout[iout - 1]);

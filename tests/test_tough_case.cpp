@@ -6,9 +6,9 @@
 #include "tough_case.hpp"
 
 TEST_CASE( "adaptive_autorestart_tricky", "[simple_adaptive]" ) {
-    std::vector<double> p = {{321.14999999999998, 39390, -135.30000000000001, 18010, 44960, 48.200000000000003,
-                              49320, -114.59999999999999, 1780, -34400.547966379738, -2.865040967667511,
-                              93065.338440593958, 5.7581184659305222}};
+    std::vector<realtype> p = {{321.14999999999998, 39390, -135.30000000000001, 18010, 44960, 48.200000000000003,
+                                49320, -114.59999999999999, 1780, -34400.547966379738, -2.865040967667511,
+                                93065.338440593958, 5.7581184659305222}};
     OdeSys odesys(p.data());
     std::vector<int> root_indices;
 
@@ -25,13 +25,13 @@ TEST_CASE( "adaptive_autorestart_tricky", "[simple_adaptive]" ) {
     bool return_on_root=false;
     int autorestart=2;
 
-    double atol=1e-7, rtol=1e-7;
+    realtype atol=1e-7, rtol=1e-7;
 
     bool return_on_error = true;  // This is essentially "xfail" for now (transformed system would work)
-    double * xyout = (double*)malloc((odesys.get_ny() + 1)*sizeof(double));
+    realtype * xyout = (realtype*)malloc((odesys.get_ny() + 1)*sizeof(realtype));
     int td = 1;
     xyout[0] = 0;
-    double tend=180;
+    realtype tend=180;
     xyout[1] = 0.00064313123504933787;
     xyout[2] = 0.00014677490343001067;
     xyout[3] = 9.536739572030514e-05;

@@ -47,7 +47,7 @@ def _compiles_ok(codestring):
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
     with TemporaryDirectory() as folder:
-        source_path = os.path.join(folder, 'complier_test_source.cpp')
+        source_path = os.path.join(folder, 'compiler_test_source.cpp')
         with open(source_path, 'wt') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
@@ -68,6 +68,19 @@ def _compiles_ok(codestring):
         else:
             _ok = True
     return _ok, out
+
+
+def _get_sun_precision():
+    codestring = """#include <sundials/sundials_config.h>
+                    #ifndef SUNDIALS_{0}_PRECISION
+                        #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
+                    #endif
+                 """
+    for prec in ['single', 'double', 'extended']:
+        _ok, _ = _compiles_ok(codestring.format(prec.upper()))
+        if _ok:
+            return prec
+    return ''
 
 
 def _attempt_compilation():
@@ -101,13 +114,13 @@ def _attempt_compilation():
         _sun3 = True
     else:
         _sun2_ok, _sun2_out = _compiles_ok("""
-    #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
-    #include <cvodes/cvodes_spgmr.h>
-    #else
-    #error "Unkown sundials version"
-    #endif
-    """)
+            #include <sundials/sundials_config.h>
+            #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+            #include <cvodes/cvodes_spgmr.h>
+            #else
+            #error "Unkown sundials version"
+            #endif
+            """)
         if _sun2_ok:
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
@@ -118,17 +131,17 @@ def _attempt_compilation():
                 _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
         else:
             _warn("Unknown sundials version:\n%s" % _sun2_out)
-    if _lapack_ok:
-        _klu_ok, _klu_out = _compiles_ok("""
-    #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_KLU)
-    #include <klu.h>
-    #else
-    #error "KLU was not enabled for this sundials build"
-    #endif
-""")
-        if not _klu_ok:
-            _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
+
+    _klu_ok, _klu_out = _compiles_ok("""
+        #include <sundials/sundials_config.h>
+        #if defined(SUNDIALS_KLU)
+        #include <klu.h>
+        #else
+        #error "KLU was not enabled for this sundials build"
+        #endif
+        """)
+    if not _klu_ok:
+        _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
 
 logger = logging.getLogger(__name__)
@@ -157,18 +170,29 @@ if env is None:
 
     env = {
         'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
-        'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_cvodes' + (
-            (',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' +
-             (',sundials_sunlinsolklu' if _r['_klu_ok'] else '')) if (_r['_sun3'] and _r['_lapack_ok'])
-            else (
-                    (',sundials_sunlinsoldense,sundials_sunlinsolband,'
-                     'sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,'
-                     'sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband')
-                    if (_r['_sun3'] and not _r['_lapack_ok']) else ''
-            )
-        ),
+        'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_cvodes',
+        'NO_LAPACK': '0' if _r['_lapack_ok'] else '1',
         'NO_KLU': '0' if _r['_klu_ok'] else '1'
     }
+    if _r['_sun3']:
+        if _r['_lapack_ok']:
+            env['SUNDIALS_LIBS'] += ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband'
+        else:
+            env['SUNDIALS_LIBS'] += (
+                ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr'
+                ',sundials_sunlinsolspbcgs,sundials_sunlinsolsptfqmr,sundials_sunmatrixdense'
+                ',sundials_sunmatrixband')
+        if _r['_klu_ok']:
+            env['SUNDIALS_LIBS'] += ',sundials_sunlinsolklu'
+    else:
+        if _r['_klu_ok']:
+            env['SUNDIALS_LIBS'] += ',klu'
+
+    prec = _get_sun_precision()
+    env['SUNDIALS_PRECISION'] = prec
+    if not prec:
+        _warn("Couldn't determine sundials precision from sundials/sundials_config.h")
+
     if appdirs:
         cfg_dir = os.path.dirname(cfg)
         if not os.path.exists(cfg_dir):
