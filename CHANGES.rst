@@ -1,3 +1,7 @@
+v0.11.3
+=======
+- New python signature: t is now a NumPy scalar
+
 v0.11.2
 =======
 - New AnyODE version
