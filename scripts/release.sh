@@ -1,7 +1,7 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/release.sh v1.2.3 ~/anaconda2/bin myserver.example.com GITHUB_USER GITHUB_REPO
+#    $ ./scripts/release.sh v1.2.3 GITHUB_USER GITHUB_REPO
 #
 
 if [[ $1 != v* ]]; then
@@ -9,8 +9,6 @@ if [[ $1 != v* ]]; then
     exit 1
 fi
 VERSION=${1#v}
-CONDA_PATH=$2
-SERVER=$3
 find . -type f -iname "*.pyc" -exec rm {} +
 find . -type f -iname "*.o" -exec rm {} +
 find . -type f -iname "*.so" -exec rm {} +
@@ -25,7 +23,7 @@ ${PYTHON:-python3} setup.py build_ext -i
 export PYTHONPATH=$(pwd)
 ./scripts/run_tests.sh
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py sdist
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh $4 ${5:-$PKG} v$VERSION
+env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh $2 ${3:-$PKG} v$VERSION
 
 # All went well, add a tag and push it.
 git tag -a v$VERSION -m v$VERSION
@@ -38,8 +36,8 @@ echo ""
 echo "    You may now create a new github release at with the tag \"v$VERSION\" and name "
 echo "    it \"${PKG}-${VERSION}\", (don't foreget to manually attach the new .tar.gz"
 echo "    file from the ./dist/ directory). Here is a link:"
-echo "        https://github.com/$4/${5:-$PKG}/releases/new "
+echo "        https://github.com/$2/${5:-$PKG}/releases/new "
 echo "    Then run:"
 echo ""
-echo "        $ ./scripts/post_release.sh $1 $SERVER $4"
+echo "        $ ./scripts/post_release.sh $1 <myserver.example.com> $2"
 echo ""
