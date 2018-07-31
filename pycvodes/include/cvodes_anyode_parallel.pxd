@@ -4,7 +4,7 @@
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
-from cvodes_cxx cimport LMM, IterType, LinSol, realtype, indextype
+from cvodes_cxx cimport LMM, IterType, LinSol, realtype
 
 cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel":
     cdef vector[pair[int, vector[int]]] multi_adaptive[U](
