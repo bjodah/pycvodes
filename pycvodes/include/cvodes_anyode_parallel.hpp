@@ -18,7 +18,7 @@ namespace cvodes_anyode_parallel {
     multi_adaptive(realtype ** xyout_arr, // vectorized
                    int * td_arr, // vectorized
                    std::vector<OdeSys *> odesys, // vectorized
-                   const std::vector<realtype> atol,
+                   std::vector<realtype> atol,
                    const realtype rtol,
                    const LMM lmm,
                    const realtype * tend,  // vectorized
@@ -65,7 +65,7 @@ namespace cvodes_anyode_parallel {
     template <class OdeSys>
     std::vector<std::pair<int, std::pair<std::vector<int>, std::vector<realtype>>>>
     multi_predefined(std::vector<OdeSys *> odesys,  // vectorized
-                     const std::vector<realtype> atol,
+                     std::vector<realtype> atol,
                      const realtype rtol,
                      const LMM lmm,
                      realtype * y0, // vectorized

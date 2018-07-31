@@ -1,18 +1,17 @@
 # -*- mode: cython -*-
 # -*- coding: utf-8 -*-
 
-from cvodes_cxx import realtype, indextype
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
-from cvodes_cxx cimport LMM, IterType, LinSol
+from cvodes_cxx cimport LMM, IterType, LinSol, realtype
 
 cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel":
     cdef vector[pair[int, vector[int]]] multi_adaptive[U](
         realtype **,
         int *,
         vector[U*],
-        const vector[realtype],
+        vector[realtype],
         const realtype,
         const LMM,
         const realtype *,
@@ -34,7 +33,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
 
     cdef vector[pair[int, pair[vector[int], vector[realtype]]]] multi_predefined[U](
         vector[U*],
-        const vector[realtype],
+        vector[realtype],
         const realtype,
         const LMM,
         realtype *,
