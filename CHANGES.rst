@@ -1,3 +1,7 @@
+v0.11.4
+=======
+- Bug fix (const qualifier, cf. https://github.com/bjodah/pycvodes/pull/84)
+
 v0.11.3
 =======
 - New python signature: t is now a NumPy scalar
