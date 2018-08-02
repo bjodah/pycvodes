@@ -1,3 +1,7 @@
+v0.11.5
+=======
+- Add REAL_TYPE, INDEX_TYPE variables to _config.py
+
 v0.11.4
 =======
 - Bug fix (const qualifier, cf. https://github.com/bjodah/pycvodes/pull/84)

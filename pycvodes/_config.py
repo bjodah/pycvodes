@@ -34,6 +34,8 @@ if sys.version_info[0] == 2:
 else:
     TemporaryDirectory = tempfile.TemporaryDirectory
 
+type_of_prec = dict(single="float", double="double", extended='long double')
+
 
 def _warn(msg):
     if os.environ.get("PYCVODES_STRICT", '0') == '1':
@@ -70,17 +72,33 @@ def _compiles_ok(codestring):
     return _ok, out
 
 
-def _get_sun_precision():
+def _get_sun_precision_and_realtype():
     codestring = """#include <sundials/sundials_config.h>
                     #ifndef SUNDIALS_{0}_PRECISION
                         #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
                     #endif
                  """
-    for prec in ['single', 'double', 'extended']:
+
+    for prec, realtype in type_of_prec.items():
         _ok, _ = _compiles_ok(codestring.format(prec.upper()))
         if _ok:
-            return prec
-    return ''
+            return prec, realtype
+    return '', ''
+
+
+def _get_sun_index_type():
+    codestring = """#include <sundials/sundials_types.h>
+                    #ifndef SUNDIALS_{0}
+                        #error SUNDIALS_{0} is not defined
+                    #endif
+                 """
+    for indextype in ["int32_t", "int64_t"]:
+        _ok, _ = _compiles_ok(codestring.format(indextype.upper()))
+        if _ok:
+            return indextype
+    # sunindextype simply not defined in older versions
+    # default to int32_t
+    return "int32_t"
 
 
 def _attempt_compilation():
@@ -188,10 +206,14 @@ if env is None:
         if _r['_klu_ok']:
             env['SUNDIALS_LIBS'] += ',klu'
 
-    prec = _get_sun_precision()
+    prec, realtype = _get_sun_precision_and_realtype()
     env['SUNDIALS_PRECISION'] = prec
+    env['REAL_TYPE'] = realtype
     if not prec:
         _warn("Couldn't determine sundials precision from sundials/sundials_config.h")
+
+    indextype = _get_sun_index_type()
+    env['INDEX_TYPE'] = indextype
 
     if appdirs:
         cfg_dir = os.path.dirname(cfg)
