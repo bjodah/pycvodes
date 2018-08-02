@@ -148,7 +148,7 @@ logger = logging.getLogger(__name__)
 
 env = None
 if appdirs:
-    cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'env.pkl')
+    cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'python%d.%d-env.pkl' % sys.version_info[:2])
     if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
         if os.path.exists(cfg) and os.path.getsize(cfg):
             with open(cfg, 'rb') as ifh:
