@@ -7,6 +7,9 @@ import sys
 import tempfile
 import warnings
 
+# type_of_prec below needs to have an identical definition in ._types
+type_of_prec = dict(single="float", double="double", extended='long double')
+
 try:
     import appdirs
 except ImportError:
@@ -20,7 +23,6 @@ if 'pytest' not in sys.modules:
     except ImportError:
         pass
 
-
 if sys.version_info[0] == 2:
     class TemporaryDirectory(object):
         def __init__(self):
@@ -33,8 +35,6 @@ if sys.version_info[0] == 2:
             shutil.rmtree(self.path)
 else:
     TemporaryDirectory = tempfile.TemporaryDirectory
-
-type_of_prec = dict(single="float", double="double", extended='long double')
 
 
 def _warn(msg):
