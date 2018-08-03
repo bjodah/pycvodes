@@ -22,13 +22,12 @@ cache:
       - /drone/sund-3.1.2-nolapack-noklu-single-int64
       - /drone/sund-3.1.2-nolapack-noklu-single-int32
 build:
-  image: bjodah/bjodahimg18dev:v1.2
+  image: bjodah/bjodahimg18dev:v1.3
   environment:
     - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-6.0/bin/llvm-symbolizer
     - ASAN_OPTIONS=symbolize=1
   commands:
     - git fetch -tq  # used by ``git describe``
-    - apt-get update --quiet && apt-get install --quiet -y libsuitesparse-dev
     - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     - if [ ! -d /drone/sund-3.1.2-lapack-klu ]; then .ci/get_sundials.sh 3.1.2 /drone/sund-3.1.2-lapack-klu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
     - if [ ! -d /drone/sund-3.1.2-nolapack-klu ]; then .ci/get_sundials.sh 3.1.2 /drone/sund-3.1.2-nolapack-klu -DLAPACK_ENABLE:BOOL=OFF -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
@@ -69,6 +68,7 @@ build:
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - apt-get remove -qq -y libsundials-dev
+    - PATH=/opt/miniconda3/bin:$PATH conda update --quiet conda-build
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
