@@ -6,6 +6,7 @@ import shutil
 import sys
 import tempfile
 import warnings
+from ._types import type_of_prec
 
 try:
     import appdirs
@@ -33,8 +34,6 @@ if sys.version_info[0] == 2:
             shutil.rmtree(self.path)
 else:
     TemporaryDirectory = tempfile.TemporaryDirectory
-
-type_of_prec = dict(single="float", double="double", extended='long double')
 
 
 def _warn(msg):

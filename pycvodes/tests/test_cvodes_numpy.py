@@ -13,7 +13,8 @@ from pycvodes import (
 def test_config_env():
     # This test is useful for e.g. out-of-tree conda-recipes (e.g. conda-forge) where variables
     # are set manually (and could otherwise be forgotten unless tests fail).
-    from .._config import env, type_of_prec
+    from .._config import env
+    from .._types import type_of_prec
     assert env['REAL_TYPE'] in type_of_prec.values()
     assert env['SUNDIALS_PRECISION'] in type_of_prec.keys()
     for k in 'LAPACK SUNDIALS_LIBS INDEX_TYPE'.split():
