@@ -10,6 +10,16 @@ from pycvodes import (
 )
 
 
+def test_config_env():
+    # This test is useful for e.g. out-of-tree conda-recipes (e.g. conda-forge) where variables
+    # are set manually (and could otherwise be forgotten unless tests fail).
+    from .._config import env, type_of_prec
+    assert env['REAL_TYPE'] in type_of_prec.values()
+    assert env['SUNDIALS_PRECISION'] in type_of_prec.keys()
+    for k in 'LAPACK SUNDIALS_LIBS INDEX_TYPE'.split():
+        assert k in env
+
+
 def requires_klu(_test):
     from .._config import env
     return pytest.mark.skipif(env.get('NO_KLU', '0') == '1',
