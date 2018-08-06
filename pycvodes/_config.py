@@ -126,7 +126,13 @@ def _attempt_compilation():
     if _sun3_ok:
         _lapack_ok, _lapack_out = _compiles_ok("""
     #include <stdio.h>
-    #include <sunlinsol/sunlinsol_lapackband.h>""")
+    #include <sundials/sundials_config.h>
+    #if defined(SUNDIALS_BLAS_LAPACK)
+    #  include <sunlinsol/sunlinsol_lapackband.h>
+    #else
+    #  error "Sundials was not configured to use lapack"
+    #endif
+    """)
         if not _lapack_ok:
             _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
         _sun3 = True
@@ -142,8 +148,12 @@ def _attempt_compilation():
         if _sun2_ok:
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
-    #include <cvodes/cvodes_lapack.h>
-
+    #include <sundials/sundials_config.h>
+    #if defined(SUNDIALS_BLAS_LAPACK)
+    #  include <cvodes/cvodes_lapack.h>
+    #else
+    #  error "Sundials 2 was not configured to use lapack"
+    #endif
     """)
             if not _lapack_ok:
                 _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
