@@ -884,7 +884,6 @@ public:
                  int tidx=0,
                  realtype ** ew_ele=nullptr // length(ew_ele) must be == 2*td*ny if not nullptr
         ){
-        realtype cur_t;
         int status;
         SVector y {ny};
         SVector yQ {nq};
@@ -904,6 +903,7 @@ public:
                 (*ew_ele)[tidx*2*ny+i] = 0.0;
             }
         }
+        realtype cur_t = xout(tidx);
         if (mxsteps == 0) { mxsteps = 500; } // cvodes default (MXSTEP_DEFAULT)
         if (record_steps)
             steps_seen.push_back(get_current_step());
@@ -980,7 +980,7 @@ public:
                                 ew = N_VNew_Serial(ny);
                                 get_est_local_errors(ele);
                                 get_err_weights(ew);
-                                double mx = 0.0;
+                                realtype mx = 0.0;
                                 int mxi = -1;
                                 for (unsigned i=0; i < ny; ++i){
                                     const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
