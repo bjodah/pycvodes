@@ -1,3 +1,7 @@
+v0.10.8
+=======
+- Bug fix in adaptive (gh-93 by @spcornelius)
+
 v0.10.7
 =======
 - LAPACK now optional
