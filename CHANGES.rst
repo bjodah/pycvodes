@@ -1,3 +1,7 @@
+v0.11.6
+=======
+- Bug fix in adaptive (gh-92 by @spcornelius)
+
 v0.11.5
 =======
 - Add REAL_TYPE, INDEX_TYPE variables to _config.py

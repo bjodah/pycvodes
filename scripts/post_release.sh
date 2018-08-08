@@ -1,11 +1,10 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/post_release.sh v1.2.3 myserver githubuser
+#    $ ./scripts/post_release.sh v1.2.3 myserver.univeristy.edu
 #
 VERSION=${1#v}
 SERVER=$2
-GITHUBUSER=$3
 
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
