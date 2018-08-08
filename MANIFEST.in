@@ -1,4 +1,6 @@
-graft external
+graft external/anyode/include
+graft external/anyode/cython_def
+include external/anyode/LICENSE
 recursive-include */include *.hpp *.pxd
 include AUTHORS
 include CHANGES.rst
