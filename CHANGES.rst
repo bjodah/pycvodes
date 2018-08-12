@@ -1,3 +1,7 @@
+v0.10.11
+========
+- Fix to setup.py
+
 v0.10.10
 ========
 - Determine compilation options by attempt in sdist

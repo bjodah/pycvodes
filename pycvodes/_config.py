@@ -175,7 +175,7 @@ if env is None:
             ) if (_r._sun3 and not _r._lapack_ok) else '')
         ),
     }
-    if appdirs:
+    if appdirs and locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall
         cfg_dir = os.path.dirname(cfg)
         if not os.path.exists(cfg_dir):
             os.mkdir(cfg_dir)
