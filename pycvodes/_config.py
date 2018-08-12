@@ -70,6 +70,8 @@ def _compiles_ok(codestring):
     return _ok, out
 
 
+logger = logging.getLogger(__name__)
+
 def _attempt_compilation():
     _math_ok, _math_out = _compiles_ok('#include <math.h>')
     if not _math_ok:
@@ -93,7 +95,6 @@ def _attempt_compilation():
     _sun3, _lapack_ok = False, False
     if _sun3_ok:
         _lapack_ok, _lapack_out = _compiles_ok("""
-    #include <stdio.h>
     #include <sundials/sundials_config.h>
     #if defined(SUNDIALS_BLAS_LAPACK)
     #  include <sunlinsol/sunlinsol_lapackband.h>
@@ -101,8 +102,13 @@ def _attempt_compilation():
     #  error "Sundials 3+ was not configured to use lapack"
     #endif
     """)
-        if not _lapack_ok:
-            _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
+        if _lapack_ok:
+            _wrapper_ok, _wrapper_out = _compiles_ok("#include <sunlinsol/sunlinsol_lapackband.h>")
+            if not _wrapper_ok:
+                _warn("Failed to inculde <sunlinsol/sunlinsol_lapackband.h> even though it should work")
+                _lapack_ok = False
+        else:
+            logger.info("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
         _sun3 = True
     else:
         _sun2_ok, _sun2_out = _compiles_ok("""
@@ -117,14 +123,17 @@ def _attempt_compilation():
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
     #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_BLAS_LAPACK)
-    #  include <cvodes/cvodes_lapack.h>
-    #else
-    #  error "Sundials 2 was not configured to use lapack"
+    #if !defined(SUNDIALS_BLAS_LAPACK)
+    #  error "INFO: Sundials 2 was not configured to use lapack"
     #endif
     """)
-            if not _lapack_ok:
-                _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
+            if _lapack_ok:
+                _wrapper_ok, _wrapper_out = _compiles_ok("#include <cvodes/cvodes_lapack.h>")
+                if not _wrapper_ok:
+                    _warn("Failed to inculde <cvodes/cvodes_lapack.h> even though it should work")
+                    _lapack_ok = False
+            else:
+                logger.info("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
         else:
             _warn("Unknown sundials version:\n%s" % _sun2_out)
 
@@ -133,8 +142,6 @@ def _attempt_compilation():
             _lapack_ok = False
 
     return locals()
-
-logger = logging.getLogger(__name__)
 
 env = None
 if appdirs:

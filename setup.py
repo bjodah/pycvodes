@@ -4,7 +4,6 @@
 
 import io
 import os
-import pprint
 import re
 import shutil
 import subprocess
@@ -167,12 +166,7 @@ if __name__ == '__main__':
             shutil.move(release_py_path, release_py_path+'__temp__')
             open(release_py_path, 'wt').write(
                 "__version__ = '{}'\n".format(__version__))
-        if ext_modules:
-            shutil.move(config_py_path, config_py_path+'__temp__')
-            open(config_py_path, 'wt').write("env = {}\n".format(pprint.pformat(env)))
         setup(**setup_kwargs)
     finally:
         if TAGGED_RELEASE:
             shutil.move(release_py_path+'__temp__', release_py_path)
-        if ext_modules:
-            shutil.move(config_py_path+'__temp__', config_py_path)
