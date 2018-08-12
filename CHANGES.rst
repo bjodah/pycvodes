@@ -1,3 +1,7 @@
+v0.10.10
+========
+- Determine compilation options by attempt in sdist
+
 v0.10.9
 =======
 - More robust ``pycvodes.config``.
