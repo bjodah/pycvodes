@@ -1,12 +1,11 @@
 # This file is replaced by setup.py in distributions for tagged releases
 import logging
-import pickle
 import os
-import warnings
-import io
+import pickle
+import shutil
 import sys
 import tempfile
-from contextlib import contextmanager
+import warnings
 
 
 try:
@@ -47,27 +46,27 @@ def _compiles_ok(codestring):
     from distutils.ccompiler import new_compiler
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
-    ntf = tempfile.NamedTemporaryFile(suffix='.cpp', delete=False)
-    ntf.write(codestring.encode('utf-8'))
-    ntf.close()
-    compiler = new_compiler()
-    customize_compiler(compiler)
-    out = ''
-    try:
-        if 'pytest' in sys.modules:
-            compiler.compile([ntf.name])
+    with TemporaryDirectory() as folder:
+        source_path = os.path.join(folder, 'compiler_test_source.cpp')
+        with open(source_path, 'wt') as ofh:
+            ofh.write(codestring)
+        compiler = new_compiler()
+        customize_compiler(compiler)
+        out = ''
+        try:
+            if pipes is None:
+                compiler.compile([source_path])
+            else:
+                with pipes() as out_err:
+                    compiler.compile([source_path])
+                out = '\n'.join([p.read() for p in out_err])
+        except CompileError:
+            _ok = False
+        except Exception:
+            _ok = False
+            _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
         else:
-            with capture_stdout_stderr() as out:
-                compiler.compile([ntf.name])
-    except CompileError:
-        _ok = False
-    except Exception:
-        _ok = False
-        _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
-    else:
-        _ok = True
-
-    os.unlink(ntf.name)
+            _ok = True
     return _ok, out
 
 
