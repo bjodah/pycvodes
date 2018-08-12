@@ -170,13 +170,15 @@ def _attempt_compilation():
     _klu_ok, _klu_out = _compiles_ok("""
         #include <sundials/sundials_config.h>
         #if defined(SUNDIALS_KLU)
-        #include <klu.h>
-        #else
-        #error "KLU was not enabled for this sundials build"
+        #error "INFOL: KLU was not enabled for this sundials build"
         #endif
         """)
-    if not _klu_ok:
-        _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
+    if _klu_ok:
+        _klu_ok, _klu_out = _compiles_ok("#include <klu.h>")
+        if not _klu_ok:
+            _warn("Failed to include <klu.h> even though pycvodes was compiled with KLU enabled.")
+    else:
+        logger.info("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
 
 env = None
@@ -235,12 +237,17 @@ if env is None:
     indextype = _get_sun_index_type()
     env['INDEX_TYPE'] = indextype
 
-    if appdirs and locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
-        _cfg_dir = os.path.dirname(_cfg)
-        if not os.path.exists(_cfg_dir):
-            os.mkdir(_cfg_dir)
-        with open(_cfg, 'wb') as ofh:
-            pickle.dump(env, ofh)
+    if appdirs:
+        if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
+            _cfg_dir = os.path.dirname(_cfg)
+            if not os.path.exists(_cfg_dir):
+                os.mkdir(_cfg_dir)
+            with open(_cfg, 'wb') as ofh:
+                pickle.dump(env, ofh)
+        else:
+            if os.path.exists(_cfg):
+                os.unlink(_cfg)  # remove old config on re-install
+            
 
 for k, v in list(env.items()):
     env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)
