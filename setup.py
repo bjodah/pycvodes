@@ -58,10 +58,9 @@ else:  # set `__version__` from _release.py:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
                 __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
-USE_CYTHON = os.path.exists(_path_under_setup(pkg_name, '_cvodes.pyx'))
+USE_CYTHON = not os.path.exists(_path_under_setup(pkg_name, '_cvodes.cpp'))
 package_include = os.path.join(pkg_name, 'include')
 
-# Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
