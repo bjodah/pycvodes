@@ -1,3 +1,7 @@
+v0.10.9
+=======
+- More robust ``pycvodes.config``.
+
 v0.10.8
 =======
 - Bug fix in adaptive (gh-93 by @spcornelius)
