@@ -107,7 +107,7 @@ def _attempt_compilation():
             if not _wrapper_ok:
                 _warn("Failed to inculde <sunlinsol/sunlinsol_lapackband.h> even though it should work")
                 _lapack_ok = False
-        else _lapack_ok:
+        else:
             logger.info("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
         _sun3 = True
     else:
