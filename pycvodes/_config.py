@@ -176,15 +176,20 @@ logger = logging.getLogger(__name__)
 
 env = None
 if appdirs:
-    cfg = os.path.join(appdirs.user_config_dir('pycvodes'), 'python%d.%d-env.pkl' % sys.version_info[:2])
+    if '__version__' not in locals():  # it will be when exec'd from setup.py
+        from pycvodes import __version__
+    _cfg = os.path.join(
+        appdirs.user_config_dir('pycvodes'),
+        'python-%s-pycvodes-%s-env.pkl' % ('%d.%d' % sys.version_info[:2], __version__)
+    )
     if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
-        if os.path.exists(cfg) and os.path.getsize(cfg):
-            with open(cfg, 'rb') as ifh:
+        if os.path.exists(_cfg) and os.path.getsize(_cfg):
+            with open(_cfg, 'rb') as ifh:
                 env = pickle.load(ifh)
         else:
-            logger.info("Path: '%s' does not exist, will run test compilations" % cfg)
+            logger.info("Path: '%s' does not exist, will run test compilations" % _cfg)
     else:
-        logger.info("ignoring contents of '%s' (running from setup.py)" % cfg)
+        logger.info("ignoring contents of '%s' (running from setup.py)" % _cfg)
 else:
     logger.info("appdirs not installed, will run test compilations")
 
@@ -226,10 +231,10 @@ if env is None:
     env['INDEX_TYPE'] = indextype
 
     if appdirs:
-        cfg_dir = os.path.dirname(cfg)
-        if not os.path.exists(cfg_dir):
-            os.mkdir(cfg_dir)
-        with open(cfg, 'wb') as ofh:
+        _cfg_dir = os.path.dirname(_cfg)
+        if not os.path.exists(_cfg_dir):
+            os.mkdir(_cfg_dir)
+        with open(_cfg, 'wb') as ofh:
             pickle.dump(env, ofh)
 
 for k, v in list(env.items()):
