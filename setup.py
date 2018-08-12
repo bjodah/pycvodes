@@ -4,7 +4,6 @@
 
 import io
 import os
-import pprint
 import re
 import shutil
 import subprocess
