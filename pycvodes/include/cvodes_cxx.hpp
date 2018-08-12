@@ -27,6 +27,8 @@
 #  if !defined(USE_LAPACK)
 #    if defined(SUNDIALS_BLAS_LAPACK)
 #      define USE_LAPACK 1
+#    else
+#      define USE_LAPACK 0
 #    endif
 #  endif
 #  if USE_LAPACK == 1
@@ -47,6 +49,8 @@
 #    if !defined(USE_LAPACK)
 #      if defined(SUNDIALS_BLAS_LAPACK)
 #        define USE_LAPACK 1
+#      else
+#        define USE_LAPACK 0
 #      endif
 #    endif
 #    if USE_LAPACK == 1
