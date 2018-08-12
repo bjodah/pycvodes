@@ -178,8 +178,10 @@ env = None
 if appdirs:
     if '__version__' not in locals():  # it will be when exec'd from setup.py
         from pycvodes import __version__
-    _cfg = os.path.join(appdirs.user_config_dir('pycvodes'),
-                        'python%d.%d-pycvodes-%s-env.pkl' % (sys.version_info[:2], __version__))
+    _cfg = os.path.join(
+        appdirs.user_config_dir('pycvodes'),
+        'python-%s-pycvodes-%s-env.pkl' % ('.'.join(sys.version_info[:2]), __version__)
+    )
     if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
         if os.path.exists(_cfg) and os.path.getsize(_cfg):
             with open(_cfg, 'rb') as ifh:
