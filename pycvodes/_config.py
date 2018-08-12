@@ -180,7 +180,7 @@ if appdirs:
         from pycvodes import __version__
     _cfg = os.path.join(
         appdirs.user_config_dir('pycvodes'),
-        'python-%s-pycvodes-%s-env.pkl' % ('.'.join(sys.version_info[:2]), __version__)
+        'python-%s-pycvodes-%s-env.pkl' % ('%d.%d' % sys.version_info[:2], __version__)
     )
     if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:
         if os.path.exists(_cfg) and os.path.getsize(_cfg):
