@@ -28,6 +28,36 @@ release_py_path = _path_under_setup(pkg_name, '_release.py')
 config_py_path = _path_under_setup(pkg_name, '_config.py')
 
 
+_version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
+RELEASE_VERSION = os.environ.get(_version_env_var, '')
+
+if os.environ.get('CONDA_BUILD', '0') == '1':
+    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
+    try:
+        RELEASE_VERSION = 'v' + open(
+            '__conda_version__.txt', 'rt').readline().rstrip()
+    except IOError:
+        pass
+
+if len(RELEASE_VERSION) > 1:
+    if RELEASE_VERSION[0] != 'v':
+        raise ValueError("$%s does not start with 'v'" % _version_env_var)
+    TAGGED_RELEASE = True
+    __version__ = RELEASE_VERSION[1:]
+else:  # set `__version__` from _release.py:
+    TAGGED_RELEASE = False
+    exec(open(release_py_path).read())
+    if __version__.endswith('git'):
+        try:
+            _git_version = subprocess.check_output(
+                ['git', 'describe', '--dirty']).rstrip().decode('utf-8')
+        except subprocess.CalledProcessError:
+            warnings.warn("A git-archive is being installed - version information incomplete.")
+        else:
+            if 'develop' not in sys.argv:
+                warnings.warn("Using git to derive version: dev-branches may compete.")
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+
 USE_CYTHON = os.path.exists(_path_under_setup(pkg_name, '_cvodes.pyx'))
 package_include = os.path.join(pkg_name, 'include')
 
@@ -70,37 +100,6 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
-
-
-_version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
-RELEASE_VERSION = os.environ.get(_version_env_var, '')
-
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-    try:
-        RELEASE_VERSION = 'v' + open(
-            '__conda_version__.txt', 'rt').readline().rstrip()
-    except IOError:
-        pass
-
-if len(RELEASE_VERSION) > 1:
-    if RELEASE_VERSION[0] != 'v':
-        raise ValueError("$%s does not start with 'v'" % _version_env_var)
-    TAGGED_RELEASE = True
-    __version__ = RELEASE_VERSION[1:]
-else:  # set `__version__` from _release.py:
-    TAGGED_RELEASE = False
-    exec(open(release_py_path).read())
-    if __version__.endswith('git'):
-        try:
-            _git_version = subprocess.check_output(
-                ['git', 'describe', '--dirty']).rstrip().decode('utf-8')
-        except subprocess.CalledProcessError:
-            warnings.warn("A git-archive is being installed - version information incomplete.")
-        else:
-            if 'develop' not in sys.argv:
-                warnings.warn("Using git to derive version: dev-branches may compete.")
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
 
 class BuildExt(build_ext):
