@@ -59,6 +59,7 @@ build:
     - apt-get remove -qq -y libsuitesparse-dev
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
     - python3 -m pip install wurlitzer
+    - unset PYCVODES_STRICT
     - .ci/run_ci.sh pycvodes /usr
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - git clean -xfd
