@@ -75,7 +75,7 @@ def _compiles_ok(codestring):
 def _get_sun_precision_and_realtype():
     codestring = """#include <sundials/sundials_config.h>
                     #ifndef SUNDIALS_{0}_PRECISION
-                        #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
+                        #error "INFO: SUNDIALS_{0} not defined in sundials/sundials_config.h"
                     #endif
                  """
 
@@ -89,7 +89,7 @@ def _get_sun_precision_and_realtype():
 def _get_sun_index_type():
     codestring = """#include <sundials/sundials_types.h>
                     #ifndef SUNDIALS_{0}
-                        #error SUNDIALS_{0} is not defined
+                        #error INFO: SUNDIALS_{0} is not defined
                     #endif
                  """
     for indextype in ["int32_t", "int64_t"]:
@@ -169,8 +169,8 @@ def _attempt_compilation():
 
     _klu_ok, _klu_out = _compiles_ok("""
         #include <sundials/sundials_config.h>
-        #if defined(SUNDIALS_KLU)
-        #error "INFOL: KLU was not enabled for this sundials build"
+        #if !defined(SUNDIALS_KLU)
+        #error "INFO: KLU was not enabled for this sundials build"
         #endif
         """)
     if _klu_ok:
@@ -247,7 +247,7 @@ if env is None:
         else:
             if os.path.exists(_cfg):
                 os.unlink(_cfg)  # remove old config on re-install
-            
+
 
 for k, v in list(env.items()):
     env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)
