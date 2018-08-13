@@ -26,6 +26,7 @@ build:
   environment:
     - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-6.0/bin/llvm-symbolizer
     - ASAN_OPTIONS=symbolize=1
+    - PYCVODES_STRICT=1
   commands:
     - git fetch -tq  # used by ``git describe``
     - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
