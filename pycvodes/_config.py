@@ -75,7 +75,7 @@ def _compiles_ok(codestring):
 def _get_sun_precision_and_realtype():
     codestring = """#include <sundials/sundials_config.h>
                     #ifndef SUNDIALS_{0}_PRECISION
-                        #error "SUNDIALS_{0} not defined in sundials/sundials_config.h"
+                        #error "INFO: SUNDIALS_{0} not defined in sundials/sundials_config.h"
                     #endif
                  """
 
@@ -89,7 +89,7 @@ def _get_sun_precision_and_realtype():
 def _get_sun_index_type():
     codestring = """#include <sundials/sundials_types.h>
                     #ifndef SUNDIALS_{0}
-                        #error SUNDIALS_{0} is not defined
+                        #error INFO: SUNDIALS_{0} is not defined
                     #endif
                  """
     for indextype in ["int32_t", "int64_t"]:
@@ -99,6 +99,8 @@ def _get_sun_index_type():
     # sunindextype simply not defined in older versions
     # default to int32_t
     return "int32_t"
+
+logger = logging.getLogger(__name__)
 
 
 def _attempt_compilation():
@@ -125,16 +127,18 @@ def _attempt_compilation():
     _sun3, _lapack_ok, _klu_ok = False, False, False
     if _sun3_ok:
         _lapack_ok, _lapack_out = _compiles_ok("""
-    #include <stdio.h>
     #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_BLAS_LAPACK)
-    #  include <sunlinsol/sunlinsol_lapackband.h>
-    #else
-    #  error "Sundials was not configured to use lapack"
+    #if !defined(SUNDIALS_BLAS_LAPACK)
+    #  error "INFO: Sundials 3+ was not configured to use lapack"
     #endif
     """)
-        if not _lapack_ok:
-            _warn("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
+        if _lapack_ok:
+            _wrapper_ok, _wrapper_out = _compiles_ok("#include <sunlinsol/sunlinsol_lapackband.h>")
+            if not _wrapper_ok:
+                _warn("Failed to inculde <sunlinsol/sunlinsol_lapackband.h> even though it should work")
+                _lapack_ok = False
+        else:
+            logger.info("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
         _sun3 = True
     else:
         _sun2_ok, _sun2_out = _compiles_ok("""
@@ -149,30 +153,33 @@ def _attempt_compilation():
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
     #include <sundials/sundials_config.h>
-    #if defined(SUNDIALS_BLAS_LAPACK)
-    #  include <cvodes/cvodes_lapack.h>
-    #else
-    #  error "Sundials 2 was not configured to use lapack"
+    #if !defined(SUNDIALS_BLAS_LAPACK)
+    #  error "INFO: Sundials 2 was not configured to use lapack"
     #endif
     """)
-            if not _lapack_ok:
-                _warn("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
+            if _lapack_ok:
+                _wrapper_ok, _wrapper_out = _compiles_ok("#include <cvodes/cvodes_lapack.h>")
+                if not _wrapper_ok:
+                    _warn("Failed to inculde <cvodes/cvodes_lapack.h> even though it should work")
+                    _lapack_ok = False
+            else:
+                logger.info("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
         else:
             _warn("Unknown sundials version:\n%s" % _sun2_out)
 
     _klu_ok, _klu_out = _compiles_ok("""
         #include <sundials/sundials_config.h>
-        #if defined(SUNDIALS_KLU)
-        #include <klu.h>
-        #else
-        #error "KLU was not enabled for this sundials build"
+        #if !defined(SUNDIALS_KLU)
+        #error "INFO: KLU was not enabled for this sundials build"
         #endif
         """)
-    if not _klu_ok:
-        _warn("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
+    if _klu_ok:
+        _klu_ok, _klu_out = _compiles_ok("#include <klu.h>")
+        if not _klu_ok:
+            _warn("Failed to include <klu.h> even though pycvodes was compiled with KLU enabled.")
+    else:
+        logger.info("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
-
-logger = logging.getLogger(__name__)
 
 env = None
 if appdirs:
@@ -231,11 +238,16 @@ if env is None:
     env['INDEX_TYPE'] = indextype
 
     if appdirs:
-        _cfg_dir = os.path.dirname(_cfg)
-        if not os.path.exists(_cfg_dir):
-            os.mkdir(_cfg_dir)
-        with open(_cfg, 'wb') as ofh:
-            pickle.dump(env, ofh)
+        if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
+            _cfg_dir = os.path.dirname(_cfg)
+            if not os.path.exists(_cfg_dir):
+                os.mkdir(_cfg_dir)
+            with open(_cfg, 'wb') as ofh:
+                pickle.dump(env, ofh)
+        else:
+            if os.path.exists(_cfg):
+                os.unlink(_cfg)  # remove old config on re-install
+
 
 for k, v in list(env.items()):
     env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)

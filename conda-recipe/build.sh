@@ -17,5 +17,4 @@ env = {
     'INDEX_TYPE': 'int32_t'
 }
 EOF
-export PYCVODES_STRICT=1
 python -m pip install --no-deps --ignore-installed .
