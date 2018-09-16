@@ -1,5 +1,6 @@
 #!/bin/bash -x
 rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
+rm -r ~/.config/pycvodes*
 set -e
 
 PKG_NAME=${1:-${CI_REPO##*/}}
