@@ -25,7 +25,7 @@ build:
     - curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
-    - python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .
+    - python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed . pytest
     - python2 -m pytest && python2 -m doctest README.rst
     - apt-get remove -qq -y libsundials-dev
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
