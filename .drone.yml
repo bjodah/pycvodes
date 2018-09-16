@@ -26,7 +26,7 @@ build:
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed .
-    - PYTHON=python2 ./scripts/run_tests.sh
+    - python2 -m pytest && python2 -m doctest README.rst
     - apt-get remove -qq -y libsundials-dev
     - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
