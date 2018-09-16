@@ -128,4 +128,5 @@ Author
 Björn I. Dahlgren, contact:
 
 - gmail address: bjodah
-- kth.se address: bda
+
+See file `AUTHORS <AUTHORS>`_ in root for a list of all authors.
