@@ -36,7 +36,7 @@ namespace cvodes_anyode_parallel {
                    bool with_jtimes=false,
                    int tidx=0,
                    realtype ** ew_ele=nullptr,
-                   std::vector<realtype> &constraints={}
+                   const std::vector<realtype> &constraints={}
                    ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -86,7 +86,7 @@ namespace cvodes_anyode_parallel {
                      bool return_on_error=false,
                      bool with_jtimes=false,
                      realtype * ew_ele=nullptr,
-                     std::vector<realtype> &constraints={}
+                     const std::vector<realtype> &constraints={}
                      ){
         const int ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
