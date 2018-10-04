@@ -491,16 +491,25 @@ def test_constraints():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
     x0, xend = 0, 5
-    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf', constraints=[1.0, 1.0, 1.0])
+    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf')
     f, j = _get_f_j(k)
-    xout, yout, info = integrate_adaptive(f, j, y0, x0, xend, **kwargs)
-    yref = decay_get_Cref(k, y0, xout)
-    assert np.allclose(yout, yref, atol=40*kwargs['atol'], rtol=40*kwargs['rtol'])
-    assert info['n_steps'] < 1000
-    assert info['nfev'] > 0
-    assert info['njev'] > 0
-    assert info['success'] is True
-    assert xout[-1] == xend
+    args = f, j, y0, x0, xend
+
+    def _check(xout, yout, info):
+        yref = decay_get_Cref(k, y0, xout)
+        assert np.allclose(yout, yref, atol=40*kwargs['atol'], rtol=40*kwargs['rtol'])
+        assert info['nfev'] > 0
+        assert info['njev'] > 0
+        assert info['success'] is True
+        assert xout[-1] == xend
+
+    xout1, yout1, info1 = integrate_adaptive(*args, **kwargs)
+    xout2, yout2, info2 = integrate_adaptive(*args, constraints=[1.0, 1.0, 1.0], **kwargs)
+
+    _check(xout1, yout1, info1)
+    _check(xout2, yout2, info2)
+
+    assert info2['n_steps'] < info1['n_steps'] - 2  # <-- thanks to constraints
 
 
 def test_dx_max_cb():
