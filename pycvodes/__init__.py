@@ -6,7 +6,7 @@ from __future__ import division, absolute_import
 
 import numpy as np
 
-from ._cvodes import adaptive, predefined, requires_jac, steppers, fpes
+from ._cvodes import adaptive, predefined, requires_jac, steppers, fpes, sundials_version
 from ._util import _check_callable, _check_indexing
 from ._release import __version__
 from ._config import env as config
@@ -108,6 +108,8 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
             Whether to use analytic Jacobian for iterative solves. (default: False)
         'ew_ele': bool
             Whether to return error_weights, estimated_local_errors in info dict.
+        'constraints': array
+            Per component constraints 0.0: no constraint, 1.0: >=0, -1.0: <=0, 2.0: >0.0, -2.0: <0.0.
 
     Returns
     -------
@@ -219,6 +221,8 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, dx0=.0,
             Whether to use analytic Jacobian for iterative solves. (default: False)
         'ew_ele': bool
             Whether to return error_weights, estimated_local_errors in info dict.
+        'constraints': array
+            Per component constraints 0.0: no constraint, 1.0: >=0, -1.0: <=0, 2.0: >0.0, -2.0: <0.0.
 
     Returns
     -------

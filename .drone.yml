@@ -1,7 +1,7 @@
 cache:
   mount:
-    - /drone/sundials-3.1.2
-    - /drone/sundials-3.1.2-nolapack
+    - /drone/sundials-3.2.0
+    - /drone/sundials-3.2.0-nolapack
     - /drone/sundials-2.7.0-nolapack
 build:
   image: bjodah/bjodahimg18dev:v1.4
@@ -10,16 +10,16 @@ build:
     - ASAN_OPTIONS=symbolize=1
   commands:
     - git fetch -tq  # used by ``git describe``
-    - if [ ! -d /drone/sundials-3.1.2 ]; then .ci/get_sundials.sh 3.1.2 /drone/sundials-3.1.2 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t"; fi
-    - if [ ! -d /drone/sundials-3.1.2-nolapack ]; then .ci/get_sundials.sh 3.1.2 /drone/sundials-3.1.2-nolapack -DLAPACK_ENABLE:BOOL=OFF; fi
+    - if [ ! -d /drone/sundials-3.2.0 ]; then .ci/get_sundials.sh 3.2.0 /drone/sundials-3.2.0 -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32; fi
+    - if [ ! -d /drone/sundials-3.2.0-nolapack ]; then .ci/get_sundials.sh 3.2.0 /drone/sundials-3.2.0-nolapack -DLAPACK_ENABLE:BOOL=OFF; fi
     - if [ ! -d /drone/sundials-2.7.0-nolapack ]; then .ci/get_sundials.sh 2.7.0 /drone/sundials-2.7.0-nolapack -DLAPACK_ENABLE:BOOL=OFF; fi
     - python3 -m pip install wurlitzer
-    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.2
-    - .ci/run_ci.sh pycvodes /drone/sundials-3.1.2-nolapack
+    - .ci/run_ci.sh pycvodes /drone/sundials-3.2.0
+    - .ci/run_ci.sh pycvodes /drone/sundials-3.2.0-nolapack
     - .ci/run_ci.sh pycvodes /drone/sundials-2.7.0-nolapack
     - apt-get update --quiet && apt-get install --quiet -y libsundials-dev
     - .ci/run_ci.sh pycvodes /usr
-    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.1.2
+    - TEST_NATIVE_CLANG=0 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /drone/sundials-3.2.0
     - TEST_NATIVE_CLANG=1 PYCVODES_LAPACK="" .ci/run_ci.sh pycvodes /usr
     - python3 -m pip install --user -e .[docs]
     - curl -Ls https://bootstrap.pypa.io/get-pip.py | python2 - --user
