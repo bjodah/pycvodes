@@ -490,7 +490,7 @@ def test_constraints():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
     x0, xend = 0, 5
-    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf')  # , constraints=[1.0, 1.0, 1.0])
+    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf', constraints=[1.0, 1.0, 1.0])
     f, j = _get_f_j(k)
     xout, yout, info = integrate_adaptive(f, j, y0, x0, xend, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
