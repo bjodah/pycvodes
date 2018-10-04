@@ -582,6 +582,7 @@ def test_dx0cb():
 
 
 @pytest.mark.skipif(sundials_version < (3, 2, 0), reason="Sundials >=3.2.0 req. for constraints")
+@pytest.mark.skipif(env['SUNDIALS_PRECISION'] != "double", reason="test only verified for double precision")
 def test_constraints():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
