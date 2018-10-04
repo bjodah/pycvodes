@@ -486,6 +486,22 @@ def test_dx0cb():
     assert xout[-1] == xend
 
 
+def test_constraints():
+    k = 1e23, 3.0, 4.0
+    y0 = [.7, .0, .0]
+    x0, xend = 0, 5
+    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf')  # , constraints=[1.0, 1.0, 1.0])
+    f, j = _get_f_j(k)
+    xout, yout, info = integrate_adaptive(f, j, y0, x0, xend, **kwargs)
+    yref = decay_get_Cref(k, y0, xout)
+    assert np.allclose(yout, yref, atol=40*kwargs['atol'], rtol=40*kwargs['rtol'])
+    assert info['n_steps'] < 1000
+    assert info['nfev'] > 0
+    assert info['njev'] > 0
+    assert info['success'] is True
+    assert xout[-1] == xend
+
+
 def test_dx_max_cb():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
