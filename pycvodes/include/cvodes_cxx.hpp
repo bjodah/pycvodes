@@ -697,7 +697,7 @@ public:
         throw std::runtime_error("setting constraints requires sundials >=3.2.0");
 #endif
     }
-    void set_constraints(std::vector<realtype> &constraints){
+    void set_constraints(const std::vector<realtype> &constraints) const {
         SVector constraints_(constraints.size(), constraints.data());
         set_constraints(constraints_.n_vec);
     }

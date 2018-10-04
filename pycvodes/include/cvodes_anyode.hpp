@@ -258,7 +258,7 @@ std::unique_ptr<Integrator> get_integrator(
         throw std::runtime_error("atol of incorrect length");
     }
     if (constraints.size())
-        inegr.set_constraints(constraints);
+        integr.set_constraints(constraints);
     integr.set_init_step(dx0);
     if (dx_min != 0.0)
         integr.set_min_step(dx_min);
