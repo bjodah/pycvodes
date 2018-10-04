@@ -25,11 +25,18 @@ cdef extern from "cvodes_cxx.hpp":
      ctypedef double realtype
      ctypedef int indextype
 
+cdef extern from "sundials_cxx.hpp" namespace "sundials_cxx":
+    int version_major, version_minor, version_patch
+
 cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
 iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
+sundials_version = (version_major, version_minor, version_patch)
+
+iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
+linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
@@ -77,7 +84,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
              bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-             int nprealloc=500, jtimes=None, bool ew_ele=False, indextype nnz=-1):
+             int nprealloc=500, jtimes=None, bool ew_ele=False, indextype nnz=-1, vector[double] constraints=[]):
     cdef:
         indextype nyq = yq0.shape[yq0.ndim - 1]
         indextype ny = nyq - nquads
@@ -145,7 +152,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
             iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
             maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
-            tidx, &ew_ele_out if ew_ele else NULL)
+            tidx, &ew_ele_out if ew_ele else NULL, constraints)
 
         xyqout_dims[0] = nout + 1
         xyqout_dims[1] = ny*(nderiv+1) + 1 + nquads
@@ -192,7 +199,7 @@ def predefined(rhs, jac,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
                bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-               jtimes=None, bool ew_ele=False, indextype nnz=-1):
+               jtimes=None, bool ew_ele=False, indextype nnz=-1, vector[double] constraints=[]):
     cdef:
         indextype nyq = yq0.shape[yq0.ndim - 1]
         indextype ny = nyq - nquads
@@ -254,7 +261,7 @@ def predefined(rhs, jac,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
             maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes,
-            ew_ele_out if ew_ele else NULL)
+            ew_ele_out if ew_ele else NULL, constraints)
 
         yqout_dims[0] = xout.size
         yqout_dims[1] = nderiv + 1
