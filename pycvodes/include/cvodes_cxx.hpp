@@ -694,6 +694,7 @@ public:
         else
             check_flag(status);
 #else
+        ignore(constraints);
         throw std::runtime_error("setting constraints requires sundials >=3.2.0");
 #endif
     }
