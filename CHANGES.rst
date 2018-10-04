@@ -1,3 +1,7 @@
+v0.10.12
+========
+- Support for constraints in sundials 3.2.0
+
 v0.10.11
 ========
 - Fix to setup.py
