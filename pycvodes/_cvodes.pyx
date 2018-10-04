@@ -18,14 +18,14 @@ import numpy as np
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(cnp.ndarray arr, int flags)
 
-cdef extern from "sundials/sundials_config.h":
-    int SUNDIALS_VERSION_MAJOR, SUNDIALS_VERSION_MINOR, SUNDIALS_VERSION_PATCH
+cdef extern from "sundials_cxx.hpp" namespace "sundials_cxx":
+    int version_major, version_minor, version_patch
 
 cnp.import_array()  # Numpy C-API initialization
 
 steppers = ('adams', 'bdf')
 requires_jac = ('bdf',)
-sundials_version = (SUNDIALS_VERSION_MAJOR, SUNDIALS_VERSION_MINOR, SUNDIALS_VERSION_PATCH)
+sundials_version = (version_major, version_minor, version_patch)
 
 iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
 linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
