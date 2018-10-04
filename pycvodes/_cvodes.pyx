@@ -35,8 +35,6 @@ requires_jac = ('bdf',)
 iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 sundials_version = (version_major, version_minor, version_patch)
 
-iter_types = {'default': 0, 'functional': 1, 'newton': 2}  # grep "define CV_FUNCTIONAL" cvodes.h
-linear_solvers = {'default': 0, 'dense': 1, 'banded': 2, 'gmres': 10, 'gmres_classic': 11, 'bicgstab': 20, 'tfqmr': 30}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
