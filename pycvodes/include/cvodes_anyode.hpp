@@ -338,7 +338,7 @@ simple_adaptive(realtype ** xyqout,
                 bool with_jtimes=false,
                 int tidx=0,
                 realtype ** ew_ele=nullptr,
-                std::vector<realtype> &constraints={}
+                const std::vector<realtype> &constraints={}
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -423,7 +423,7 @@ int simple_predefined(OdeSys * const odesys,
                       bool return_on_error=false,
                       bool with_jtimes=false,
                       realtype * ew_ele=nullptr,
-                      std::vector<realtype> &constraints={}
+                      const std::vector<realtype> &constraints={}
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
