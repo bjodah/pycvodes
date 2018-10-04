@@ -33,6 +33,12 @@ def high_precision(_test):
                               reason="test atol and/or rtol is too high for single precision")(_test)
 
 
+def double_precision(_test):
+    from .._config import env
+    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] != "double",
+                              reason="test only verified for double precision")(_test)
+
+
 def test_get_include():
     assert get_include().endswith('include')
     assert 'cvodes_cxx.hpp' in os.listdir(get_include())
@@ -582,7 +588,7 @@ def test_dx0cb():
 
 
 @pytest.mark.skipif(sundials_version < (3, 2, 0), reason="Sundials >=3.2.0 req. for constraints")
-@pytest.mark.skipif(env['SUNDIALS_PRECISION'] != "double", reason="test only verified for double precision")
+@double_precision
 def test_constraints():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
