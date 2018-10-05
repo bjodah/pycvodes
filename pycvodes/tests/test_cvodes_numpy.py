@@ -511,6 +511,9 @@ def test_constraints():
 
     assert info2['n_steps'] < info1['n_steps'] - 2  # <-- thanks to constraints
 
+    with pytest.raises(Exception):
+        integrate_adaptive(*args, constraints=[42.0, 17.0, 1984], **kwargs)
+
 
 def test_dx_max_cb():
     k = 1e23, 3.0, 4.0
