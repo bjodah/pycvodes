@@ -813,6 +813,25 @@ public:
         SVectorV ele_(ny, ele);
         this->get_est_local_errors(ele_.n_vec);
     }
+    void set_constraints(N_Vector constraints) const {
+#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
+        if (NV_LENGTH_S(constraints) != ny)
+            throw std::runtime_error("constraints of incorrect length");
+        int status = CVodeSetConstraints(this->mem, constraints);
+        if (status == CV_ILL_INPUT)
+            throw std::runtime_error("constraints vector contains illegal values");
+        else
+            check_flag(status);
+#else
+        ignore(constraints);
+        throw std::runtime_error("setting constraints requires sundials >=3.2.0");
+#endif
+    }
+    void set_constraints(const std::vector<realtype> &constraints) const {
+        SVector constraints_(constraints.size(), constraints.data());
+        set_constraints(constraints_.n_vec);
+    }
+
     // get info
     long int get_n_lin_iters() const {
         long int res=0;

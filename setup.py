@@ -57,8 +57,21 @@ else:  # set `__version__` from _release.py:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
                 __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
 
-USE_CYTHON = not os.path.exists(_path_under_setup(pkg_name, '_cvodes.cpp'))
 package_include = os.path.join(pkg_name, 'include')
+
+_cpp = _path_under_setup(pkg_name, '_cvodes.cpp')
+_pyx = _path_under_setup(pkg_name, '_cvodes.pyx')
+if os.path.exists(_cpp):
+    if os.path.exists(_pyx) and os.path.getmtime(_pyx) - 1e-6 >= os.path.getmtime(_cpp):
+        USE_CYTHON = True
+    else:
+        USE_CYTHON = False
+else:
+    if os.path.exists(_pyx):
+        USE_CYTHON = True
+    else:
+        raise ValueError("Neither pyx nor cpp file found")
+
 
 ext_modules = []
 

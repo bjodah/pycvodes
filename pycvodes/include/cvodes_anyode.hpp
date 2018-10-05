@@ -261,7 +261,8 @@ std::unique_ptr<Integrator> get_integrator(
     const LinSol linear_solver=LinSol::DEFAULT,
     const int maxl=0,
     const realtype eps_lin=0.0,
-    const bool with_jtimes=false)
+    const bool with_jtimes=false,
+    const std::vector<realtype> &constraints={})
 {
     const int ny = odesys->get_ny();
 #if PYCVODES_NO_KLU != 1
@@ -300,8 +301,9 @@ std::unique_ptr<Integrator> get_integrator(
         integr.set_tol(rtol, atol_.n_vec);
     } else {
         throw std::runtime_error("atol of incorrect length");
-
     }
+    if (constraints.size())
+        integr.set_constraints(constraints);
     integr.set_init_step(dx0);
     if (dx_min != 0.0)
         integr.set_min_step(dx_min);
@@ -394,7 +396,8 @@ int
                 const bool return_on_error=false,
                 const bool with_jtimes=false,
                 int tidx=0,
-                realtype ** ew_ele=nullptr
+                realtype ** ew_ele=nullptr,
+                const std::vector<realtype> &constraints={}
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -415,7 +418,7 @@ int
         dx0 = odesys->get_dx0(x0, y0);
     auto integr = get_integrator<OdeSys>(
         odesys, atol, rtol, lmm, y0, x0, mxsteps, dx0, dx_min, dx_max,
-        with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
+        with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes, constraints);
 
     odesys->integrator = static_cast<void*>(integr.get());
 
@@ -478,7 +481,8 @@ int simple_predefined(OdeSys * const odesys,
                       const int autorestart=0,
                       const bool return_on_error=false,
                       const bool with_jtimes=false,
-                      realtype * ew_ele=nullptr
+                      realtype * ew_ele=nullptr,
+                      const std::vector<realtype> &constraints={}
     ){
     // iter_type == Undecided => Functional if lmm == Adams else Newton
 
@@ -496,7 +500,7 @@ int simple_predefined(OdeSys * const odesys,
     if (dx0 == 0.0)
         dx0 = odesys->get_dx0(xout[0], yq0);
     auto integr = get_integrator<OdeSys>(odesys, atol, rtol, lmm, yq0, xout[0], mxsteps, dx0, dx_min, dx_max,
-                                         with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes);
+                                         with_jacobian, iter_type, linear_solver, maxl, eps_lin, with_jtimes, constraints);
     odesys->integrator = static_cast<void*>(integr.get());
 
     odesys->current_info.clear();
@@ -548,6 +552,7 @@ struct SolverSettings{
     bool return_on_error {true};
     bool with_jacobian {true};
     bool with_jtimes {true};
+    std::vector<realtype> constraints={};
 };
 
 template <class OdeSys>
@@ -581,7 +586,7 @@ std::unique_ptr<AnyODE::Result> chained_predefined(
         odesys, settings.atol, settings.rtol, lmm, yq0, x0, settings.mxsteps, dx0,
         settings.dx_min, settings.dx_max,
         settings.with_jacobian, iter_type, linear_solver, settings.maxl, settings.eps_lin,
-        settings.with_jtimes);
+        settings.with_jtimes, settings.constraints);
     odesys->integrator = static_cast<void*>(integr.get());
 
     std::time_t cput0 = std::clock();
