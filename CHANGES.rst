@@ -1,3 +1,7 @@
+v0.11.7
+=======
+- Add support for constraints when using sundials>=3.2.0
+
 v0.11.6
 =======
 - Bug fix in adaptive (gh-92 by @spcornelius)
@@ -27,6 +31,26 @@ v0.11.0
 =======
 - Enhanced _config.py
 - Support for sparse jacobian
+
+v0.10.12
+========
+- Support for constraints in sundials 3.2.0
+
+v0.10.11
+========
+- Fix to setup.py
+
+v0.10.10
+========
+- Determine compilation options by attempt in sdist
+
+v0.10.9
+=======
+- More robust ``pycvodes.config``.
+
+v0.10.8
+=======
+- Bug fix in adaptive (gh-93 by @spcornelius)
 
 v0.10.7
 =======
