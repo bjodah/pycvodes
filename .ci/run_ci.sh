@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 set +e
-python3 -m pip uninstall -y pycvodes
+#python3 -m pip uninstall -y pycvodes
 rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
 set -e
 
@@ -23,12 +23,12 @@ python3 setup.py sdist
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
 set +e
-python3 -m pip uninstall -y pycvodes
+#python3 -m pip uninstall -y pycvodes
 rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
 set -e
 
 if [ -d build/ ]; then rm -r build/; fi
-CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install .
+CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 setup.py build_ext -i
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     PYTHONPATH=$(pwd) ./scripts/run_tests.sh
