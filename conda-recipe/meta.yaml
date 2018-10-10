@@ -1,10 +1,9 @@
 {% set name = "pycvodes" %}
-{% set version = "0.11.8.dev0+git" %}
 {% set variant = "openblas" %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: {{ GIT_DESCRIBE_TAG | replace("v", "") }}
 
 source:
   git_url: ../

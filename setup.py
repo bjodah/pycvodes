@@ -30,14 +30,6 @@ config_py_path = _path_under_setup(pkg_name, '_config.py')
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
 RELEASE_VERSION = os.environ.get(_version_env_var, '')
 
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-    try:
-        RELEASE_VERSION = 'v' + open(
-            '__conda_version__.txt', 'rt').readline().rstrip()
-    except IOError:
-        pass
-
 if len(RELEASE_VERSION) > 1:
     if RELEASE_VERSION[0] != 'v':
         raise ValueError("$%s does not start with 'v'" % _version_env_var)
