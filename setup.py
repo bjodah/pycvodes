@@ -47,7 +47,8 @@ else:  # set `__version__` from _release.py:
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+                _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', _ver_tmplt, _git_version)  # .dev < '' < .post
 
 package_include = os.path.join(pkg_name, 'include')
 
