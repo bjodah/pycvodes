@@ -15,13 +15,14 @@ git clean -xfd
 
 python3 setup.py sdist
 python3 -m pip uninstall -y pycvodes
-rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
+#rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
 set -e
 (cd dist/; python3 -m pip install $PKG_NAME-$(python3 ../setup.py --version).tar.gz)
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
-
-CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
+python3 -m pip uninstall -y pycvodes
+if [ -d build/ ]; then rm -r build/; fi
+CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install .
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     PYTHONPATH=$(pwd) ./scripts/run_tests.sh
