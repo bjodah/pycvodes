@@ -1,9 +1,13 @@
 #!/bin/bash -x
 
+set +e
+python3 -m pip uninstall -y pycvodes
+rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
+set -e
+
 PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
     eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
-    echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
 
 for p in "${@:2}"
@@ -14,13 +18,15 @@ done
 git clean -xfd
 
 python3 setup.py sdist
-python3 -m pip uninstall -y pycvodes
-#rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
-set -e
 (cd dist/; python3 -m pip install $PKG_NAME-$(python3 ../setup.py --version).tar.gz)
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
+
+set +e
 python3 -m pip uninstall -y pycvodes
+rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
+set -e
+
 if [ -d build/ ]; then rm -r build/; fi
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install .
 
