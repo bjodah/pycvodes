@@ -87,7 +87,7 @@ namespace cvodes_anyode_parallel {
                      const unsigned nderiv=0,
                      const int autorestart=0, // must be autonomous!
                      const bool return_on_error=false,
-                     const bool with_jtimes=false
+                     const bool with_jtimes=false,
                      realtype * ew_ele=nullptr,
                      const std::vector<realtype> &constraints={}
                      ){
