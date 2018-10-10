@@ -1,3 +1,7 @@
+v0.11.8
+=======
+- Fix syntax error in header file
+
 v0.11.7
 =======
 - Add support for constraints when using sundials>=3.2.0
