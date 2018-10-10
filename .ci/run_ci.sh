@@ -22,7 +22,7 @@ python3 setup.py sdist
 
 CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
 
-if [[ "${LOW_PRECISION:-1}" != "1" ]]; then
+if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     PYTHONPATH=$(pwd) ./scripts/run_tests.sh
     cd tests/; make; make clean; cd -
     cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
