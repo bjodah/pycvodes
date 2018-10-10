@@ -1,10 +1,10 @@
 {% set name = "pycvodes" %}
-{% set version = "0.11.0.dev0+git" %}
 {% set variant = "openblas" %}
+{% set number = GIT_DESCRIBE_NUMBER | int %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: {{ GIT_DESCRIBE_TAG | replace("v", "") }}{% if number > 0 %}.post{{ GIT_DESCRIBE_NUMBER }}{% endif %}
 
 source:
   git_url: ../
@@ -19,7 +19,7 @@ requirements:
     - toolchain
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20*  # [not win]
-    - sundials 3.1.*
+    - sundials 3.2.*
     - suitesparse 4.5.*  # [not win]
     - python
     - setuptools
@@ -29,7 +29,7 @@ requirements:
   run:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20|0.2.20.*  # [not win]
-    - sundials 3.1.*
+    - sundials 3.2.*
     - python
     - numpy >=1.11
     - suitesparse 4.5.*  # [not win]

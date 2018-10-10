@@ -14,3 +14,4 @@ htmlcov/
 **/.ipynb_checkpoints/
 **.egg-info/
 .eggs/
+tmp/

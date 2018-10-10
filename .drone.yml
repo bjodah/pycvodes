@@ -42,6 +42,7 @@ build:
     - if [ ! -d /drone/sun-3.2.0-nolapack-noklu-extended-int32 ]; then .ci/get_sundials.sh 3.2.0 /drone/sun-3.2.0-nolapack-noklu-extended-int32  -DSUNDIALS_INDEX_TYPE:STRING="int32_t"  -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="extended"; fi
     - if [ ! -d /drone/sun-3.2.0-nolapack-noklu-single-int64 ]; then .ci/get_sundials.sh 3.2.0 /drone/sun-3.2.0-nolapack-noklu-single-int64  -DSUNDIALS_INDEX_TYPE:STRING="int64_t"  -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="single"; fi
     - if [ ! -d /drone/sun-3.2.0-nolapack-noklu-single-int32 ]; then .ci/get_sundials.sh 3.2.0 /drone/sun-3.2.0-nolapack-noklu-single-int32  -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_ENABLE:BOOL=OFF -DLAPACK_ENABLE:BOOL=OFF -DSUNDIALS_PRECISION:STRING="single"; fi
+    - python3 -m pip install --upgrade pip
     - .ci/run_ci.sh pycvodes /drone/sun-3.2.0-lapack-klu
     - .ci/run_ci.sh pycvodes /drone/sun-3.2.0-nolapack-klu
     - .ci/run_ci.sh pycvodes /drone/sun-3.2.0-lapack-noklu
