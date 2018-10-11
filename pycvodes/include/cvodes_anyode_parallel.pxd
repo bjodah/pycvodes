@@ -28,9 +28,9 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         const bool,
         const int,
         const bool,
-        const bool
+        const bool,
         int,
-        realtype*,
+        realtype***,
         vector[realtype]&
     ) except +
 
@@ -56,6 +56,6 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         const int,
         const bool,
         const bool,
-	realtype *,
-	vector[realtype]&
+        realtype **,
+        vector[realtype]&
     ) except +

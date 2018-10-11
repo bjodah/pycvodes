@@ -1,3 +1,7 @@
+v0.11.9
+=======
+- Fix signature in header
+
 v0.11.8
 =======
 - Fix syntax error in header file
