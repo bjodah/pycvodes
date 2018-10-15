@@ -689,10 +689,11 @@ public:
         if (NV_LENGTH_S(constraints) != ny)
             throw std::runtime_error("constraints of incorrect length");
         int status = CVodeSetConstraints(this->mem, constraints);
-        if (status == CV_ILL_INPUT)
+        if (status == CV_ILL_INPUT) {
             throw std::runtime_error("constraints vector contains illegal values");
-        else
+        } else {
             check_flag(status);
+        }
 #else
         ignore(constraints);
         throw std::runtime_error("setting constraints requires sundials >=3.2.0");
@@ -1187,8 +1188,28 @@ public:
                         unsuccessful_step_throw_(status);
                     }
                 } else {
-                    if (this->verbosity > 0) std::cerr << __FILE__ << ":" << __LINE__ <<
-                                                 ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                    if (this->verbosity > 0){
+                        std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        if (status >= 0) {
+                            N_Vector ele, ew;
+                            ele = N_VNew_Serial(ny);
+                            ew = N_VNew_Serial(ny);
+                            get_est_local_errors(ele);
+                            get_err_weights(ew);
+                            realtype mx = 0.0;
+                            int mxi = -1;
+                            for (unsigned i=0; i < ny; ++i){
+                                const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                if (cur > mx){
+                                    mxi = i;
+                                    mx = cur;
+                                }
+                            }
+                            N_VDestroy_Serial(ele);
+                            N_VDestroy_Serial(ew);
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                        }
+                    }
                     this->set_max_num_steps(mxsteps + this->get_max_num_steps());
                     std::vector<double> tout_;
                     long int nleft = nt - iout + 1;

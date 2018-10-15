@@ -2,12 +2,12 @@ environment:
 
   matrix:
     - TARGET_ARCH: x86
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36
 
     - TARGET_ARCH: x64
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
 
 platform:
     - x64

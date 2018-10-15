@@ -65,14 +65,6 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
 RELEASE_VERSION = os.environ.get(_version_env_var, '')
 
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-    try:
-        RELEASE_VERSION = 'v' + open(
-            '__conda_version__.txt', 'rt').readline().rstrip()
-    except IOError:
-        pass
-
 if len(RELEASE_VERSION) > 1:
     if RELEASE_VERSION[0] != 'v':
         raise ValueError("$%s does not start with 'v'" % _version_env_var)
@@ -90,7 +82,8 @@ else:  # set `__version__` from _release.py:
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+                _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
+                __version__ = re.sub('v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
 
 
 class BuildExt(build_ext):
