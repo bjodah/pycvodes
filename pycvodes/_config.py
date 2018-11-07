@@ -201,6 +201,23 @@ else:
     logger.info("appdirs not installed, will run test compilations")
 
 
+def _make_dirs(path):
+    if path[-1] == '/':
+        parent = os.path.dirname(path[:-1])
+    else:
+        parent = os.path.dirname(path)
+
+    if len(parent) > 0:
+        if not os.path.exists(parent):
+            _make_dirs(parent)
+
+    if not os.path.exists(path):
+        if logger:
+            logger.info("Making dir: "+path)
+        os.mkdir(path, 0o777)
+    else:
+        assert os.path.isdir(path)
+
 if env is None:
     _r = _attempt_compilation()
 
@@ -241,7 +258,7 @@ if env is None:
         if locals().get('_PYCVODES_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
             _cfg_dir = os.path.dirname(_cfg)
             if not os.path.exists(_cfg_dir):
-                os.mkdir(_cfg_dir)
+                _make_dirs(_cfg_dir)
             with open(_cfg, 'wb') as ofh:
                 pickle.dump(env, ofh)
         else:
