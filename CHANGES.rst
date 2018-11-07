@@ -1,3 +1,7 @@
+v0.10.13
+========
+- Made _config.py more robust
+
 v0.10.12
 ========
 - Support for constraints in sundials 3.2.0
