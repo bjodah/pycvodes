@@ -66,7 +66,7 @@ for URL in "${SUNDIALS_URLS[@]}"; do
         tar xzf $SUNDIALS_FNAME
 	if [[ "$VERSION" == "4.0.0" ]]; then
 	    cd sundials-$VERSION
-	    git apply ../patch_001_sund400.diff
+	    ( set -xe; git apply ../.ci/patch_001_sund400.diff )
 	    cd -
 	fi
         mkdir sundials_build
