@@ -1,0 +1,13 @@
+diff --git a/src/arkode/arkode_butcher.c b/src/arkode/arkode_butcher.c
+index fd9daa9..f648c91 100644
+--- a/src/arkode/arkode_butcher.c
++++ b/src/arkode/arkode_butcher.c
+@@ -2068,7 +2068,7 @@ static int __ButcherSimplifyingAssumptions(realtype **A, realtype *b, realtype *
+   for (i=1; i<1000; i++) {
+     if (__vp(c,i-1,s,tmp)) { free(tmp); return(0); }
+     if (__dot(b,tmp,s,&LHS)) { free(tmp); return(0); }
+-    RHS = RCONST(1)/i;
++    RHS = RCONST(1.0)/i;
+     if (SUNRabs(RHS-LHS) > TOL)
+       break;
+     P++;

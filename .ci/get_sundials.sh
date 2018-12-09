@@ -57,24 +57,30 @@ TIMEOUT=60  # 60 seconds
 
 for URL in "${SUNDIALS_URLS[@]}"; do
     if echo $SUNDIALS_MD5 $SUNDIALS_FNAME | md5sum -c --; then
-        echo "Found ${SUNDIALS_FNAME} with matching checksum, using this file."
+        echo "Found ${SUNDIALS_FNAME} with matching checksum, using that file."
     else
         echo "Downloading ${URL}..."
         timeout $TIMEOUT wget --quiet --tries=2 --timeout=$TIMEOUT $URL -O $SUNDIALS_FNAME || continue
     fi
     if echo $SUNDIALS_MD5 $SUNDIALS_FNAME | md5sum -c --; then
         tar xzf $SUNDIALS_FNAME
+	if [[ "$VERSION" == "4.0.0" ]]; then
+	    cd sundials-$VERSION
+	    git apply ../patch_001_sund400.diff
+	    cd -
+	fi
         mkdir sundials_build
         cd sundials_build
-	set -x
-        cmake -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX" \
-              -DCMAKE_BUILD_TYPE:STRING="Release" \
-              -DBUILD_SHARED_LIBS:BOOL=ON \
-              -DBUILD_STATIC_LIBS:BOOL=OFF \
-              -DEXAMPLES_ENABLE_C:BOOL=OFF \
-              -DEXAMPLES_INSTALL:BOOL=OFF \
-              -DOPENMP_ENABLE:BOOL=OFF \
-              "${@:3}" "../sundials-$VERSION/"
+	( set -x; \
+          cmake -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX" \
+		-DCMAKE_BUILD_TYPE:STRING="Release" \
+		-DBUILD_SHARED_LIBS:BOOL=ON \
+		-DBUILD_STATIC_LIBS:BOOL=OFF \
+		-DEXAMPLES_ENABLE_C:BOOL=OFF \
+		-DEXAMPLES_INSTALL:BOOL=OFF \
+		-DOPENMP_ENABLE:BOOL=OFF \
+		"${@:3}" "../sundials-$VERSION/"
+	)
 	if [[ $? -ne 0 ]]; then
 	    2>&1 echo "Cmake configuration failed."
 	    exit 1
@@ -84,7 +90,7 @@ for URL in "${SUNDIALS_URLS[@]}"; do
             2>&1 echo "Building of sundials \"$VERSION\" failed."
             exit 1
         fi
-        make install
+        quiet_unless_fail make install
         if [ $? -ne 0 ]; then
             2>&1 echo "Install of sundials \"$VERSION\" failed."
             exit 1
