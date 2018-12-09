@@ -6,6 +6,22 @@
 #  $ ./get_sundials.sh 2.7.0 /opt/sun-2.7.0 -DLAPACK_ENABLE:BOOL=OFF
 #
 
+function quiet_unless_fail {
+    # suppresses function output unless exit status is != 0
+    OUTPUT_FILE=$(tempfile)
+    #/bin/rm --force /tmp/suppress.out 2>/dev/null
+    EXECMD=${1+"$@"}
+    $EXECMD > ${OUTPUT_FILE} 2>&1
+    EXIT_CODE=$?
+    if [ ${EXIT_CODE} -ne 0 ]; then
+	cat ${OUTPUT_FILE}
+	echo "The following command exited with exit status ${EXIT_CODE}: ${EXECMD}"
+	/bin/rm ${OUTPUT_FILE}
+	exit $?
+    fi
+    /bin/rm ${OUTPUT_FILE}
+}
+
 VERSION="$1"
 PREFIX="$2"
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
@@ -63,7 +79,7 @@ for URL in "${SUNDIALS_URLS[@]}"; do
 	    2>&1 echo "Cmake configuration failed."
 	    exit 1
 	fi
-        make -j 2 >/dev/null 2>&1
+        quiet_unless_fail make VERBOSE=1 -j 1
         if [ $? -ne 0 ]; then
             2>&1 echo "Building of sundials \"$VERSION\" failed."
             exit 1
