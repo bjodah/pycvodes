@@ -66,7 +66,8 @@ for URL in "${SUNDIALS_URLS[@]}"; do
         tar xzf $SUNDIALS_FNAME
 	if [[ "$VERSION" == "4.0.0" ]]; then
 	    cd sundials-$VERSION
-	    ( set -xe; git apply --verbose ../.ci/patch_001_sund400.diff )
+	    ( set -xe; patch -p1 < ../.ci/patch_001_sund400.diff )
+	    #( set -xe; git apply --verbose ../.ci/patch_001_sund400.diff )
 	    cd -
 	fi
 	if grep "RCONST(1)" -R sundials-*/; then
