@@ -24,7 +24,7 @@ function quiet_unless_fail {
 
 VERSION="$1"
 PREFIX="$2"
-if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
+if [ -d "$PREFIX" ]; then >&2 echo "Directory already exists: $PREFIX"; exit 1; fi
 if [[ "$VERSION" == "2.7.0" ]]; then
     SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
     SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"
@@ -45,7 +45,7 @@ elif [[ "$VERSION" == "4.0.0" ]]; then
     SUNDIALS_MD5="5f584274f1ef7743526076f5a08319be"
     SUNDIALS_SHA256="953dd7c30d25d5e28f6aa4d803c5b6160294a5c0c9572ac4e9c7e2d461bd9a19"
 else
-    2>&1 echo "Unknown sundials version \"$VERSION\""
+    >&2 echo "Unknown sundials version \"$VERSION\""
 fi
 
 SUNDIALS_URLS=(\
@@ -66,8 +66,12 @@ for URL in "${SUNDIALS_URLS[@]}"; do
         tar xzf $SUNDIALS_FNAME
 	if [[ "$VERSION" == "4.0.0" ]]; then
 	    cd sundials-$VERSION
-	    ( set -xe; git apply ../.ci/patch_001_sund400.diff )
+	    ( set -xe; git apply --verbose ../.ci/patch_001_sund400.diff )
 	    cd -
+	fi
+	if grep "RCONST(1)" -R sundials-*/; then
+	    >&2 echo "Found incorrect RCONST(1) in source"
+	    exit 1;
 	fi
         mkdir sundials_build
         cd sundials_build
@@ -82,17 +86,17 @@ for URL in "${SUNDIALS_URLS[@]}"; do
 		"${@:3}" "../sundials-$VERSION/"
 	)
 	if [[ $? -ne 0 ]]; then
-	    2>&1 echo "Cmake configuration failed."
+	    >&2 echo "Cmake configuration failed."
 	    exit 1
 	fi
         quiet_unless_fail make VERBOSE=1 -j 1
         if [ $? -ne 0 ]; then
-            2>&1 echo "Building of sundials \"$VERSION\" failed."
+            >&2 echo "Building of sundials \"$VERSION\" failed."
             exit 1
         fi
         quiet_unless_fail make install
         if [ $? -ne 0 ]; then
-            2>&1 echo "Install of sundials \"$VERSION\" failed."
+            >&2 echo "Install of sundials \"$VERSION\" failed."
             exit 1
         fi
         cd ..
