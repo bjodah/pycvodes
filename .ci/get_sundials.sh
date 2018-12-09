@@ -9,7 +9,10 @@
 VERSION=$1
 PREFIX=$2
 if [ -d "$PREFIX" ]; then 2>&1 echo "Directory already exists: $PREFIX"; exit 1; fi
-if [[ $VERSION == "3.1.1" ]]; then
+if [[ $VERSION == "2.7.0" ]]; then
+    SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
+    SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"
+elif [[ $VERSION == "3.1.1" ]]; then
     SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
     SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
 elif [[ $VERSION == "3.1.2" ]]; then
@@ -21,14 +24,16 @@ elif [[ $VERSION == "3.2.0" ]]; then
 elif [[ $VERSION == "3.2.1" ]]; then
     SUNDIALS_FNAME="sundials-3.2.1.tar.gz"
     SUNDIALS_MD5="65c42e4fec7d1f4f4bcd670f9bbe31c0"
-elif [[ $VERSION == "2.7.0" ]]; then
-    SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
-    SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"
+elif [[ $VERSION == "4.0.0" ]]; then
+    SUNDIALS_FNAME="sundials-4.0.0.tar.gz"
+    SUNDIALS_MD5="5f584274f1ef7743526076f5a08319be"
+    SUNDIALS_SHA256="953dd7c30d25d5e28f6aa4d803c5b6160294a5c0c9572ac4e9c7e2d461bd9a19"
 else
     2>&1 echo "Unknown sundials version $VERSION"
 fi
 
 SUNDIALS_URLS=(\
+    "http://davycrockett.mooo.com/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
     "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
     "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
 )
