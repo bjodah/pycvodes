@@ -25,6 +25,7 @@
 #  define CVLS_MEM_NULL CVSPILS_MEM_NULL:
 #  define CVLS_LMEM_NULL CVSPILS_LMEM_NULL
 #  define CVLS_ILL_INPUT CVSPILS_ILL_INPUT
+#  define CVLS_MEM_FAIL CVSPILS_MEM_FAIL
 #endif
 #if !defined(PYCVODES_NO_KLU)
 #  if defined(SUNDIALS_KLU)
@@ -609,9 +610,9 @@ public:
 #  else
             LS_ =
                 # if SUNDIALS_VERSION_MAJOR >= 4
-                SUNLapackBand
-                #else
                 SUNLinSol_LapackBand
+                #else
+                SUNLapackBand
                 #endif
                 (y_, A_);
 #  endif
