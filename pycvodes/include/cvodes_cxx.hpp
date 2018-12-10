@@ -22,7 +22,7 @@
 #  include "sunnonlinsol/sunnonlinsol_fixedpoint.h"
 #else
 #  define CVLS_SUCCESS CVSPILS_SUCCESS
-#  define CVLS_MEM_NULL CVSPILS_MEM_NULL:
+#  define CVLS_MEM_NULL CVSPILS_MEM_NULL
 #  define CVLS_LMEM_NULL CVSPILS_LMEM_NULL
 #  define CVLS_ILL_INPUT CVSPILS_ILL_INPUT
 #  define CVLS_MEM_FAIL CVSPILS_MEM_FAIL
