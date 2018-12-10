@@ -768,10 +768,10 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 4
         case CVLS_SUNLS_FAIL:
             throw std::runtime_error("A call to the LS object failed");
+#endif
         default:
             throw std::runtime_error("Unkown error code");
         }
-#endif
     }
     void cvspils_check_flag(int flag, bool check_ill_input=false) const {
         switch (flag){
