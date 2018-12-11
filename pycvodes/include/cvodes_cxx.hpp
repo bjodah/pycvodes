@@ -93,7 +93,7 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
-#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 1
+#if SUNDIALS_VERSION_MAJOR > 3 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR >= 1)
 typedef sunindextype indextype;
 #else
 typedef int indextype;
