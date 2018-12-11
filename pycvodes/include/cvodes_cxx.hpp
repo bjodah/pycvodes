@@ -17,6 +17,16 @@
 #include <iostream>
 
 #include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 4
+#  include "sunnonlinsol/sunnonlinsol_newton.h"
+#  include "sunnonlinsol/sunnonlinsol_fixedpoint.h"
+#else
+#  define CVLS_SUCCESS CVSPILS_SUCCESS
+#  define CVLS_MEM_NULL CVSPILS_MEM_NULL
+#  define CVLS_LMEM_NULL CVSPILS_LMEM_NULL
+#  define CVLS_ILL_INPUT CVSPILS_ILL_INPUT
+#  define CVLS_MEM_FAIL CVSPILS_MEM_FAIL
+#endif
 #if !defined(PYCVODES_NO_KLU)
 #  if defined(SUNDIALS_KLU)
 #    define PYCVODES_NO_KLU 0
@@ -83,7 +93,7 @@
 #include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
-#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 1
+#if SUNDIALS_VERSION_MAJOR > 3 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR >= 1)
 typedef sunindextype indextype;
 #else
 typedef int indextype;
@@ -148,7 +158,11 @@ inline LMM lmm_from_name(std::string name){
 }
 
 enum class Task : int {Normal=CV_NORMAL, One_Step=CV_ONE_STEP};
-enum class IterType : int {Functional=CV_FUNCTIONAL, Newton=CV_NEWTON, Undecided=-1};
+enum class IterType : int {
+    Functional=1, //CV_FUNCTIONAL // Known as "fixed_point" in sundials>=4
+    Newton=2, //CV_NEWTON
+    Undecided=-1
+};
 inline IterType iter_type_from_name(std::string name){
     if (name == "functional")
         return IterType::Functional;
@@ -236,6 +250,10 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     N_Vector y_ = nullptr;
     IterLinSolEnum solver_;
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+    IterType iter_;
+    SUNNonlinearSolver NLS_;
+#endif
 public:
     void *mem {nullptr};
     long int ny {0};
@@ -247,7 +265,12 @@ public:
     std::vector<int> orders_seen, fpes_seen;
     std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
     Integrator(const LMM lmm, const IterType iter) {
+#if SUNDIALS_VERSION_MAJOR >= 4
+        this->mem = CVodeCreate(static_cast<int>(lmm));
+        this->iter_ = iter;
+#else
         this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
+#endif
         if (!this->mem)
             throw std::bad_alloc(); // "CVodeCreate failed (allocation failed)."
     }
@@ -263,6 +286,9 @@ public:
             SUNMatDestroy(this->A_);
         if (this->LS_)
             SUNLinSolFree(this->LS_);
+#endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+        SUNNonlinSolFree(NLS_);
 #endif
     }
     // init
@@ -283,6 +309,25 @@ public:
             throw std::bad_alloc(); // "CVodeInit failed (allocation failed).";
         else
             check_flag(status);
+#if SUNDIALS_VERSION_MAJOR >= 4
+        int flag;
+        if (this->iter_ == IterType::Newton) {
+            NLS_ = SUNNonlinSol_Newton(y_);
+        } else if (this->iter_ == IterType::Functional) {
+            const int n_accel_vecs = 0; // number of Anderson acceleration vectors (TODO: customizable)
+            NLS_ = SUNNonlinSol_FixedPoint(y_, n_accel_vecs);
+            flag = CVodeSetNonlinearSolver(this->mem, NLS_);
+            if (flag == CV_SUCCESS) {
+                ; // pass
+            } else if (flag == CV_MEM_NULL) {
+                throw std::bad_alloc();
+            } else if (flag == CV_ILL_INPUT) {
+                throw std::runtime_error("The SUNNONLINSOL is invalid");
+            }
+        } else {
+            throw std::runtime_error(StreamFmt() << "Unknown itertype: " << static_cast<int>(this->iter_));
+        }
+#endif
     }
     void init(CVRhsFn cb, realtype t0, SVector &y) {
         this->init(cb, t0, y.n_vec);
@@ -480,11 +525,17 @@ public:
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if PYCVODES_NO_LAPACK == 1
-            LS_ = SUNDenseLinearSolver(y_, A_);
-#else
+#  if PYCVODES_NO_LAPACK == 1
+            LS_ =
+#    if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_Dense
+#    else
+                SUNDenseLinearSolver
+#    endif
+                (y_, A_);
+#  else
             LS_ = SUNLapackDense(y_, A_);
-#endif
+#  endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -492,18 +543,18 @@ public:
         if (status < 0)
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
-#if PYCVODES_NO_LAPACK == 1
+#  if PYCVODES_NO_LAPACK == 1
         status = CVDense(this->mem, ny);
-#else
+#  else
         status = CVLapackDense(this->mem, ny);
-#endif
+#  endif
         if (status != CVDLS_SUCCESS) {
             throw std::runtime_error(
-#if PYCVODES_NO_LAPACK == 1
+#  if PYCVODES_NO_LAPACK == 1
                 "CVDense failed"
-#else
+#  else
                 "CVLapackDense failed"
-#endif
+#  endif
                 );
         }
 #endif
@@ -537,18 +588,34 @@ public:
         if (A_ == nullptr){
             if (A_)
                 throw std::runtime_error("matrix already set");
-            A_ = SUNBandMatrix(ny, mupper, mlower, mlower+mupper);
+            A_ = SUNBandMatrix(ny, mupper, mlower
+#  if SUNDIALS_VERSION_MAJOR < 4
+                               , mlower+mupper
+#  endif
+                );
             if (!A_)
                 throw std::runtime_error("SUNDenseMatrix failed.");
         }
         if (LS_ == nullptr){
             if (LS_)
                 throw std::runtime_error("linear solver already set");
-#if PYCVODES_NO_LAPACK == 1
-            LS_ = SUNBandLinearSolver(y_, A_);
-#else
-            LS_ = SUNLapackBand(y_, A_);
-#endif
+#  if PYCVODES_NO_LAPACK == 1
+            LS_ =
+                # if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_Band
+                # else
+                SUNBandLinearSolver
+                #endif
+                (y_, A_);
+#  else
+            LS_ =
+                # if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_LapackBand
+                #else
+                SUNLapackBand
+                #endif
+                (y_, A_);
+#  endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
@@ -557,18 +624,19 @@ public:
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
 #else
         status =
-#if PYCVODES_NO_LAPACK == 1
-        CVBand(this->mem, N, mupper, mlower);
-#else
-        CVLapackBand(this->mem, N, mupper, mlower);
-#endif
+#  if PYCVODES_NO_LAPACK == 1
+            CVBand(this->mem, N, mupper, mlower)
+#  else
+            CVLapackBand(this->mem, N, mupper, mlower)
+#  endif
+            ;
         if (status != CVDLS_SUCCESS)
             throw std::runtime_error(
-#if PYCVODES_NO_LAPACK == 1
+#  if PYCVODES_NO_LAPACK == 1
                 "CVBand failed"
-#else
+#  else
                 "CVLapackBand failed"
-#endif
+#  endif
                 );
 #endif
     }
@@ -681,30 +749,40 @@ public:
                                      << static_cast<int>(solver));
         }
 #if SUNDIALS_VERSION_MAJOR >= 3
-        flag = CVSpilsSetLinearSolver(this->mem, LS_);
         solver_ = solver;
+#  if SUNDIALS_VERSION_MAJOR >=4
+        flag = CVodeSetLinearSolver(this->mem, LS_, A_);
+#  else
+        flag = CVSpilsSetLinearSolver(this->mem, LS_);
+#  endif
 #endif
         switch (flag){
-        case CVSPILS_SUCCESS:
+        case CVLS_SUCCESS:
             break;
-        case CVSPILS_MEM_NULL:
+        case CVLS_MEM_NULL:
             throw std::runtime_error("set_linear_solver_to_iterative failed (cvode_mem is NULL)");
-        case CVSPILS_ILL_INPUT:
+        case CVLS_ILL_INPUT:
             throw std::runtime_error("PREC_LEFT invalid.");
-        case CVSPILS_MEM_FAIL:
+        case CVLS_MEM_FAIL:
             throw std::bad_alloc(); // "Memory allocation for sparse iterative solver request failed."
+#if SUNDIALS_VERSION_MAJOR >= 4
+        case CVLS_SUNLS_FAIL:
+            throw std::runtime_error("A call to the LS object failed");
+#endif
+        default:
+            throw std::runtime_error("Unkown error code");
         }
     }
     void cvspils_check_flag(int flag, bool check_ill_input=false) const {
         switch (flag){
-        case CVSPILS_SUCCESS:
+        case CVLS_SUCCESS:
             break;
-        case CVSPILS_MEM_NULL:
+        case CVLS_MEM_NULL:
             throw std::runtime_error("cvode_mem is NULL");
-        case CVSPILS_LMEM_NULL:
-            throw std::runtime_error("CVSPILS linear solver has not been initialized)");
+        case CVLS_LMEM_NULL:
+            throw std::runtime_error("linear solver has not been initialized)");
         }
-        if ((check_ill_input) && (flag == CVSPILS_ILL_INPUT))
+        if ((check_ill_input) && (flag == CVLS_ILL_INPUT))
             throw std::runtime_error("Bad input.");
     }
     void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
@@ -717,8 +795,12 @@ public:
     }
 #if SUNDIALS_VERSION_MAJOR >=3
     void set_jtimes_fn(CVSpilsJacTimesSetupFn jtsetup,
-                              CVSpilsJacTimesVecFn jtimes){
+                       CVSpilsJacTimesVecFn jtimes){
+#if SUNDIALS_VERSION_MAJOR >=4
+        int flag = CVodeSetJacTimes(this->mem, jtsetup, jtimes);
+#else
         int flag = CVSpilsSetJacTimes(this->mem, jtsetup, jtimes);
+#endif
         this->cvspils_check_flag(flag);
     }
 #endif
@@ -814,7 +896,7 @@ public:
         this->get_est_local_errors(ele_.n_vec);
     }
     void set_constraints(N_Vector constraints) const {
-#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
+#if SUNDIALS_VERSION_MAJOR >= 4 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR >= 2)
         if (NV_LENGTH_S(constraints) != ny)
             throw std::runtime_error("constraints of incorrect length");
         int status = CVodeSetConstraints(this->mem, constraints);
@@ -946,11 +1028,11 @@ public:
 
     void cvdls_check_flag(int flag) const {
         switch (flag){
-        case CVDLS_SUCCESS:
+        case CVLS_SUCCESS:
             break;
-        case CVDLS_MEM_NULL:
+        case CVLS_MEM_NULL:
             throw std::runtime_error("cvode_mem is NULL");
-        case CVDLS_LMEM_NULL:
+        case CVLS_LMEM_NULL:
             throw std::runtime_error("CVDLS linear solver has not been initialized)");
         }
     }
@@ -1229,7 +1311,7 @@ public:
                    const unsigned nderiv,
                    std::vector<int>& root_indices,
                    std::vector<realtype>& root_out,
-                   int autorestart=0, // must be autonomous if >0b
+                   int autorestart=0, // must be autonomous if >0
                    bool return_on_error=false,
                    get_dx_max_fn get_dx_max=get_dx_max_fn(),
                    realtype * ew_ele=nullptr
