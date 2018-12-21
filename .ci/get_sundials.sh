@@ -44,6 +44,10 @@ elif [[ "$VERSION" == "4.0.0" ]]; then
     SUNDIALS_FNAME="sundials-4.0.0.tar.gz"
     SUNDIALS_MD5="5f584274f1ef7743526076f5a08319be"
     SUNDIALS_SHA256="953dd7c30d25d5e28f6aa4d803c5b6160294a5c0c9572ac4e9c7e2d461bd9a19"
+elif [[ "$VERSION" == "4.0.1" ]]; then
+    SUNDIALS_FNAME="sundials-4.0.1.tar.gz"
+    SUNDIALS_MD5="7399c3da7a857ef857645275fc6d393c"
+    SUNDIALS_SHA256="29e409c8620e803990edbda1ebf49e03a38c08b9187b90658d86bddae913aed4"
 else
     >&2 echo "Unknown sundials version \"$VERSION\""
 fi
