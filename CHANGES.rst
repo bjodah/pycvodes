@@ -1,3 +1,7 @@
+v0.11.10
+========
+- Support for sundials>=4.0.0
+
 v0.11.9
 =======
 - Fix signature in header
