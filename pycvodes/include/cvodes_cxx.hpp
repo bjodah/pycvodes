@@ -90,7 +90,6 @@
 #  endif
 #endif
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
-#include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
 #if SUNDIALS_VERSION_MAJOR > 3 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR >= 1)
@@ -254,6 +253,8 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     IterType iter_;
     SUNNonlinearSolver NLS_;
 #endif
+    CVRhsFn cb_ {nullptr};
+    long int mxsteps_;
 public:
     void *mem {nullptr};
     long int ny {0};
@@ -303,6 +304,7 @@ public:
         auto y_ = y;
 #endif
         int status = CVodeInit(this->mem, cb, t0, y_);
+	this->cb_ = cb;
         if (status == CV_ILL_INPUT)
             throw std::runtime_error("CVodeInit failed (CV_ILL_INPUT).");
         else if (status == CV_MEM_FAIL)
@@ -427,11 +429,12 @@ public:
             check_flag(status);
     }
     void set_max_num_steps(long int mxsteps){
+        this->mxsteps_ = mxsteps;
         int status = CVodeSetMaxNumSteps(this->mem, mxsteps);
         check_flag(status);
     }
     long int get_max_num_steps(){
-        return static_cast<CVodeMem>(this->mem)->cv_mxstep;
+        return this->mxsteps_;
     }
 
     // set_tol
@@ -1090,8 +1093,7 @@ public:
         }
     }
     void call_rhs(realtype t, SVector y, SVector &ydot){
-        CVodeMem cv_mem = (CVodeMem) this->mem;
-        int status = cv_mem->cv_f(t, y.n_vec, ydot.n_vec, cv_mem->cv_user_data);
+        int status = this->cb_(t, y.n_vec, ydot.n_vec, cv_mem->cv_user_data);
         if (status)
             throw std::runtime_error("call_rhs failed.");
     }
