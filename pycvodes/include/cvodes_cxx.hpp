@@ -1093,7 +1093,7 @@ public:
         }
     }
     void call_rhs(realtype t, SVector y, SVector &ydot){
-        int status = this->cb_(t, y.n_vec, ydot.n_vec, cv_mem->cv_user_data);
+        int status = this->cb_(t, y.n_vec, ydot.n_vec, static_cast<void*>(this));
         if (status)
             throw std::runtime_error("call_rhs failed.");
     }
