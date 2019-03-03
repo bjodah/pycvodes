@@ -20,7 +20,9 @@ build:
 
 requirements:
   build:
-    - toolchain
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+  host:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.20*  # [not win]
     - sundials
