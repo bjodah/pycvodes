@@ -1,3 +1,7 @@
+v0.10.14
+========
+- Fix ew_ele in parallel impl.
+
 v0.10.13
 ========
 - Made _config.py more robust
