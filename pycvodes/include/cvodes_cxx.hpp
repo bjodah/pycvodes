@@ -161,6 +161,7 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     SUNLinearSolver LS_ = nullptr;
     N_Vector y_ = nullptr;
     IterLinSolEnum solver_;
+    std::vector<realtype> constraints_;
 #endif
 public:
     void *mem {nullptr};
@@ -684,7 +685,7 @@ public:
         SVectorV ele_(ny, ele);
         this->get_est_local_errors(ele_.n_vec);
     }
-    void set_constraints(N_Vector constraints) const {
+    void set_constraints(N_Vector constraints) {
 #if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
         if (NV_LENGTH_S(constraints) != ny)
             throw std::runtime_error("constraints of incorrect length");
@@ -694,12 +695,15 @@ public:
         } else {
             check_flag(status);
         }
+        constraints_.insert(constraints_.begin(),
+                            NV_DATA_S(constraints),
+                            NV_DATA_S(constraints) + NV_LENGTH_S(constraints));
 #else
         ignore(constraints);
         throw std::runtime_error("setting constraints requires sundials >=3.2.0");
 #endif
     }
-    void set_constraints(const std::vector<realtype> &constraints) const {
+    void set_constraints(const std::vector<realtype> &constraints) {
         SVector constraints_(constraints.size(), constraints.data());
         set_constraints(constraints_.n_vec);
     }
@@ -1054,7 +1058,16 @@ public:
             }
 
             for (int i=0; i<ny; ++i)
-                yout(tidx, 0, i) = y[i];
+                yout(tidx, 0, i) =
+#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
+                    (constraints_.size()) ?
+                    ((constraints_[i] == 1.0) ? std::abs(y[i]) : y[i]) // to allow for autorestart
+                    :
+                    y[i]
+#else
+                    y[i]
+#endif
+                    ;
             // Derivatives for interpolation
             for (unsigned di=1; di<=nderiv; ++di){
                 if (this->get_n_steps() < 2*(nderiv+1))
