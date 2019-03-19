@@ -1057,17 +1057,18 @@ public:
                 std::feclearexcept(FE_ALL_EXCEPT);
             }
 
-            for (int i=0; i<ny; ++i)
-                yout(tidx, 0, i) =
+            for (int i=0; i<ny; ++i) {
 #if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
-                    (constraints_.size()) ?
-                    ((constraints_[i] == 1.0) ? std::abs(y[i]) : y[i]) // to allow for autorestart
-                    :
-                    y[i]
+                if (constraints_.size() and constraints_[i] == 1.0 and y[i] < 0) {
+                    if (this->verbosity > 0) std::clog << "applying abs to y[" << i << "].\n";
+                    yout(tidx, 0, i) = -y[i];
+                } else {
+                    yout(tidx, 0, i) = y[i];
+                }
 #else
-                    y[i]
+                yout(tidx, 0, i) = y[i];
 #endif
-                    ;
+            }
             // Derivatives for interpolation
             for (unsigned di=1; di<=nderiv; ++di){
                 if (this->get_n_steps() < 2*(nderiv+1))
@@ -1230,6 +1231,16 @@ public:
                         tout_.push_back(tout[iout + i - 1] - tout[iout - 1]);
                     std::vector<int> root_indices_;
                     std::vector<realtype> root_out_;
+#if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
+                    if (constraints_.size()) {
+                        for (int i=0; i<ny; ++i){
+                            if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
+                                if (this->verbosity > 0) std::clog << "Applying abs to y[" << i << "].\n";
+                                yqout[i + (iout-1)*((nderiv+1)*ny+nq)] = -yqout[i + (iout-1)*((nderiv+1)*ny+nq)];
+                            }
+                        }
+                    }
+#endif
                     int n_reached = this->predefined(nleft, &tout_[0],
                                                      yqout + (iout-1)*((nderiv+1)*ny+nq),
                                                      yqout + (iout-1)*((nderiv+1)*ny+nq),
