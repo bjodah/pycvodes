@@ -1060,8 +1060,8 @@ public:
             for (int i=0; i<ny; ++i) {
 #if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
                 if (constraints_.size() and constraints_[i] == 1.0 and y[i] < 0) {
-                    if (this->verbosity > 0) std::clog << "applying abs to y[" << i << "].\n";
-                    yout(tidx, 0, i) = -y[i];
+                    if (this->verbosity > 0) std::clog << "clipping y[" << i << "] to zero.\n";
+                    yout(tidx, 0, i) = 0.0;
                 } else {
                     yout(tidx, 0, i) = y[i];
                 }
@@ -1235,8 +1235,8 @@ public:
                     if (constraints_.size()) {
                         for (int i=0; i<ny; ++i){
                             if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
-                                if (this->verbosity > 0) std::clog << "Applying abs to y[" << i << "].\n";
-                                yqout[i + (iout-1)*((nderiv+1)*ny+nq)] = -yqout[i + (iout-1)*((nderiv+1)*ny+nq)];
+                                if (this->verbosity > 0) std::clog << "clipping to y[" << i << "] to zero.\n";
+                                yqout[i + (iout-1)*((nderiv+1)*ny+nq)] = 0;
                             }
                         }
                     }
