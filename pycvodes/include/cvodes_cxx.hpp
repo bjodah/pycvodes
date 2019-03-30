@@ -304,13 +304,14 @@ public:
         auto y_ = y;
 #endif
         int status = CVodeInit(this->mem, cb, t0, y_);
-	this->cb_ = cb;
         if (status == CV_ILL_INPUT)
             throw std::runtime_error("CVodeInit failed (CV_ILL_INPUT).");
         else if (status == CV_MEM_FAIL)
             throw std::bad_alloc(); // "CVodeInit failed (allocation failed).";
         else
             check_flag(status);
+	this->cb_ = cb;
+        fprintf(stderr, "%s:%d: cb=%p\n", __FILE__, __LINE__, (void*)cb);
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag;
         if (this->iter_ == IterType::Newton) {
@@ -1093,6 +1094,7 @@ public:
         }
     }
     void call_rhs(realtype t, SVector y, SVector &ydot){
+        fprintf(stderr, "%s:%d: cb=%p\n", __FILE__, __LINE__, (void*)(this->cb_));
         int status = this->cb_(t, y.n_vec, ydot.n_vec, static_cast<void*>(this));
         if (status)
             throw std::runtime_error("call_rhs failed.");
