@@ -254,6 +254,7 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     SUNNonlinearSolver NLS_;
 #endif
     CVRhsFn cb_ {nullptr};
+    void * user_data_ {nullptr};
     long int mxsteps_;
 public:
     void *mem {nullptr};
@@ -311,7 +312,6 @@ public:
         else
             check_flag(status);
 	this->cb_ = cb;
-        fprintf(stderr, "%s:%d: cb=%p\n", __FILE__, __LINE__, (void*)cb);
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag;
         if (this->iter_ == IterType::Newton) {
@@ -504,6 +504,7 @@ public:
     // user data
     void set_user_data(void *user_data){
         int status = CVodeSetUserData(this->mem, user_data);
+        user_data_ = user_data;
         if (status < 0)
             throw std::runtime_error("CVodeSetUserData failed.");
     }
@@ -1094,8 +1095,7 @@ public:
         }
     }
     void call_rhs(realtype t, SVector y, SVector &ydot){
-        fprintf(stderr, "%s:%d: cb=%p\n", __FILE__, __LINE__, (void*)(this->cb_));
-        int status = this->cb_(t, y.n_vec, ydot.n_vec, static_cast<void*>(this));
+        int status = this->cb_(t, y.n_vec, ydot.n_vec, this->user_data_);
         if (status)
             throw std::runtime_error("call_rhs failed.");
     }
