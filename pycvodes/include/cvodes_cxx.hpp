@@ -312,6 +312,7 @@ public:
         else
             check_flag(status);
 	this->cb_ = cb;
+        set_max_num_steps(500);  // to store mxsteps_
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag;
         if (this->iter_ == IterType::Newton) {
