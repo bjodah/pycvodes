@@ -256,6 +256,7 @@ def _f1(t, y, fout):
 
 _kwargs1 = dict(dx0=0.0, atol=1e-8, rtol=1e-8, nderiv=1, method='adams')
 
+
 @high_precision
 def test_derivative_1():
     yout, info = integrate_predefined(_f1, None, [1], [0, 1, 2], **_kwargs1)
@@ -266,6 +267,7 @@ def test_derivative_1():
         [[exp(2)], [exp(2)]],
     ])
     assert np.allclose(yout, ref)
+
 
 @high_precision
 def test_derivative_1__exception():
