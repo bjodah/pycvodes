@@ -90,7 +90,6 @@
 #  endif
 #endif
 #include <cvodes/cvodes.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
-#include <cvodes/cvodes_impl.h> /* CVodeMem */
 #include <cvodes/cvodes_diag.h>       /* prototype for CVDiag */
 
 #if SUNDIALS_VERSION_MAJOR > 3 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR >= 1)
@@ -254,6 +253,9 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     IterType iter_;
     SUNNonlinearSolver NLS_;
 #endif
+    CVRhsFn cb_ {nullptr};
+    void * user_data_ {nullptr};
+    long int mxsteps_;
 public:
     void *mem {nullptr};
     long int ny {0};
@@ -309,6 +311,8 @@ public:
             throw std::bad_alloc(); // "CVodeInit failed (allocation failed).";
         else
             check_flag(status);
+	this->cb_ = cb;
+        set_max_num_steps(500);  // to store mxsteps_
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag;
         if (this->iter_ == IterType::Newton) {
@@ -427,11 +431,12 @@ public:
             check_flag(status);
     }
     void set_max_num_steps(long int mxsteps){
+        this->mxsteps_ = mxsteps;
         int status = CVodeSetMaxNumSteps(this->mem, mxsteps);
         check_flag(status);
     }
     long int get_max_num_steps(){
-        return static_cast<CVodeMem>(this->mem)->cv_mxstep;
+        return this->mxsteps_;
     }
 
     // set_tol
@@ -500,6 +505,7 @@ public:
     // user data
     void set_user_data(void *user_data){
         int status = CVodeSetUserData(this->mem, user_data);
+        user_data_ = user_data;
         if (status < 0)
             throw std::runtime_error("CVodeSetUserData failed.");
     }
@@ -1090,8 +1096,7 @@ public:
         }
     }
     void call_rhs(realtype t, SVector y, SVector &ydot){
-        CVodeMem cv_mem = (CVodeMem) this->mem;
-        int status = cv_mem->cv_f(t, y.n_vec, ydot.n_vec, cv_mem->cv_user_data);
+        int status = this->cb_(t, y.n_vec, ydot.n_vec, this->user_data_);
         if (status)
             throw std::runtime_error("call_rhs failed.");
     }

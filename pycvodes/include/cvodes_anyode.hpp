@@ -45,8 +45,9 @@ template<class OdeSys>
 int rhs_cb(realtype t, N_Vector y, N_Vector ydot, void *user_data){
     auto t_start = std::chrono::high_resolution_clock::now();
     auto& odesys = *static_cast<OdeSys*>(user_data);
-    if (odesys.record_rhs_xvals)
+    if (odesys.record_rhs_xvals) {
         odesys.current_info.nfo_vecdbl["rhs_xvals"].push_back(t);
+    }
     AnyODE::Status status = odesys.rhs(t, NV_DATA_S(y), NV_DATA_S(ydot));
     static_cast<Integrator*>(odesys.integrator)->time_rhs += std::chrono::duration<double>(
         std::chrono::high_resolution_clock::now() - t_start).count();

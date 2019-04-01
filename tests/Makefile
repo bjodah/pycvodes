@@ -1,11 +1,12 @@
 CXX ?= g++
-LIBS ?=$(shell python3 -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
-PYCVODES_NO_LAPACK=$(shell python3 -c "from pycvodes._config import env; print(env.get('NO_LAPACK', '0'))")
-PYCVODES_NO_KLU=$(shell python3 -c "from pycvodes._config import env; print(env.get('NO_KLU', '0'))")
+PYTHON ?= python3
+LIBS ?=$(shell $(PYTHON) -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
+PYCVODES_NO_LAPACK=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_LAPACK', '0'))")
+PYCVODES_NO_KLU=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_KLU', '0'))")
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
 CXXFLAGS += $(EXTRA_FLAGS)
-INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell python3-config --includes)
+INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
@@ -39,7 +40,7 @@ ifeq ($(CXX),clang++-6.0)
 else
 	./test_cvodes_anyode_parallel --abortx 1
 endif
-	python3 ./_test_cvodes_anyode.py
+	$(PYTHON) ./_test_cvodes_anyode.py
 
 clean:
 	rm catch.o

@@ -251,12 +251,15 @@ def test_integrate_adaptive(method, forgiveness, banded):
     assert '7' in str(excinfo.value).lower()
 
 
+def _f1(t, y, fout):
+    fout[0] = y[0]
+
+_kwargs1 = dict(dx0=0.0, atol=1e-8, rtol=1e-8, nderiv=1, method='adams')
+
+
 @high_precision
 def test_derivative_1():
-    def f(t, y, fout):
-        fout[0] = y[0]
-    kwargs = dict(dx0=0.0, atol=1e-8, rtol=1e-8, nderiv=1, method='adams')
-    yout, info = integrate_predefined(f, None, [1], [0, 1, 2], **kwargs)
+    yout, info = integrate_predefined(_f1, None, [1], [0, 1, 2], **_kwargs1)
     assert yout.shape == (3, 2, 1)
     ref = np.array([
         [[exp(0)], [exp(0)]],
@@ -265,8 +268,11 @@ def test_derivative_1():
     ])
     assert np.allclose(yout, ref)
 
+
+@high_precision
+def test_derivative_1__exception():
     with pytest.raises(RuntimeError) as excinfo:
-        integrate_predefined(f, None, [1], [0, 1, 2], nsteps=7, **kwargs)
+        integrate_predefined(_f1, None, [1], [0, 1, 2], nsteps=7, **_kwargs1)
     assert 'too_much_work' in str(excinfo.value).lower()
     assert '7' in str(excinfo.value).lower()
 
