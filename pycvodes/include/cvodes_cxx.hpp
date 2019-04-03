@@ -101,6 +101,10 @@ typedef int indextype;
 #if !defined(PYCVODES_CLIP_TO_CONSTRAINTS)
 #  define PYCVODES_CLIP_TO_CONSTRAINTS 0
 #endif
+#if SUNDIALS_VERSION_MAJOR < 3 || (SUNDIALS_VERSION_MAJOR == 3 && SUNDIALS_VERSION_MINOR < 2)
+#  define PYCVODES_CLIP_TO_CONSTRAINTS 0
+#endif
+
 
 #if !defined(BEGIN_NAMESPACE)
 #define BEGIN_NAMESPACE(s) namespace s{
@@ -926,8 +930,8 @@ public:
 #endif
     }
     void set_constraints(const std::vector<realtype> &constraints) {
-        SVector constraints_(constraints.size(), constraints.data());
-        set_constraints(constraints_.n_vec);
+        SVector constr_svec(constraints.size(), constraints.data());
+        set_constraints(constr_svec.n_vec);
     }
 
     // get info
