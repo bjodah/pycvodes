@@ -1,5 +1,6 @@
 # -*- coding: utf-8; mode: cython -*-
 # distutils: language = c++
+# cython: language_level=3
 
 import warnings
 from cpython.object cimport PyObject
