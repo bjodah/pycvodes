@@ -28,7 +28,7 @@ build:
     - python2 -m pip install --user --upgrade --upgrade-strategy only-if-needed . pytest
     - python2 -m pytest && python2 -m doctest README.rst
     - apt-get remove -qq -y libsundials-dev
-    - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
+#    - PATH=/opt/miniconda3/bin:$PATH conda build conda-recipe
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 
