@@ -1,3 +1,8 @@
+v0.10.15
+========
+- Handle polynomial interpolation from sundials giving negative values even when
+  using positive constraints.
+
 v0.10.14
 ========
 - Fix ew_ele in parallel impl.
