@@ -1,3 +1,7 @@
+v0.11.12
+========
+- Fix parallel adaptive wrt ew_ele array (triple pointer -> double pointer).
+
 v0.11.11
 ========
 - Add compile time option "PYCVODES_CLIP_TO_CONSTRAINTS" (currently defaults to 0).
