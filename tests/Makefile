@@ -4,7 +4,7 @@ LIBS ?=$(shell $(PYTHON) -c "from pycvodes._config import env; print(' '.join('-
 PYCVODES_NO_LAPACK=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_LAPACK', '0'))")
 PYCVODES_NO_KLU=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_KLU', '0'))")
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
-EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
+EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
 DEFINES ?=
