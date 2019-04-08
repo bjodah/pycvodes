@@ -1,3 +1,9 @@
+v0.11.11
+========
+- Add compile time option "PYCVODES_CLIP_TO_CONSTRAINTS" (currently defaults to 0).
+  To handle polynomial interpolatino from sundials giving negative values even when
+  using positive constraints.
+
 v0.11.10
 ========
 - Support for sundials>=4.0.0
