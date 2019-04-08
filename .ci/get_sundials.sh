@@ -28,18 +28,23 @@ if [ -d "$PREFIX" ]; then >&2 echo "Directory already exists: $PREFIX"; exit 1; 
 if [[ "$VERSION" == "2.7.0" ]]; then
     SUNDIALS_FNAME="sundials-2.7.0.tar.gz"
     SUNDIALS_MD5="c304631b9bc82877d7b0e9f4d4fd94d3"
+    SUNDIALS_SHA256="d39fcac7175d701398e4eb209f7e92a5b30a78358d4a0c0fcc23db23c11ba104"
 elif [[ "$VERSION" == "3.1.1" ]]; then
     SUNDIALS_FNAME="sundials-3.1.1.tar.gz"
     SUNDIALS_MD5="e63f4de0be5be97f750b30b0fa11ef34"
+    SUNDIALS_SHA256="a24d643d31ed1f31a25b102a1e1759508ce84b1e4739425ad0e18106ab471a24"
 elif [[ "$VERSION" == "3.1.2" ]]; then
     SUNDIALS_FNAME="sundials-3.1.2.tar.gz"
     SUNDIALS_MD5="63304dafc935c94a0ad37832085384bc"
+    SUNDIALS_SHA256="a8985bb1e851d90e24260450667b134bc13d71f5c6effc9e1d7183bd874fe116"
 elif [[ "$VERSION" == "3.2.0" ]]; then
     SUNDIALS_FNAME="sundials-3.2.0.tar.gz"
     SUNDIALS_MD5="669e05565d3294478848ed497ac35a6e"
+    SUNDIALS_SHA256="d2b690afecadf8b5a048bb27ab341de591d714605b98d3518985dfc2250e93f9"
 elif [[ "$VERSION" == "3.2.1" ]]; then
     SUNDIALS_FNAME="sundials-3.2.1.tar.gz"
     SUNDIALS_MD5="65c42e4fec7d1f4f4bcd670f9bbe31c0"
+    SUNDIALS_SHA256="47d94d977ab2382cdcdd02f72a25ebd4ba8ca2634bbb2f191fe1636e71c86808"
 elif [[ "$VERSION" == "4.0.0" ]]; then
     SUNDIALS_FNAME="sundials-4.0.0.tar.gz"
     SUNDIALS_MD5="5f584274f1ef7743526076f5a08319be"
