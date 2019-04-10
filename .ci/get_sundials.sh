@@ -61,15 +61,22 @@ elif [[ "$VERSION" == "4.1.0" ]]; then
     SUNDIALS_FNAME="sundials-4.1.0.tar.gz"
     SUNDIALS_MD5="f25bb0bc109ac3db0aaae13eadce559c"
     SUNDIALS_SHA256="280de1c27b2360170a6f46cb3799b2aee9dff3bddbafc8b08c291a47ab258aa5"
+elif [[ "$VERSION" == "5.0.0-dev.0" ]]; then  # temporary
+    SUNDIALS_FNAME="sundials-5.0.0-dev.0.tar.gz"
+    SUNDIALS_MD5="1b27df035cc7a7b4b2e0a7920d9113b2"
+    SUNDIALS_SHA256="241231b93c52579d7ded57016d621762ca6fd720bcdc995ee9b5dc743b215eed"
+    SUNDIALS_URLS=( https://github.com/LLNL/sundials/releases/download/v5.0.0-dev.0/sundials-5.0.0-dev.0.tar.gz )
 else
     >&2 echo "Unknown sundials version \"$VERSION\""
 fi
 
-SUNDIALS_URLS=(\
-    "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
-    "http://davycrockett.mooo.com:49090/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
-    "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
-)
+if [[ ! -v SUNDIALS_URLS[@] ]]; then 
+    SUNDIALS_URLS=(\
+        "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
+        "http://davycrockett.mooo.com:49090/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
+        "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
+    )
+fi
 TIMEOUT=60  # 60 seconds
 
 for URL in "${SUNDIALS_URLS[@]}"; do
