@@ -30,7 +30,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         bool,
         bool,
         int,
-        double***,
+        double**,
         vector[double]&
     ) except +
 
