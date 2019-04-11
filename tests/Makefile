@@ -2,7 +2,7 @@ CXX ?= g++
 LIBS ?=$(shell python3 -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
 USE_LAPACK=$(shell python3 -c "from pycvodes._config import env; print('0' if env['LAPACK'] == '' else '1')")
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DUSE_LAPACK=$(USE_LAPACK)
-EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG
+EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 CXXFLAGS += $(EXTRA_FLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include
 DEFINES ?=
