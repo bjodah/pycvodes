@@ -1,3 +1,7 @@
+v0.10.16
+========
+- Fix parallel adaptive wrt ew_ele array (triple pointer -> double pointer).
+
 v0.10.15
 ========
 - Handle polynomial interpolation from sundials giving negative values even when
