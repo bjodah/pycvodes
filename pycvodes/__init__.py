@@ -120,6 +120,9 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
             Whether to return error_weights, estimated_local_errors in info dict.
         'constraints': array
             Per component constraints 0.0: no constraint, 1.0: >=0, -1.0: <=0, 2.0: >0.0, -2.0: <0.0.
+        'max_steps_between_jac': int
+             Maximum  number  of  timesteps to wait before recomputation of the Jacobian or
+             recommendation to update the preconditioner.
 
     Returns
     -------

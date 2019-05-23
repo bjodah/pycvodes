@@ -448,7 +448,6 @@ public:
     long int get_max_num_steps(){
         return this->mxsteps_;
     }
-
     // set_tol
     void set_tol(realtype rtol, realtype atol){
         int status = CVodeSStolerances(this->mem, rtol, atol);
@@ -798,8 +797,9 @@ public:
         case CVLS_LMEM_NULL:
             throw std::runtime_error("linear solver has not been initialized)");
         }
-        if ((check_ill_input) && (flag == CVLS_ILL_INPUT))
+        if ((check_ill_input) && (flag == CVLS_ILL_INPUT)) {
             throw std::runtime_error("Bad input.");
+        }
     }
     void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -876,6 +876,17 @@ public:
 #endif
         this->cvspils_check_flag(flag);
     }
+// Linear solver options:
+    void set_max_steps_between_jac(long int msbj) {
+#if SUNDIALS_VERSION_MAJOR >= 4
+        int flag = CVodeSetMaxStepsBetweenJac(this->mem, msbj);
+        cvspils_check_flag(flag);
+#else
+        ignore(msbj);
+        throw std::runtime_error("set_max_steps_between_jac  requires sundials >=4.0.0");
+#endif
+    }
+// Getters:
     int get_current_order() {
         int qcur;
         CVodeGetCurrentOrder(this->mem, &qcur);

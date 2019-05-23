@@ -83,7 +83,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
              int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
              bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
              bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-             int nprealloc=500, jtimes=None, bool ew_ele=False, indextype nnz=-1, vector[realtype] constraints=[]):
+             int nprealloc=500, jtimes=None, bool ew_ele=False, indextype nnz=-1, vector[realtype] constraints=[], long int max_steps_between_jac=0):
     cdef:
         indextype nyq = yq0.shape[yq0.ndim - 1]
         indextype ny = nyq - nquads
@@ -151,7 +151,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
             iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
             maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
-            tidx, &ew_ele_out if ew_ele else NULL, constraints)
+            tidx, &ew_ele_out if ew_ele else NULL, constraints, max_steps_between_jac)
 
         xyqout_dims[0] = nout + 1
         xyqout_dims[1] = ny*(nderiv+1) + 1 + nquads
@@ -198,7 +198,8 @@ def predefined(rhs, jac,
                int autorestart=0, bool return_on_error=False, bool record_rhs_xvals=False,
                bool record_jac_xvals=False, bool record_order=False, bool record_fpe=False,
                bool record_steps=False, dx0cb=None, dx_max_cb=None, bool autonomous_exprs=False,
-               jtimes=None, bool ew_ele=False, indextype nnz=-1, const vector[realtype] constraints=[]):
+               jtimes=None, bool ew_ele=False, indextype nnz=-1, const vector[realtype] constraints=[],
+                   long int max_steps_between_jac=0):
     cdef:
         indextype nyq = yq0.shape[yq0.ndim - 1]
         indextype ny = nyq - nquads
@@ -260,7 +261,7 @@ def predefined(rhs, jac,
             dx0, dx_min, dx_max, with_jacobian, iter_type_from_name(iter_type.lower().encode('UTF-8')),
             linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
             maxl, eps_lin, nderiv, autorestart, return_on_error, with_jtimes,
-            ew_ele_out if ew_ele else NULL, constraints)
+            ew_ele_out if ew_ele else NULL, constraints, max_steps_between_jac)
 
         yqout_dims[0] = xout.size
         yqout_dims[1] = nderiv + 1

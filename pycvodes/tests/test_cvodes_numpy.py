@@ -620,7 +620,29 @@ def test_constraints():
     assert info2['n_steps'] < info1['n_steps'] - 2  # <-- thanks to constraints
 
     with pytest.raises(Exception):
-        integrate_adaptive(*args, constraints=[42.0, 17.0, 1984], **kwargs)
+        integrate_adaptive(*args, constraints=[42.0, 17.0, 1984], **kwargs)  # incorrect values for constraints
+
+
+@high_precision
+@pytest.mark.skipif(sundials_version < (4, 0, 0), reason="Sundials >=4.0.0 req. for CVodeSetMaxStepsBetweenJac")
+def test_set_max_steps_between_jac():
+    k = 1e23, 3.0, 4.0
+    y0 = [.7, .0, .0]
+    x0, xend = 0, 5
+    kwargs = dict(atol=1e-8, rtol=1e-8, method='bdf', dx_max_cb=lambda x, y: 1e-3, nsteps=xend*1050)
+    f, j = _get_f_j(k)
+    xout, yout, info = integrate_adaptive(
+        f, j, y0, x0, xend,
+        max_steps_between_jac=5,  # 1e6=>6, 100=>49, 50 => 92, 25=>137, 10=>270, 5=>276, 2=>284, 1=>292
+        **kwargs)
+    assert info['njev'] > 200
+
+    yref = decay_get_Cref(k, y0, xout)
+    assert np.allclose(yout, yref, atol=40*kwargs['atol'], rtol=40*kwargs['rtol'])
+    assert info['n_steps'] > 1000
+    assert info['nfev'] > 0
+    assert info['success'] is True
+    assert xout[-1] == xend
 
 
 @high_precision
