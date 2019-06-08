@@ -14,29 +14,24 @@ source:
   git_url: ../
 
 build:
-  number: 200
-  features:
-    - blas_{{ variant }}  # [not win]
+  number: 0
 
 requirements:
   build:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
   host:
-    - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.20*  # [not win]
+    - libblas
+    - liblapack
     - sundials <4.0.0
     - python
     - setuptools
     - pip
     - cython
-    - numpy 1.11.*
+    - numpy
   run:
-    - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.20|0.2.20.*  # [not win]
-    - sundials <4.0.0
     - python
-    - numpy >=1.11
+    - {{ pin_compatible('numpy') }}
 
 test:
   imports:

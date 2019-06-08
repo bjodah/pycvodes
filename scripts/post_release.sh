@@ -28,7 +28,7 @@ sed -i -E \
     dist/conda-recipe-$VERSION/meta.yaml
 
 ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-packages'
-for CONDA_PY in 27 35 36; do
+for CONDA_PY in 36 37; do
     anfilte-build . dist/conda-recipe-$VERSION dist/ --python ${CONDA_PY}
     scp dist/linux-64/${PKG}-${VERSION}-py${CONDA_PY}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
 done
