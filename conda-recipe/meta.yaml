@@ -32,6 +32,7 @@ requirements:
   run:
     - python
     - {{ pin_compatible('numpy') }}
+    - {{ pin_compatible('sundials') }}
 
 test:
   imports:
