@@ -1,3 +1,7 @@
+v0.11.13
+========
+- Expose set_max_steps_between_jac
+
 v0.11.12
 ========
 - Fix parallel adaptive wrt ew_ele array (triple pointer -> double pointer).
