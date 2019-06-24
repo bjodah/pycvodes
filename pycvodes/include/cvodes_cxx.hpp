@@ -1001,7 +1001,7 @@ public:
                         }
                     } else {
                         if (this->verbosity > 0){
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << " Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                             if (status >= 0) {
                                 N_Vector ele, ew;
                                 ele = N_VNew_Serial(ny);
@@ -1019,7 +1019,7 @@ public:
                                 }
                                 N_VDestroy_Serial(ele);
                                 N_VDestroy_Serial(ew);
-                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
                         if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
@@ -1203,7 +1203,7 @@ public:
                     }
                 } else {
                     if (this->verbosity > 0){
-                        std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                         if (status >= 0) {
                             N_Vector ele, ew;
                             ele = N_VNew_Serial(ny);
@@ -1221,7 +1221,7 @@ public:
                             }
                             N_VDestroy_Serial(ele);
                             N_VDestroy_Serial(ew);
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                         }
                     }
                     this->set_max_num_steps(mxsteps + this->get_max_num_steps());
