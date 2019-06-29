@@ -1001,7 +1001,7 @@ public:
                         }
                     } else {
                         if (this->verbosity > 0){
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << " Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << " Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                             if (status >= 0) {
                                 N_Vector ele, ew;
                                 ele = N_VNew_Serial(ny);
@@ -1019,16 +1019,16 @@ public:
                                 }
                                 N_VDestroy_Serial(ele);
                                 N_VDestroy_Serial(ew);
-                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                                std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
                         if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
                             if (this->verbosity > 0)
-                                std::cerr << "    Singular Jacobian?";
-                            this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
-                            this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
+                                std::clog << "    Singular Jacobian?";
+                            this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
+                            this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
                         }
-                        if (this->verbosity > 0) std::cerr << '\n';
+                        if (this->verbosity > 0) std::clog << '\n';
                         if (tidx > mxsteps){
                             this->set_max_num_steps(this->get_max_num_steps() + 500);
                         }
@@ -1203,7 +1203,7 @@ public:
                     }
                 } else {
                     if (this->verbosity > 0){
-                        std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
                         if (status >= 0) {
                             N_Vector ele, ew;
                             ele = N_VNew_Serial(ny);
@@ -1221,7 +1221,7 @@ public:
                             }
                             N_VDestroy_Serial(ele);
                             N_VDestroy_Serial(ew);
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                         }
                     }
                     this->set_max_num_steps(mxsteps + this->get_max_num_steps());
