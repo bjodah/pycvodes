@@ -231,6 +231,7 @@ std::unique_ptr<Integrator> get_integrator(
     integr.record_order = odesys->record_order;
     integr.record_fpe = odesys->record_fpe;
     integr.record_steps = odesys->record_steps;
+    //integr.record_mxss = odesys->record_mxss;  TODO: record_* don't belong in odesys struct
     integr.set_user_data(static_cast<void *>(odesys));
     integr.init(rhs_cb<OdeSys>, t0, yq0, ny);
     if (nroots > 0)

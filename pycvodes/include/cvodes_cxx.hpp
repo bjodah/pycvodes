@@ -1,5 +1,5 @@
 #pragma once
-// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.1.x)
+// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.2.1)
 // far from all functionality has been wrapped yet.
 
 #include <assert.h>
@@ -168,11 +168,13 @@ public:
     long int ny {0};
     int nq {0};
     int verbosity = 50;  // "50%" -- plenty of room for future tuning.
+    int autorestart_additional_steps {500};
+    bool autorestart_relax_tolerances_last_restart {false};
     bool autonomous_exprs = false;
-    bool record_order = false, record_fpe = false, record_steps = false;
+    bool record_order = false, record_fpe = false, record_steps = false, record_mxss = false;
     double time_rhs {0}, time_jac {0}, time_roots {0}, time_quads {0}, time_prec {0}, time_jtimes {0};
     std::vector<int> orders_seen, fpes_seen;
-    std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
+    std::vector<double> steps_seen, mxss_seen;  // Conversion from float / long double not a problem.
     Integrator(const LMM lmm, const IterType iter) {
         this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
         if (!this->mem)
@@ -704,8 +706,8 @@ public:
 #endif
     }
     void set_constraints(const std::vector<realtype> &constraints) {
-        SVector constraints_(constraints.size(), constraints.data());
-        set_constraints(constraints_.n_vec);
+        SVector sv_constraints(constraints.size(), constraints.data());
+        set_constraints(sv_constraints.n_vec);
     }
 
     // get info
@@ -982,8 +984,13 @@ public:
                     }
                 }
             }
-            if (get_dx_max)
-                this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
+            if (get_dx_max) {
+                const auto mxss = get_dx_max(cur_t, y.get_data_ptr());
+                this->set_max_step(mxss);
+                if (record_mxss) {
+                    mxss_seen.push_back(mxss);
+                }
+            }
             status = this->step(xend, y, &cur_t, Task::One_Step);
             if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) || (tidx > mxsteps)){
                 if (status == CV_ROOT_RETURN){
@@ -1001,7 +1008,8 @@ public:
                         }
                     } else {
                         if (this->verbosity > 0){
-                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << " Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << " Autorestart (" << autorestart << ") t=" << cur_t
+                                      << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals()  << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
                             if (status >= 0) {
                                 N_Vector ele, ew;
                                 ele = N_VNew_Serial(ny);
@@ -1019,18 +1027,18 @@ public:
                                 }
                                 N_VDestroy_Serial(ele);
                                 N_VDestroy_Serial(ew);
-                                std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                                std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
-                        if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
+                        if (status == CV_CONV_FAILURE && autorestart == 1 && this->autorestart_relax_tolerances_last_restart) {
                             if (this->verbosity > 0)
-                                std::clog << "    Singular Jacobian?";
+                                std::clog << "    Desperate times call for desperate measures: relaxing tolerances to 1e-3/1e-3 and relying on finite differences";
                             this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
                             this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
                         }
                         if (this->verbosity > 0) std::clog << '\n';
                         if (tidx > mxsteps){
-                            this->set_max_num_steps(this->get_max_num_steps() + 500);
+                            this->set_max_num_steps(mxsteps + autorestart_additional_steps);
                         }
                         const int step_back = (tidx > 1) ? 2 : 1;
                         const double last_x = xout(tidx - step_back);
@@ -1158,8 +1166,13 @@ public:
             }
         }
         for(iout=1; (iout < nt); iout++) {
-            if (get_dx_max)
-                this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
+            if (get_dx_max) {
+                const auto mxss = get_dx_max(cur_t, y.get_data_ptr());
+                this->set_max_step(mxss);
+                if (record_mxss) {
+                    mxss_seen.push_back(mxss);
+                }
+            }
             status = this->step(tout[iout], y, &cur_t, Task::Normal);
             if(status == CV_SUCCESS){
                 if (record_order)
@@ -1203,7 +1216,8 @@ public:
                     }
                 } else {
                     if (this->verbosity > 0){
-                        std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                        std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ": Autorestart (" << autorestart << ") t=" << cur_t
+                                  << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals() << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
                         if (status >= 0) {
                             N_Vector ele, ew;
                             ele = N_VNew_Serial(ny);
@@ -1221,10 +1235,16 @@ public:
                             }
                             N_VDestroy_Serial(ele);
                             N_VDestroy_Serial(ew);
-                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __func__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                         }
                     }
-                    this->set_max_num_steps(mxsteps + this->get_max_num_steps());
+                    if (status == CV_CONV_FAILURE && autorestart == 1 && this->autorestart_relax_tolerances_last_restart) {
+                        if (this->verbosity > 0)
+                            std::clog << "    Desperate times call for desperate measures: relaxing tolerances to 1e-3/1e-3 and relying on finite differences";
+                        this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
+                        this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
+                    }
+                    this->set_max_num_steps(mxsteps + this->autorestart_additional_steps);
                     std::vector<double> tout_;
                     long int nleft = nt - iout + 1;
                     for (int i=0; i<nleft; ++i)
@@ -1232,10 +1252,13 @@ public:
                     std::vector<int> root_indices_;
                     std::vector<realtype> root_out_;
 #if SUNDIALS_VERSION_MAJOR >= 3 && SUNDIALS_VERSION_MINOR >= 2
+                    std::clog << "constraints_.size() = " << constraints_.size() << "\n"; //DEBUG, DO-NOT-MERGE!
                     if (constraints_.size()) {
+                        std::clog << "constraints[0] = " << constraints_[0] << "\n"; //DEBUG, DO-NOT-MERGE!
                         for (int i=0; i<ny; ++i){
                             if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
-                                if (this->verbosity > 60) std::clog << "clipping to y[" << i << "] to zero.\n";
+//                                if (this->verbosity > 60)
+                                    std::clog << "clipping to y[" << i << "] to zero.\n";
                                 yqout[i + (iout-1)*((nderiv+1)*ny+nq)] = 0;
                             }
                         }
