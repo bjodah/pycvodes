@@ -1440,7 +1440,7 @@ public:
                 } else {
                     if (this->verbosity > 0) std::cerr << __FILE__ << ":" << __LINE__ <<
                                                  ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
-                    this->set_max_num_steps(mxsteps + this->get_max_num_steps());
+                    this->set_max_num_steps(mxsteps + 500);
                     std::vector<realtype> tout_;
                     long int nleft = nt - iout + 1;
                     for (int i=0; i<nleft; ++i)
