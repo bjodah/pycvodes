@@ -404,15 +404,6 @@ int
                 const std::vector<realtype> &constraints={},
                 const long int msbj=0
     ){
-    // iter_type == Undecided => Functional if lmm == Adams else Newton
-
-    // linear_solver ==  0 => 1 if get_mlower() == -1 else 2
-    // linear_solver ==  1 => Direct (dense LU-factorization)
-    // linear_solver ==  2 => Direct (banded LU-factorization)
-    // linear_solver == 10 => Iterative, GMRES, Modified Gram-Schmidt
-    // linear_solver == 11 => Iterative, GMRES, Classical Gram-Schmidt
-    // linear_solver == 20 => Iterative, Bi-CGStab (maxl => maximum dimension of Krylov subspace)
-    // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
     if (linear_solver == LinSol::DEFAULT)
@@ -490,15 +481,6 @@ int simple_predefined(OdeSys * const odesys,
                       const std::vector<realtype> &constraints={},
                       const long int msbj=0
     ){
-    // iter_type == Undecided => Functional if lmm == Adams else Newton
-
-    // linear_solver ==  0 => 1 if get_mlower() == -1 else 2
-    // linear_solver ==  1 => Direct (dense LU-factorization)
-    // linear_solver ==  2 => Direct (banded LU-factorization)
-    // linear_solver == 10 => Iterative, GMRES, Modified Gram-Schmidt
-    // linear_solver == 11 => Iterative, GMRES, Classical Gram-Schmidt
-    // linear_solver == 20 => Iterative, Bi-CGStab (maxl => maximum dimension of Krylov subspace)
-    // linear_solver == 30 => Iterative, TFQMR (maxl => maximum dimension of Krylov subspace)
     if (iter_type == IterType::Undecided)
         iter_type = (lmm == LMM::Adams) ? IterType::Functional : IterType::Newton;
     if (linear_solver == LinSol::DEFAULT)
