@@ -290,7 +290,13 @@ public:
         this->errfp = fopen(filename, "o");
         set_err_file(this->errfp);
     }
-
+    void set_stab_lim_det(const bool active) {
+        int flag = CVodeSetStabLimDet(this->mem, active);
+        if (flag == CV_ILL_INPUT) {
+            throw std::runtime_error("The linear multistep method is not set to CV_BDF.");
+        }
+        check_flag(flag);
+    }
     // Step specifications
     void set_init_step(realtype h0){
         int status = CVodeSetInitStep(this->mem, h0);
