@@ -262,6 +262,7 @@ std::unique_ptr<Integrator> get_integrator(
     if (constraints.size())
         integr.set_constraints(constraints);
     integr.set_stab_lim_det(stab_lim_det);
+    integr.stab_lim_det_ = stab_lim_det; // for autorestart
     integr.set_init_step(dx0);
     if (dx_min != 0.0)
         integr.set_min_step(dx_min);

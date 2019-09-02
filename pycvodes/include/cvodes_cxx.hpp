@@ -170,8 +170,9 @@ public:
     int verbosity = 50;  // "50%" -- plenty of room for future tuning.
     int autorestart_additional_steps {500};
     bool autorestart_relax_tolerances_last_restart {false};
-    bool autonomous_exprs = false;
+    bool autonomous_exprs {false};
     bool record_order = false, record_fpe = false, record_steps = false, record_mxss = false;
+    bool stab_lim_det_ {false}; // reinit at autorestart... (fixed in pycvodes2)
     double time_rhs {0}, time_jac {0}, time_roots {0}, time_quads {0}, time_prec {0}, time_jtimes {0};
     std::vector<int> orders_seen, fpes_seen;
     std::vector<double> steps_seen, mxss_seen;  // Conversion from float / long double not a problem.
@@ -291,6 +292,7 @@ public:
         set_err_file(this->errfp);
     }
     void set_stab_lim_det(const bool active) {
+        std::clog << "setting stab_lim_det to:" << active << '\n'; //debug, DO-NOT-MERGE!
         int flag = CVodeSetStabLimDet(this->mem, active);
         if (flag == CV_ILL_INPUT) {
             throw std::runtime_error("The linear multistep method is not set to CV_BDF.");
@@ -952,6 +954,9 @@ public:
         for (int i=0; i<ny; ++i)
             y[i] = yout(tidx, 0, i);
         this->reinit(xout(tidx), y);
+        if (stab_lim_det_){
+            this->set_stab_lim_det(stab_lim_det_);
+        }
         if (nq){
             auto yQ0 = SVector(nq, &qout(tidx, 0));
             this->quad_reinit(yQ0);
@@ -1144,6 +1149,9 @@ public:
         for (int i=0; i<ny; ++i)
             y[i] = yq0[i];
         this->reinit(tout[0], y);
+        if (stab_lim_det_){
+            this->set_stab_lim_det(stab_lim_det_);
+        }
         if (nq){
             auto yQ0 = SVector(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
             this->quad_reinit(yQ0);
