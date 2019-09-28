@@ -33,7 +33,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         int,
         realtype **,
         vector[double]&,
-        long int
+        long int,
         bool
     ) except +
 
@@ -63,6 +63,6 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         const bool,
         realtype *,
         vector[double]&,
-        long int
+        long int,
         bool
     ) except +

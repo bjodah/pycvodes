@@ -424,7 +424,6 @@ public:
         set_err_file(this->errfp);
     }
     void set_stab_lim_det(const bool active) {
-        std::clog << "setting stab_lim_det to:" << active << '\n'; //debug, DO-NOT-MERGE!
         int flag = CVodeSetStabLimDet(this->mem, active);
         if (flag == CV_ILL_INPUT) {
             throw std::runtime_error("The linear multistep method is not set to CV_BDF.");
@@ -1477,7 +1476,7 @@ public:
                             realtype mx = 0.0;
                             int mxi = -1;
                             for (unsigned i=0; i < ny; ++i){
-                                const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                const realtype cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
                                 if (cur > mx){
                                     mxi = i;
                                     mx = cur;
@@ -1495,7 +1494,7 @@ public:
                         this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
                     }
                     this->set_max_num_steps(mxsteps + this->autorestart_additional_steps);
-                    std::vector<double> tout_;
+                    std::vector<realtype> tout_;
                     long int nleft = nt - iout + 1;
                     for (int i=0; i<nleft; ++i)
                         tout_.push_back(tout[iout + i - 1] - tout[iout - 1]);
@@ -1503,7 +1502,6 @@ public:
                     std::vector<realtype> root_out_;
 #if PYCVODES_CLIP_TO_CONSTRAINTS == 1
                     if (constraints_.size()) {
-                        std::clog << "constraints[0] = " << constraints_[0] << "\n"; //DEBUG, DO-NOT-MERGE!
                         for (int i=0; i<ny; ++i){
                             if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
                                 if (this->verbosity > 60) { std::clog << "clipping to y[" << i << "] to zero.\n"; }
