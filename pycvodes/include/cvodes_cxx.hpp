@@ -1,5 +1,5 @@
 #pragma once
-// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.1.x)
+// Thin C++11 wrapper around CVODES from (SUNDIALS v2.7.0 and v3.2.1)
 // far from all functionality has been wrapped yet.
 
 #include <assert.h>
@@ -271,11 +271,14 @@ public:
     long int ny {0};
     int nq {0};
     int verbosity = 50;  // "50%" -- plenty of room for future tuning.
-    bool autonomous_exprs = false;
-    bool record_order = false, record_fpe = false, record_steps = false;
+    int autorestart_additional_steps {500};
+    bool autorestart_relax_tolerances_last_restart {false};
+    bool autonomous_exprs {false};
+    bool record_order = false, record_fpe = false, record_steps = false, record_mxss = false;
+    bool stab_lim_det_ {false}; // reinit at autorestart... (fixed in pycvodes2)
     double time_rhs {0}, time_jac {0}, time_roots {0}, time_quads {0}, time_prec {0}, time_jtimes {0};
     std::vector<int> orders_seen, fpes_seen;
-    std::vector<double> steps_seen;  // Conversion from float / long double not a problem.
+    std::vector<double> steps_seen, mxss_seen;  // Conversion from float / long double not a problem.
     Integrator(const LMM lmm, const IterType iter) {
 #if SUNDIALS_VERSION_MAJOR >= 4
         this->mem = CVodeCreate(static_cast<int>(lmm));
@@ -420,7 +423,14 @@ public:
         this->errfp = fopen(filename, "o");
         set_err_file(this->errfp);
     }
-
+    void set_stab_lim_det(const bool active) {
+        std::clog << "setting stab_lim_det to:" << active << '\n'; //debug, DO-NOT-MERGE!
+        int flag = CVodeSetStabLimDet(this->mem, active);
+        if (flag == CV_ILL_INPUT) {
+            throw std::runtime_error("The linear multistep method is not set to CV_BDF.");
+        }
+        check_flag(flag);
+    }
     // Step specifications
     void set_init_step(realtype h0){
         int status = CVodeSetInitStep(this->mem, h0);
@@ -941,8 +951,8 @@ public:
 #endif
     }
     void set_constraints(const std::vector<realtype> &constraints) {
-        SVector constr_svec(constraints.size(), constraints.data());
-        set_constraints(constr_svec.n_vec);
+        SVector sv_constraints(constraints.size(), constraints.data());
+        set_constraints(sv_constraints.n_vec);
     }
 
     // get info
@@ -1180,6 +1190,9 @@ public:
         for (int i=0; i<ny; ++i)
             y[i] = yout(tidx, 0, i);
         this->reinit(xout(tidx), y);
+        if (stab_lim_det_){
+            this->set_stab_lim_det(stab_lim_det_);
+        }
         if (nq){
             auto yQ0 = SVector(nq, &qout(tidx, 0));
             this->quad_reinit(yQ0);
@@ -1218,8 +1231,13 @@ public:
                     }
                 }
             }
-            if (get_dx_max)
-                this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
+            if (get_dx_max) {
+                const auto mxss = get_dx_max(cur_t, y.get_data_ptr());
+                this->set_max_step(mxss);
+                if (record_mxss) {
+                    mxss_seen.push_back(mxss);
+                }
+            }
             status = this->step(xend, y, &cur_t, Task::One_Step);
             if((status != CV_SUCCESS && status != CV_TSTOP_RETURN) || (tidx > mxsteps)){
                 if (status == CV_ROOT_RETURN){
@@ -1237,7 +1255,8 @@ public:
                         }
                     } else {
                         if (this->verbosity > 0){
-                            std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << " Autorestart (" << autorestart << ") t=" << cur_t
+                                      << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals()  << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
                             if (status >= 0) {
                                 N_Vector ele, ew;
                                 ele = N_VNew_Serial(ny);
@@ -1255,18 +1274,18 @@ public:
                                 }
                                 N_VDestroy_Serial(ele);
                                 N_VDestroy_Serial(ew);
-                                std::cerr << "cvodes_cxx.hpp:" << __LINE__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                                std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
-                        if (status == CV_CONV_FAILURE && autorestart == 1) { // Most likely close to singular matrix
+                        if (status == CV_CONV_FAILURE && autorestart == 1 && this->autorestart_relax_tolerances_last_restart) {
                             if (this->verbosity > 0)
-                                std::cerr << "    Singular Jacobian?";
-                            this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::cerr << " - using atol=1e-3, rtol=1e-3";
-                            this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::cerr << " - using finite differences.\n"; // Hail Mary
+                                std::clog << "    Desperate times call for desperate measures: relaxing tolerances to 1e-3/1e-3 and relying on finite differences";
+                            this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
+                            this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
                         }
                         if (this->verbosity > 0) std::cerr << '\n';
                         if (tidx > mxsteps){
-                            this->set_max_num_steps(this->get_max_num_steps() + 500);
+                            this->set_max_num_steps(mxsteps + autorestart_additional_steps);
                         }
                         const int step_back = (tidx > 1) ? 2 : 1;
                         const realtype last_x = xout(tidx - step_back);
@@ -1366,6 +1385,9 @@ public:
         for (int i=0; i<ny; ++i)
             y[i] = yq0[i];
         this->reinit(tout[0], y);
+        if (stab_lim_det_){
+            this->set_stab_lim_det(stab_lim_det_);
+        }
         if (nq){
             auto yQ0 = SVector(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
             this->quad_reinit(yQ0);
@@ -1394,8 +1416,13 @@ public:
             }
         }
         for(iout=1; (iout < nt); iout++) {
-            if (get_dx_max)
-                this->set_max_step(get_dx_max(cur_t, y.get_data_ptr()));
+            if (get_dx_max) {
+                const auto mxss = get_dx_max(cur_t, y.get_data_ptr());
+                this->set_max_step(mxss);
+                if (record_mxss) {
+                    mxss_seen.push_back(mxss);
+                }
+            }
             status = this->step(tout[iout], y, &cur_t, Task::Normal);
             if(status == CV_SUCCESS){
                 if (record_order)
@@ -1438,10 +1465,37 @@ public:
                         unsuccessful_step_throw_(status);
                     }
                 } else {
-                    if (this->verbosity > 0) std::cerr << __FILE__ << ":" << __LINE__ <<
-                                                 ": Autorestart (" << autorestart << ") t=" << cur_t << "\n";
-                    this->set_max_num_steps(mxsteps + 500);
-                    std::vector<realtype> tout_;
+                    if (this->verbosity > 0){
+                        std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ": Autorestart (" << autorestart << ") t=" << cur_t
+                                  << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals() << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
+                        if (status >= 0) {
+                            N_Vector ele, ew;
+                            ele = N_VNew_Serial(ny);
+                            ew = N_VNew_Serial(ny);
+                            get_est_local_errors(ele);
+                            get_err_weights(ew);
+                            realtype mx = 0.0;
+                            int mxi = -1;
+                            for (unsigned i=0; i < ny; ++i){
+                                const double cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                if (cur > mx){
+                                    mxi = i;
+                                    mx = cur;
+                                }
+                            }
+                            N_VDestroy_Serial(ele);
+                            N_VDestroy_Serial(ew);
+                            std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                        }
+                    }
+                    if (status == CV_CONV_FAILURE && autorestart == 1 && this->autorestart_relax_tolerances_last_restart) {
+                        if (this->verbosity > 0)
+                            std::clog << "    Desperate times call for desperate measures: relaxing tolerances to 1e-3/1e-3 and relying on finite differences";
+                        this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
+                        this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
+                    }
+                    this->set_max_num_steps(mxsteps + this->autorestart_additional_steps);
+                    std::vector<double> tout_;
                     long int nleft = nt - iout + 1;
                     for (int i=0; i<nleft; ++i)
                         tout_.push_back(tout[iout + i - 1] - tout[iout - 1]);
@@ -1449,6 +1503,7 @@ public:
                     std::vector<realtype> root_out_;
 #if PYCVODES_CLIP_TO_CONSTRAINTS == 1
                     if (constraints_.size()) {
+                        std::clog << "constraints[0] = " << constraints_[0] << "\n"; //DEBUG, DO-NOT-MERGE!
                         for (int i=0; i<ny; ++i){
                             if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
                                 if (this->verbosity > 60) { std::clog << "clipping to y[" << i << "] to zero.\n"; }

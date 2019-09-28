@@ -34,6 +34,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         realtype **,
         vector[double]&,
         long int
+        bool
     ) except +
 
     cdef int simple_predefined[U](
@@ -63,4 +64,5 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         realtype *,
         vector[double]&,
         long int
+        bool
     ) except +

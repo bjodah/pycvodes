@@ -39,7 +39,8 @@ namespace cvodes_anyode_parallel {
                    int tidx=0,
                    realtype ** ew_ele=nullptr,
                    const std::vector<realtype> &constraints={},
-                   const long int msbj=0
+                   const long int msbj=0,
+                   bool stab_lim_det=false
                    ){
         const indextype ny = odesys[0]->get_ny();
         AnyODE::ignore(ny);
@@ -58,7 +59,7 @@ namespace cvodes_anyode_parallel {
                     odesys[idx], atol, rtol, lmm, tend[idx],
                     results[idx].second, mxsteps, dx0[idx], dx_min[idx], dx_max[idx],
                     with_jacobian, iter_type, linear_solver, maxl, eps_lin, nderiv,
-                    return_on_root, autorestart, return_on_error, with_jtimes, tidx, (ew_ele) ? &ew_ele[idx] : nullptr, constraints, msbj);
+                    return_on_root, autorestart, return_on_error, with_jtimes, tidx, (ew_ele) ? &ew_ele[idx] : nullptr, constraints, msbj, stab_lim_det);
             });
         }
         te.rethrow();
@@ -90,7 +91,8 @@ namespace cvodes_anyode_parallel {
                      const bool with_jtimes=false,
                      realtype ** ew_ele=nullptr,
                      const std::vector<realtype> &constraints={},
-                     const long int msbj=0
+                     const long int msbj=0,
+                     bool stab_lim_det=false
                      ){
         const indextype ny = odesys[0]->get_ny();
         const int nsys = odesys.size();
@@ -112,7 +114,7 @@ namespace cvodes_anyode_parallel {
                         nreached_roots[idx].second.first, nreached_roots[idx].second.second,
                         mxsteps, dx0[idx], dx_min[idx], dx_max[idx], with_jacobian,
                         iter_type, linear_solver, maxl, eps_lin, nderiv,
-                        autorestart, return_on_error, with_jtimes, (ew_ele) ? ew_ele[idx] : nullptr, constraints, msbj);
+                        autorestart, return_on_error, with_jtimes, (ew_ele) ? ew_ele[idx] : nullptr, constraints, msbj, stab_lim_det);
             });
         }
         if (!return_on_error)
