@@ -1,3 +1,7 @@
+v0.11.15
+========
+- stab_lim_det
+
 v0.11.13
 ========
 - Expose set_max_steps_between_jac
