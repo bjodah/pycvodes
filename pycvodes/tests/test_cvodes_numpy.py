@@ -175,6 +175,8 @@ def test_integrate_predefined(method, forgiveness, banded):
         else:
             atol = [1e-8, 3e-9, 2e-9]
             rtol = 1e-8
+        if method == 'bdf':
+            kwargs['stab_lim_det'] = True
         # Run twice to catch possible side-effects:
         yout, nfo = integrate_predefined(f, j, y0, xout, atol, rtol, **kwargs)
         yout, nfo = integrate_predefined(f, j, y0, xout, atol, rtol, **kwargs)
@@ -228,6 +230,8 @@ def test_integrate_adaptive(method, forgiveness, banded):
             kwargs['lband'] = 1
             kwargs['uband'] = 0
     # Run twice to catch possible side-effects:
+    if method == 'bdf':
+        kwargs['stab_lim_det'] = True
     xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
     xout, yout, info = integrate_adaptive(f, j, y0, **kwargs)
     yref = decay_get_Cref(k, y0, xout)
