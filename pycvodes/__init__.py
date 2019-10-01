@@ -71,7 +71,7 @@ def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
         perform signature sanity checks on ``rhs`` and ``jac``
     check_indexing : bool
         Perform item setting sanity checks on ``rhs`` and ``jac``.
-    \*\*kwargs:
+    \\*\\*kwargs:
         'lband' : int
             Number of lower bands.
             Indexing: ``banded[row_i - col_i + uband, col_i]``.
@@ -201,7 +201,7 @@ def integrate_predefined(rhs, jac, y0, xout, atol, rtol, jac_type="dense",
         Perform signature sanity checks on ``rhs`` and ``jac``.
     check_indexing : bool (default: False)
         Perform item setting sanity checks on ``rhs`` and ``jac``.
-    \*\*kwargs:
+    \\*\\*kwargs:
         'lband' : int
             Number of lower bands.
             Indexing: ``banded[row_i - col_i + uband, col_i]``.
