@@ -78,8 +78,9 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
    >>> _config.env['LAPACK']  # doctest: +SKIP
    'lapack,blas'
 
-If you use ``pip`` to install ``pycvodes`` note that you will need to install sundials
-(and its development headers, with cvodes & lapack enabled) prior to installing pycvodes.
+If you use ``pip`` to install ``pycvodes``, note that prior to installing pycvodes, you will need
+to install sundials (pycvodes>=0.12.0 requires sundials>=5.1.0, pycvodes<0.12 requires sundials<5)
+and its development headers, with cvodes & lapack enabled
 
 Examples
 --------

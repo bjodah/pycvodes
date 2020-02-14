@@ -12,12 +12,11 @@ function quiet_unless_fail {
     #/bin/rm --force /tmp/suppress.out 2>/dev/null
     EXECMD=${1+"$@"}
     $EXECMD > ${OUTPUT_FILE} 2>&1
-    EXIT_CODE=$?
-    if [ ${EXIT_CODE} -ne 0 ]; then
+    EXIT_CODE_QUIET=$?
+    if [ ${EXIT_CODE_QUIET} -ne 0 ]; then
 	cat ${OUTPUT_FILE}
-	echo "The following command exited with exit status ${EXIT_CODE}: ${EXECMD}"
+	echo "The following command exited with exit status ${EXIT_CODE_QUIET}: ${EXECMD}"
 	/bin/rm ${OUTPUT_FILE}
-	exit $?
     fi
     /bin/rm ${OUTPUT_FILE}
 }
@@ -61,15 +60,38 @@ elif [[ "$VERSION" == "4.1.0" ]]; then
     SUNDIALS_FNAME="sundials-4.1.0.tar.gz"
     SUNDIALS_MD5="f25bb0bc109ac3db0aaae13eadce559c"
     SUNDIALS_SHA256="280de1c27b2360170a6f46cb3799b2aee9dff3bddbafc8b08c291a47ab258aa5"
+elif [[ "$VERSION" == "5.0.0-dev.0" ]]; then  # temporary
+    SUNDIALS_FNAME="sundials-5.0.0-dev.0.tar.gz"
+    SUNDIALS_MD5="1b27df035cc7a7b4b2e0a7920d9113b2"
+    SUNDIALS_SHA256="241231b93c52579d7ded57016d621762ca6fd720bcdc995ee9b5dc743b215eed"
+    SUNDIALS_URLS=( https://github.com/LLNL/sundials/releases/download/v5.0.0-dev.0/sundials-5.0.0-dev.0.tar.gz )
+elif [[ "$VERSION" == "5.0.0-dev.1" ]]; then
+    SUNDIALS_FNAME="sundials-5.0.0-dev.1.tar.gz"
+    SUNDIALS_MD5="a7eb1f28b556b9584c27ddb9ea04ba29"
+    SUNDIALS_SHA256="8c8e4fcb86497f8625b5dc38c9b6257c6e3097c472564436e2900de1d3d02206"
+elif [[ "$VERSION" == "5.0.0-dev.2" ]]; then
+    SUNDIALS_FNAME="sundials-5.0.0-dev.2.tar.gz"
+    SUNDIALS_MD5="354cc9f9c1076587b076af200ea8e9b9"
+    SUNDIALS_SHA256="fee0b6536032a4a483f265479da7325b3bb39b962874039b046b860490451f8e"
+elif [[ "$VERSION" == "5.0.0" ]]; then
+    SUNDIALS_FNAME="sundials-5.0.0.tar.gz"
+    SUNDIALS_MD5="1ecf05edb50aa71b5ee2aa3b50973e56"
+    SUNDIALS_SHA256="345141ec01c641d0bdfb3476c478b7e74fd6a7192a478a27cafe75d9da2d7dd3"
+elif [[ "$VERSION" == "5.1.0" ]]; then
+    SUNDIALS_FNAME="sundials-5.1.0.tar.gz"
+    SUNDIALS_MD5="d91721d714f16eb60715888b69ebbc3f"
+    SUNDIALS_SHA256="fb22d14fad42203809dc46d046b001149ec4e901b23882bd4a80619157fd9b21"
 else
     >&2 echo "Unknown sundials version \"$VERSION\""
 fi
 
-SUNDIALS_URLS=(\
-    "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
-    "http://davycrockett.mooo.com:49090/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
-    "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
-)
+if [[ ! -v SUNDIALS_URLS[@] ]]; then
+    SUNDIALS_URLS=(\
+        "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
+        "http://davycrockett.mooo.com:49090/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
+        "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
+    )
+fi
 TIMEOUT=60  # 60 seconds
 
 for URL in "${SUNDIALS_URLS[@]}"; do
@@ -91,8 +113,9 @@ for URL in "${SUNDIALS_URLS[@]}"; do
 	    >&2 echo "Found incorrect RCONST(1) in source"
 	    exit 1;
 	fi
-        mkdir sundials_build
-        cd sundials_build
+        src_dir="$PWD/sundials-$VERSION"
+        tmp_bld_dir=$(mktemp -d); trap "{ rm -r $tmp_bld_dir; }" INT TERM EXIT
+        cd $tmp_bld_dir
 	( set -x; \
           cmake -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX" \
 		-DCMAKE_BUILD_TYPE:STRING="Release" \
@@ -101,23 +124,25 @@ for URL in "${SUNDIALS_URLS[@]}"; do
 		-DEXAMPLES_ENABLE_C:BOOL=OFF \
 		-DEXAMPLES_INSTALL:BOOL=OFF \
 		-DOPENMP_ENABLE:BOOL=OFF \
-		"${@:3}" "../sundials-$VERSION/"
+		"${@:3}" "$src_dir"
 	)
 	if [[ $? -ne 0 ]]; then
 	    >&2 echo "Cmake configuration failed."
 	    exit 1
 	fi
         quiet_unless_fail make VERBOSE=1 -j 1
-        if [ $? -ne 0 ]; then
+        if [ $EXIT_CODE_QUIET -ne 0 ]; then
             >&2 echo "Building of sundials \"$VERSION\" failed."
             exit 1
         fi
         quiet_unless_fail make install
-        if [ $? -ne 0 ]; then
+        if [ $EXIT_CODE_QUIET -eq 0 ]; then
+            echo "Sundials installed to: $PREFIX"
+        else
             >&2 echo "Install of sundials \"$VERSION\" failed."
             exit 1
         fi
-        cd ..
+        cd -
         rm -r sundials*
         exit 0
     fi
