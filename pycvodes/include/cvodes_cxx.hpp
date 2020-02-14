@@ -1351,6 +1351,7 @@ public:
             *td = tidx + 1;
             void * new_xyqout = realloc(*xyqout, datalen(*td, nderiv, ny, nq));
             if (new_xyqout == nullptr){
+                // TODO: we may leak here
                 throw std::bad_alloc();
             } else {
                 *xyqout = (realtype *)new_xyqout;
