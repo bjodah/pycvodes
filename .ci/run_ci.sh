@@ -16,8 +16,9 @@ done
 
 git clean -xfd
 
+PKG_VERSION=$(python3 ../setup.py --version).tar.gz)
 python3 setup.py sdist
-(cd dist/; python3 -m pip install $PKG_NAME-$(python3 ../setup.py --version).tar.gz)
+(cd dist/; python3 -m pip install $PKG_NAME-$PKG_VERSION
 (cd /; python3 -m pytest --verbose --pyargs $PKG_NAME)
 (cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
