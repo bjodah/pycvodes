@@ -16,7 +16,7 @@ done
 
 git clean -xfd
 
-PKG_VERSION=$(python3 ../setup.py --version)
+PKG_VERSION=$(python3 setup.py --version)
 python3 setup.py sdist
 (cd dist/; python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz
 (cd /; python3 -m pytest --verbose --pyargs $PKG_NAME)
