@@ -13,6 +13,12 @@ import warnings
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
 from setuptools.extension import Extension
+try:
+    import cython
+except ImportError:
+    _HAVE_CYTHON = False
+else:
+    _HAVE_CYTHON = True
 
 
 pkg_name = 'pycvodes'
@@ -21,7 +27,7 @@ license = 'BSD'
 
 
 def _path_under_setup(*args):
-    return os.path.join(os.path.dirname(__file__), *args)
+    return os.path.join(*args)
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 config_py_path = _path_under_setup(pkg_name, '_config.py')
@@ -52,19 +58,16 @@ else:  # set `__version__` from _release.py:
 
 package_include = os.path.join(pkg_name, 'include')
 
-_cpp = _path_under_setup(pkg_name, '_cvodes.cpp')
-_pyx = _path_under_setup(pkg_name, '_cvodes.pyx')
-if os.path.exists(_cpp):
-    if os.path.exists(_pyx) and os.path.getmtime(_pyx) - 1e-6 >= os.path.getmtime(_cpp):
-        USE_CYTHON = True
-    else:
-        USE_CYTHON = False
+_src = {ext: _path_under_setup(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
+if _HAVE_CYTHON and os.path.exists(_src["pyx"]):
+    # Possible that a new release of Python needs a re-rendered Cython source,
+    # or that we want to include possible bug-fix to Cython, disable by manually
+    # deleting .pyx file from source distribution.
+    USE_CYTHON = True
+    if os.path.exists(_src['cpp']):
+        os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
 else:
-    if os.path.exists(_pyx):
-        USE_CYTHON = True
-    else:
-        raise ValueError("Neither pyx nor cpp file found")
-
+    USE_CYTHON = False
 
 ext_modules = []
 
@@ -78,8 +81,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
-    ext = '.pyx' if USE_CYTHON else '.cpp'
-    sources = [os.path.join(pkg_name, '_cvodes'+ext)]
+    sources = [_src["pyx" if USE_CYTHON else "cpp"]]
     ext_modules = [Extension('%s._cvodes' % pkg_name, sources)]
     if USE_CYTHON:
         from Cython.Build import cythonize
