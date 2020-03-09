@@ -12,12 +12,9 @@ build:
   commands:
     - git fetch -tq  # used by ``git describe``
     - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-klu-lapack
-    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-noklu-nolapack-extended-int64
     - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-noklu-nolapack-single-int32
-    - export TEST_NATIVE_CLANG=0 PYCVODES_LAPACK=""
-    - source .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-nolapack-klu
-    - python3 -m pip install --user -e .[docs]
+    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-noklu-nolapack-extended-int64
+    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-klu-lapack
     - python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
     - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
     - python3 setup.py sdist
