@@ -37,6 +37,7 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
         REQUIRE( systems[idx]->current_info.nfo_int["n_steps"] < 997 );
         REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] > 0 );
         REQUIRE( systems[idx]->current_info.nfo_dbl["time_wall"] < 100 );
+        free(xyout_arr[idx]);
     }
     free(td_arr);
     free(xyout_arr);
