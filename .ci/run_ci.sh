@@ -29,7 +29,7 @@ if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     cd tests/; make; make clean; cd -
     cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
     if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-        cd tests/; LIBRARY_PATH=/usr/lib/llvm-10/lib make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+        cd tests/; LIBRARY_PATH=/usr/lib/llvm-10/lib:$LIBRARY_PATH make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
         cd tests/; make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
     fi
 
