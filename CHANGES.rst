@@ -1,3 +1,7 @@
+v0.12.1
+=======
+- Update setup.py
+
 v0.12.0
 =======
 - Require sundials 5.1.0
