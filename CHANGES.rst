@@ -1,3 +1,7 @@
+v0.12.2
+=======
+- Python compatibility fix
+
 v0.12.1
 =======
 - Update setup.py

@@ -7,7 +7,10 @@ from cpython.object cimport PyObject
 from libc.stdlib cimport malloc
 from libcpp cimport bool
 from libcpp.vector cimport vector
-from collections.abc import Iterable
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable  # python2.7
 
 from cvodes_anyode_numpy cimport CvodesPyOdeSys
 from cvodes_cxx cimport lmm_from_name, iter_type_from_name, \

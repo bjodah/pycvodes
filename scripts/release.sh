@@ -22,7 +22,7 @@ PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ${PYTHON:-python3} setup.py build_ext -i
 export PYTHONPATH=$(pwd)
 ./scripts/run_tests.sh
-env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION python setup.py sdist
+env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ${PYTHON:-python3} setup.py sdist
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh
 
 # All went well, add a tag and push it.
