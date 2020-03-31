@@ -81,6 +81,10 @@ elif [[ "$VERSION" == "5.1.0" ]]; then
     SUNDIALS_FNAME="sundials-5.1.0.tar.gz"
     SUNDIALS_MD5="d91721d714f16eb60715888b69ebbc3f"
     SUNDIALS_SHA256="fb22d14fad42203809dc46d046b001149ec4e901b23882bd4a80619157fd9b21"
+elif [[ "$VERSION" == "5.2.0" ]]; then
+    SUNDIALS_FNAME="sundials-5.2.0.tar.gz"
+    SUNDIALS_MD5="ba4291b668b1acb2a8a2c56407c1b8d5"
+    SUNDIALS_SHA256="0861d150f6fdafce10af5d3b661ca951dafc560e5c51b5d802c80de3aa2cfbce"
 else
     >&2 echo "Unknown sundials version \"$VERSION\""
 fi
@@ -88,6 +92,7 @@ fi
 if [[ ! -v SUNDIALS_URLS[@] ]]; then
     SUNDIALS_URLS=(\
         "http://hera.physchem.kth.se/~repo/${SUNDIALS_MD5}/${SUNDIALS_FNAME}" \
+        "https://github.com/llnl/sundials/archive/v${VERSION}.tar.gz" \
         "http://davycrockett.mooo.com:49090/~repo/${SUNDIALS_SHA256}/${SUNDIALS_FNAME}" \
         "http://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FNAME}" \
     )
