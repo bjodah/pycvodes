@@ -1,11 +1,11 @@
-#!/bin/bash -xu
+#!/bin/bash -x
 
 #python3 -m pip uninstall -y pycvodes
 rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
-set -e
-
+set -eu
 PKG_NAME=$1
 SUNDBASE=$2
+set +u
 if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then
     >&2 echo "Not a valid prefix for sundials: $SUNDBASE"
     exit 1
