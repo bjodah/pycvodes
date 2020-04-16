@@ -15,14 +15,6 @@ try:
 except ImportError:
     appdirs = None
 
-pipes = None
-
-if 'pytest' not in sys.modules:
-    try:
-        from wurlitzer import pipes
-    except ImportError:
-        pass
-
 if sys.version_info[0] == 2:
     class TemporaryDirectory(object):
         def __init__(self):
@@ -56,12 +48,7 @@ def _compiles_ok(codestring):
         customize_compiler(compiler)
         out = ''
         try:
-            if pipes is None:
-                compiler.compile([source_path])
-            else:
-                with pipes() as out_err:
-                    compiler.compile([source_path])
-                out = '\n'.join([p.read() for p in out_err])
+            compiler.compile([source_path])
         except CompileError:
             _ok = False
         except Exception:
