@@ -1,26 +1,23 @@
-#!/bin/bash -x
+#!/bin/bash -xu
 
 #python3 -m pip uninstall -y pycvodes
 rm -r /usr/local/lib/python*/dist-packages/pycvodes*  # pip uninstall is useless
 set -e
 
-PKG_NAME=${1:-${CI_REPO##*/}}
-if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
-    eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
+PKG_NAME=$1
+SUNDBASE=$2
+if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then
+    >&2 echo "Not a valid prefix for sundials: $SUNDBASE"
+    exit 1
 fi
 
-for p in "${@:2}"
-do
-export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
-done
+CFLAGS="-isystem $SUNDBASE $CFLAGS"
+LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS"
 
 git clean -xfd
 
 PKG_VERSION=$(python3 setup.py --version)
 python3 setup.py sdist
-(cd dist/; CC=gcc-10 CXX=g++-10 python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
-(cd /; python3 -m pytest --verbose --pyargs $PKG_NAME)
-(cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
@@ -32,7 +29,15 @@ if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
         cd tests/; LIBRARY_PATH=/usr/lib/llvm-10/lib:$LIBRARY_PATH make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
         cd tests/; make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
     fi
+fi
 
+mv ./dist/ /tmp/
+git clean -xfd
+(cd /tmp/dist/; CC=gcc-10 CXX=g++-10 python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
+(cd /; python3 -m pytest --verbose --pyargs $PKG_NAME)
+(cd /; python3 -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
+
+if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     (cd examples/; ../scripts/render_index.sh *.html)
 fi
