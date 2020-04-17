@@ -6,36 +6,32 @@ import pytest
 import itertools as it
 
 from pycvodes import (
-    integrate_adaptive, integrate_predefined, requires_jac, get_include, iterative_linsols, sundials_version
+    integrate_adaptive, integrate_predefined, requires_jac, get_include, iterative_linsols, sundials_version, config
 )
 
 
 def test_config_env():
     # This test is useful for e.g. out-of-tree conda-recipes (e.g. conda-forge) where variables
     # are set manually (and could otherwise be forgotten unless tests fail).
-    from .._config import env
     from .._types import type_of_prec
-    assert env['REAL_TYPE'] in type_of_prec.values()
-    assert env['SUNDIALS_PRECISION'] in type_of_prec.keys()
-    for k in 'LAPACK SUNDIALS_LIBS INDEX_TYPE'.split():
-        assert k in env
+    assert config['REAL_TYPE'] in type_of_prec.values()
+    assert config['SUNDIALS_PRECISION'] in type_of_prec.keys()
+    # for k in 'LAPACK SUNDIALS_LIBS INDEX_TYPE'.split():
+    #     assert k in env
 
 
 def requires_klu(_test):
-    from .._config import env
-    return pytest.mark.skipif(env.get('NO_KLU', '0') == '1',
+    return pytest.mark.skipif(config.get('NO_KLU', '0') == '1',
                               reason="sparse jacobian tests require KLU to be enabled")(_test)
 
 
 def high_precision(_test):
-    from .._config import env
-    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] == "single",
+    return pytest.mark.skipif(config['SUNDIALS_PRECISION'] == "single",
                               reason="test atol and/or rtol is too high for single precision")(_test)
 
 
 def double_precision(_test):
-    from .._config import env
-    return pytest.mark.skipif(env['SUNDIALS_PRECISION'] != "double",
+    return pytest.mark.skipif(config['SUNDIALS_PRECISION'] != "double",
                               reason="test only verified for double precision")(_test)
 
 
@@ -150,8 +146,6 @@ def bandify(cb, mlower, mupper):
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_predefined(method, forgiveness, banded):
-    from .._config import env
-
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
@@ -169,7 +163,7 @@ def test_integrate_predefined(method, forgiveness, banded):
 
     for j in jac_callbacks:
         xout = np.linspace(0, 3, 31)
-        if env['SUNDIALS_PRECISION'] == "single":
+        if config['SUNDIALS_PRECISION'] == "single":
             atol = [1e-4, 3e-5, 2e-5]
             rtol = 1e-4
         else:
@@ -210,12 +204,10 @@ def test_integrate_adaptive_tstop0():
 
 @pytest.mark.parametrize("method,forgiveness,banded", methods)
 def test_integrate_adaptive(method, forgiveness, banded):
-    from .._config import env
-
     use_jac = method in requires_jac
     k = k0, k1, k2 = 2.0, 3.0, 4.0
     y0 = [0.7, 0.3, 0.5]
-    if env['SUNDIALS_PRECISION'] == "single":
+    if config['SUNDIALS_PRECISION'] == "single":
         atol, rtol = 1e-4, 1e-4
     else:
         atol, rtol = 1e-8, 1e-8
