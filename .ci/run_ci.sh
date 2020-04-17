@@ -11,7 +11,7 @@ if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then
     exit 1
 fi
 
-CFLAGS="-isystem $SUNDBASE $CFLAGS"
+CFLAGS="-isystem $SUNDBASE/include $CFLAGS"
 LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS"
 
 git clean -xfd
