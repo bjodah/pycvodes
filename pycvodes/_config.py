@@ -40,23 +40,26 @@ def _compiles_ok(codestring):
     from distutils.ccompiler import new_compiler
     from distutils.sysconfig import customize_compiler
     from distutils.errors import CompileError
+    from distutils.log import DEBUG, set_verbosity
+    set_verbosity(DEBUG)
     with TemporaryDirectory() as folder:
         source_path = os.path.join(folder, 'compiler_test_source.cpp')
         with open(source_path, 'wt') as ofh:
             ofh.write(codestring)
         compiler = new_compiler()
         customize_compiler(compiler)
-        out = ''
         try:
             compiler.compile([source_path])
         except CompileError:
             _ok = False
         except Exception:
             _ok = False
-            _warn("Failed test compilation of '%s':\n %s" % (codestring, out))
         else:
             _ok = True
-    return _ok, out
+        if not _ok:
+            _warn("Failed test compilation of '%s'" % codestring)
+
+    return _ok
 
 
 def _get_sun_precision_and_realtype():
@@ -67,7 +70,7 @@ def _get_sun_precision_and_realtype():
                  """
 
     for prec, realtype in type_of_prec.items():
-        _ok, _ = _compiles_ok(codestring.format(prec.upper()))
+        _ok = _compiles_ok(codestring.format(prec.upper()))
         if _ok:
             return prec, realtype
     return '', ''
@@ -80,7 +83,7 @@ def _get_sun_index_type():
                     #endif
                  """
     for indextype in ["int32_t", "int64_t"]:
-        _ok, _ = _compiles_ok(codestring.format(indextype.upper()))
+        _ok = _compiles_ok(codestring.format(indextype.upper()))
         if _ok:
             return indextype
     # sunindextype simply not defined in older versions
@@ -91,17 +94,16 @@ logger = logging.getLogger(__name__)
 
 
 def _attempt_compilation():
-    _math_ok, _math_out = _compiles_ok('#include <math.h>')
+    _math_ok = _compiles_ok('#include <math.h>')
     if not _math_ok:
-        _warn("Failed to include math.h: %s" % _math_out)
-        _warn(_math_out)
+        _warn("Failed to include math.h.")
 
-    _sundials_ok, _sundials_out = _compiles_ok('#include <sundials/sundials_config.h>')
+    _sundials_ok = _compiles_ok('#include <sundials/sundials_config.h>')
     if not _sundials_ok:
-        _warn("sundials not in include path, set e.g. $CPLUS_INCLUDE_PATH (%s):\n%s" %
-              (os.environ.get('CPLUS_INCLUDE_PATH', ''), _sundials_out))
+        _warn("sundials not in include path, set e.g. $CPLUS_INCLUDE_PATH (%s)" %
+              os.environ.get('CPLUS_INCLUDE_PATH', ''))
 
-    _sun3_ok, _sun3_out = _compiles_ok("""
+    _sun3_ok = _compiles_ok("""
     #include <sundials/sundials_config.h>
     #if SUNDIALS_VERSION_MAJOR >= 3
     #include <stdio.h>
@@ -113,22 +115,22 @@ def _attempt_compilation():
 
     _sun3, _lapack_ok, _klu_ok = False, False, False
     if _sun3_ok:
-        _lapack_ok, _lapack_out = _compiles_ok("""
+        _lapack_ok = _compiles_ok("""
     #include <sundials/sundials_config.h>
     #if !defined(SUNDIALS_BLAS_LAPACK)
     #  error "INFO: Sundials 3+ was not configured to use lapack"
     #endif
     """)
         if _lapack_ok:
-            _wrapper_ok, _wrapper_out = _compiles_ok("#include <sunlinsol/sunlinsol_lapackband.h>")
+            _wrapper_ok = _compiles_ok("#include <sunlinsol/sunlinsol_lapackband.h>")
             if not _wrapper_ok:
                 _warn("Failed to inculde <sunlinsol/sunlinsol_lapackband.h> even though it should work")
                 _lapack_ok = False
         else:
-            logger.info("lapack not enabled in the sundials (>=3) distribtuion:\n%s" % _lapack_out)
+            logger.info("lapack not enabled in the sundials (>=3) distribution.")
         _sun3 = True
     else:
-        _sun2_ok, _sun2_out = _compiles_ok("""
+        _sun2_ok = _compiles_ok("""
             #include <sundials/sundials_config.h>
             #if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
             #include <cvodes/cvodes_spgmr.h>
@@ -138,34 +140,34 @@ def _attempt_compilation():
             """)
         if _sun2_ok:
             _sun3 = False
-            _lapack_ok, _lapack_out = _compiles_ok("""
+            _lapack_ok = _compiles_ok("""
     #include <sundials/sundials_config.h>
     #if !defined(SUNDIALS_BLAS_LAPACK)
     #  error "INFO: Sundials 2 was not configured to use lapack"
     #endif
     """)
             if _lapack_ok:
-                _wrapper_ok, _wrapper_out = _compiles_ok("#include <cvodes/cvodes_lapack.h>")
+                _wrapper_ok = _compiles_ok("#include <cvodes/cvodes_lapack.h>")
                 if not _wrapper_ok:
                     _warn("Failed to inculde <cvodes/cvodes_lapack.h> even though it should work")
                     _lapack_ok = False
             else:
-                logger.info("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
+                logger.info("lapack not enabled in the sundials (<3) distribution.")
         else:
-            _warn("Unknown sundials version:\n%s" % _sun2_out)
+            _warn("Unknown sundials version.")
 
-    _klu_ok, _klu_out = _compiles_ok("""
+    _klu_ok = _compiles_ok("""
         #include <sundials/sundials_config.h>
         #if !defined(SUNDIALS_KLU)
         #error "INFO: KLU was not enabled for this sundials build"
         #endif
         """)
     if _klu_ok:
-        _klu_ok, _klu_out = _compiles_ok("#include <klu.h>")
+        _klu_ok = _compiles_ok("#include <klu.h>")
         if not _klu_ok:
             _warn("Failed to include <klu.h> even though pycvodes was compiled with KLU enabled.")
     else:
-        logger.info("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
+        logger.info("KLU either not enabled for sundials or not in include path.")
     return locals()
 
 env = None
@@ -255,3 +257,5 @@ if env is None:
 
 for k, v in list(env.items()):
     env[k] = os.environ.get('%s_%s' % ('PYCVODES', k), v)
+
+print("This will be saved as env for pycvodes:\n%s" % env)

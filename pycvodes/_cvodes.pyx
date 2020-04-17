@@ -39,6 +39,7 @@ requires_jac = ('bdf',)
 iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 sundials_version = (version_major, version_minor, version_patch)
 
+env = {}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
@@ -47,12 +48,21 @@ fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 # np.asarray(..., dtype=)
 if sizeof(realtype) == sizeof(cnp.npy_double):
     dtype = np.float64
+    env["REAL_TYPE"] = "double"
+    env["SUNDIALS_PRECISION"] = "double"
 elif sizeof(realtype) == sizeof(cnp.npy_float):
     dtype = np.float32
+    env["REAL_TYPE"] = "float"
+    env["SUNDIALS_PRECISION"] = "single"
 elif sizeof(realtype) == sizeof(cnp.npy_longdouble):
     dtype = np.longdouble
+    env["REAL_TYPE"] = "long double"
+    env["SUNDIALS_PRECISION"] = "extended"
 else:
     dtype = np.float64
+    env["REAL_TYPE"] = "realtype"   # unclear
+
+
 
 # signature in python methods should be able to accept any floating type regardless
 # of what realtype is under the hood. scalars of type "floating" passed to the cython wrapper
