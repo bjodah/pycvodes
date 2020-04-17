@@ -62,7 +62,7 @@ else:
     dtype = np.float64
     env["REAL_TYPE"] = "realtype"   # unclear
 
-if sizeof(indextype) == sizeof(cpn.npy_int):
+if sizeof(indextype) == sizeof(cnp.npy_int):
     env["INDEX_TYPE"] = "int"
 else:
     env["INDEX_TYPE"] = "long int"
