@@ -21,7 +21,7 @@ python3 setup.py sdist
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
-    CXX=clang++-10 CC=clang-10 CFLAGS='-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS' python3 setup.py build_ext -i
+    CXX=clang++-10 CC=clang-10 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS" python3 setup.py build_ext -i
     PYTHONPATH=$(pwd) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 LD_PRELOAD=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/libclang_rt.asan-x86_64.so ./scripts/run_tests.sh
     cd tests/; make; make clean; cd -
     cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
