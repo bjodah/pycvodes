@@ -15,8 +15,8 @@ build:
     - CXX=g++-10
   commands:
     - git fetch -tq  # used by ``git describe``
-    - .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-extended-int64
-    - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-single-int32
+    - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-extended-int64
+    - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-single-int32
     - .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-klu-lapack
     - python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
     - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
