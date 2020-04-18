@@ -16,12 +16,12 @@ def test_config_env():
     from .._types import type_of_prec
     assert config['REAL_TYPE'] in type_of_prec.values()
     assert config['SUNDIALS_PRECISION'] in type_of_prec.keys()
-    # for k in 'LAPACK SUNDIALS_LIBS INDEX_TYPE'.split():
-    #     assert k in env
+    for k in 'LAPACK INDEX_TYPE'.split():
+        assert k in config
 
 
 def requires_klu(_test):
-    return pytest.mark.skipif(config.get('NO_KLU', '0') == '1',
+    return pytest.mark.skipif(not config["KLU"],
                               reason="sparse jacobian tests require KLU to be enabled")(_test)
 
 

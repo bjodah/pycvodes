@@ -28,6 +28,7 @@ cimport numpy as cnp
 cdef extern from "cvodes_cxx.hpp":
      ctypedef double realtype
      ctypedef int indextype
+     int PYCVODES_NO_KLU, PYCVODES_NO_LAPACK
 
 cdef extern from "sundials_cxx.hpp" namespace "sundials_cxx":
     int version_major, version_minor, version_patch
@@ -39,7 +40,10 @@ requires_jac = ('bdf',)
 iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 sundials_version = (version_major, version_minor, version_patch)
 
-env = {}
+env = {
+    "KLU": not bool(PYCVODES_NO_KLU),
+    "LAPACK": not bool(PYCVODES_NO_LAPACK)
+}
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
 
