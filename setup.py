@@ -84,7 +84,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     )
     for k, v in list(env.items()):
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
-    _USE_KLU = env.get('NO_KLU', '0')
+    _USE_KLU = env.get('NO_KLU', '0') == '0'
     if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
         _USE_LAPACK = False
     else:
