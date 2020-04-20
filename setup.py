@@ -90,9 +90,9 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     else:
         _USE_LAPACK = True
 
-    if not env.get("SUNDIALS_LIBRARIES", ""):
+    if env["SUNDIALS_LIBS"] == "":
         exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
-        env["SUNDIALS_LIBRARIES"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
+        env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
 
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
