@@ -91,6 +91,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         _USE_LAPACK = True
 
     if env["SUNDIALS_LIBS"] == "":
+        get_libs = None  # silence linting check (pyflakes), get from _libs.py
         exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
         env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
 
