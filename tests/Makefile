@@ -32,7 +32,7 @@ ifneq ($(PYCVODES_NO_KLU), 1)
 endif
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
-ifeq ($(CXX),clang++-8)
+ifeq ($(CXX),clang++-10)
 	@echo "skipping openmp when using clang"
 else
 	./test_cvodes_anyode_parallel --abortx 1

@@ -1,11 +1,11 @@
 import os
 import numpy as np
-from pycvodes._config import env
+from pycvodes._libs import get_libs
 
 def make_ext(modname, pyxfilename):
     from Cython.Build import cythonize
     ext = cythonize([pyxfilename], include_path=['../pycvodes/include', '../external/anyode/cython_def'])[0]
-    ext.libraries = [l for l in (env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(',')) if l != '']
+    ext.libraries = [l for l in get_libs().split(',') if l != '']
     ext.include_dirs=['../pycvodes/include', '../external/anyode/include', np.get_include()]
     ext.define_macros += [('PYCVODES_NO_LAPACK', '0' if env['LAPACK'] else '1'),
                           ('ANYODE_NO_LAPACK', '0' if env['LAPACK'] else '1')]
