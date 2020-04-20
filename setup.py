@@ -90,19 +90,9 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     else:
         _USE_LAPACK = True
 
-    if env["SUNDIALS_LIBS"] == "":
-        env["SUNDIALS_LIBS"] = (
-            "sundials_nvecserial,sundials_cvodes,sundials_sunlinsolspgmr,sundials_sunlinsolspbcgs,"
-            "sundials_sunlinsolsptfqmr,sundials_sunmatrixdense,sundials_sunmatrixband" + (
-                ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband' if _USE_LAPACK
-                else ',sundials_sunlinsoldense,sundials_sunlinsolband'
-                ) + (
-                ",sundials_sunlinsolklu" if _USE_KLU
-                else ""
-                )
-            )
-            #     ,klu
-            # ext_modules[0].libraries += env['LAPACK'].split(',')
+    if not env.get("SUNDIALS_LIBRARIES", ""):
+        exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
+        env["SUNDIALS_LIBRARIES"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
 
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))

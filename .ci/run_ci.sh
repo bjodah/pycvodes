@@ -23,11 +23,12 @@ if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
     CXX=clang++-10 CC=clang-10 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS" python3 setup.py build_ext -i
     PYTHONPATH=$(pwd) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 LD_PRELOAD=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/libclang_rt.asan-x86_64.so ./scripts/run_tests.sh
-    cd tests/; make; make clean; cd -
-    cd tests/; make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
+    LINKLIBS=$(python3 -c "from pycvodes._libs import print_libs_linkline as pll; pll()")
+    cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make; make clean; cd -
+    cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
     if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-        cd tests/; LIBRARY_PATH=/usr/lib/llvm-10/lib:$LIBRARY_PATH make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
-        cd tests/; make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=/usr/lib/llvm-10/lib:$LIBRARY_PATH make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
     fi
 fi
 
