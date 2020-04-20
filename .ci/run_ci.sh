@@ -35,7 +35,7 @@ if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     unset PYTHONPATH PYTHON
 fi
 
-mv ./dist/ /tmp/
+cp -ra dist/ /tmp/
 git clean -xfd
 (cd /tmp/dist/; CC=gcc-10 CXX=g++-10 python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
 (cd /; python3 -m pytest --verbose --pyargs $PKG_NAME)
