@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from pycvodes import config
 from pycvodes._libs import get_libs
 
 def make_ext(modname, pyxfilename):
