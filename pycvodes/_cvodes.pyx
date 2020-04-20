@@ -41,8 +41,8 @@ iterative_linsols = ('gmres', 'gmres_classic', 'bicgstab', 'tfqmr')
 sundials_version = (version_major, version_minor, version_patch)
 
 env = {
-    "KLU": not bool(PYCVODES_NO_KLU),
-    "LAPACK": not bool(PYCVODES_NO_LAPACK)
+    "KLU": PYCVODES_NO_KLU != 1,
+    "LAPACK": PYCVODES_NO_LAPACK != 1
 }
 
 fpes = {str(k.decode('utf-8')): v for k, v in dict(_fpes).items()}
