@@ -45,3 +45,11 @@ if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     (cd examples/; ../scripts/render_index.sh *.html)
 fi
+
+if [[ "${BUILD_DOCS:-0}" == "1" ]]; then
+    python3 setup.py build_ext -i
+    python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
+    ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+    python3 setup.py sdist
+    ./scripts/generate_docs.sh
+fi
