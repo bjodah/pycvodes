@@ -12,12 +12,14 @@ def get_libs(config=None):
         )
     )
 
+
 def get_libs_linkline(config=None):
     libs = get_libs(config)
     if libs:
         return " ".join(["-l%s" % lib for lib in libs.split(",")])
     else:
         return ""
+
 
 def print_libs_linkline(config=None):
     print(get_libs_linkline(config))

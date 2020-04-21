@@ -6,7 +6,9 @@ from __future__ import division, absolute_import
 
 import numpy as np
 
-from ._cvodes import adaptive, predefined, requires_jac, steppers, fpes, iterative_linsols, sundials_version, env as config
+from ._cvodes import (
+    adaptive, predefined, requires_jac, steppers, fpes, iterative_linsols, sundials_version, env as config
+)
 from ._util import _check_callable, _check_indexing, _check_jac_type
 from ._release import __version__
 
