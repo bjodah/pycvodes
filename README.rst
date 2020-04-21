@@ -16,9 +16,6 @@ pycvodes
 .. image:: https://img.shields.io/pypi/l/pycvodes.svg
    :target: https://github.com/bjodah/pycvodes/blob/master/LICENSE
    :alt: License
-.. image:: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov/coverage.svg
-   :target: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov
-   :alt: coverage
 .. image:: https://zenodo.org/badge/43224425.svg
    :target: https://zenodo.org/badge/latestdoi/43224425
 

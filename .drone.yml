@@ -19,9 +19,6 @@ build:
     - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-single-int32
     # sundials is underlinked...
     - LDFLAGS="-llapack -lblas" .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-klu-lapack
-    - python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
-    - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-    - python3 setup.py sdist
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
