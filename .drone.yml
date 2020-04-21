@@ -4,22 +4,21 @@ clone:
   submodule_override:
     external/anyode: git://github.com/bjodah/anyode.git
 build:
-  image: bjodah/bjodahimg20dev:v1.0.3
+  image: bjodah/bjodahimg20dev:v1.1.0
   environment:
     - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-10/bin/llvm-symbolizer
     - ASAN_OPTIONS=symbolize=1
     - PYCVODES_STRICT=1
+    - CPATH=/usr/include/suitesparse
+    - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+    - CC=gcc-10
+    - CXX=g++-10
   commands:
     - git fetch -tq  # used by ``git describe``
-    - export C_INCLUDE_PATH=/usr/include/suitesparse CPLUS_INCLUDE_PATH=/usr/include/suitesparse LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-    - LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-noklu-nolapack-single-int32
-    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-noklu-nolapack-extended-int64
-    - .ci/run_ci.sh pycvodes /opt/sundials-5.1.0-klu-lapack
-    - export LD_LIBRARY_PATH=/opt/sundials-5.1.0-klu-lapack/lib
-    - python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
-    - ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-    - python3 setup.py sdist
-    - ./scripts/generate_docs.sh
+    - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-extended-int64
+    - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-noklu-nolapack-single-int32
+    # sundials is underlinked...
+    - LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt/sundials-5.2.0-klu-lapack
     - ./scripts/prepare_deploy.sh
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
     - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'

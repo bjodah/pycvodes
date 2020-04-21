@@ -31,7 +31,6 @@ def _path_under_setup(*args):
     return os.path.join(*args)
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
-config_py_path = _path_under_setup(pkg_name, '_config.py')
 
 
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
@@ -77,9 +76,25 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     import numpy as np
     env = None  # silence pyflakes, 'env' is actually set on the next line
     _PYCVODES_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
-    exec(open(config_py_path).read())
+    env = dict(
+        LAPACK="blas,lapack",
+        NO_KLU="0",
+        NO_LAPACK="0",
+        SUNDIALS_LIBS="",
+    )
     for k, v in list(env.items()):
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+    _USE_KLU = env.get('NO_KLU', '0') == '0'
+    if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
+        _USE_LAPACK = False
+    else:
+        _USE_LAPACK = True
+
+    if env["SUNDIALS_LIBS"] == "":
+        get_libs = None  # silence linting check (pyflakes), get from _libs.py
+        exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
+        env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
+
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
     sources = [_src["pyx" if USE_CYTHON else "cpp"]]
@@ -93,14 +108,9 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].language = 'c++'
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
-    if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
-        _USE_LAPACK = False
-    else:
-        _USE_LAPACK = True
-        ext_modules[0].libraries += env['LAPACK'].split(',')
 
     ext_modules[0].define_macros += [
-        ('PYCVODES_NO_KLU', env.get('NO_KLU', '0')),
+        ('PYCVODES_NO_KLU', '0' if _USE_KLU else '1'),
         ('PYCVODES_NO_LAPACK', '0' if _USE_LAPACK else '1'),
         ('ANYODE_NO_LAPACK', '0' if _USE_LAPACK else '1')
     ]

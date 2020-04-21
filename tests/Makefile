@@ -1,11 +1,10 @@
 CXX ?= g++
 PYTHON ?= python3
-LIBS ?=$(shell $(PYTHON) -c "from pycvodes._config import env; print(' '.join('-l%s' % l for l in filter( lambda x: x != '', env['SUNDIALS_LIBS'].split(',') + env['LAPACK'].split(','))))")
-PYCVODES_NO_LAPACK=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_LAPACK', '0'))")
-PYCVODES_NO_KLU=$(shell $(PYTHON) -c "from pycvodes._config import env; print(env.get('NO_KLU', '0'))")
+PYCVODES_NO_LAPACK ?= 0
+PYCVODES_NO_KLU ?= 0
 CXXFLAGS ?= -std=c++14 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
 EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
-CXXFLAGS += $(EXTRA_FLAGS)
+CXXFLAGS += $(EXTRA_FLAGS) $(CFLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
@@ -35,7 +34,7 @@ ifneq ($(PYCVODES_NO_KLU), 1)
 endif
 	./test_cvodes_cxx --abortx 1
 	./test_sundials_cxx --abortx 1
-ifeq ($(CXX),clang++-8)
+ifeq ($(CXX),clang++-10)
 	@echo "skipping openmp when using clang"
 else
 	./test_cvodes_anyode_parallel --abortx 1
@@ -48,13 +47,13 @@ clean:
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
 test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.o
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS)
 
 test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp catch.o
 ifeq ($(CXX),clang++-6.0)
 	@echo "skipping openmp when using clang"
 else
-	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LIBS) $(OPENMP_LIB)
+	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS) $(OPENMP_LIB)
 endif
 
 catch.hpp: catch.hpp.bz2

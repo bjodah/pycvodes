@@ -16,9 +16,6 @@ pycvodes
 .. image:: https://img.shields.io/pypi/l/pycvodes.svg
    :target: https://github.com/bjodah/pycvodes/blob/master/LICENSE
    :alt: License
-.. image:: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov/coverage.svg
-   :target: http://hera.physchem.kth.se/~pycvodes/branches/master/htmlcov
-   :alt: coverage
 .. image:: https://zenodo.org/badge/43224425.svg
    :target: https://zenodo.org/badge/latestdoi/43224425
 
@@ -74,8 +71,8 @@ the environment variable ``PYCVODES_LAPACK``, your choice can later be accessed 
 
 .. code:: python
 
-   >>> from pycvodes import _config
-   >>> _config.env['LAPACK']  # doctest: +SKIP
+   >>> from pycvodes import config
+   >>> config['LAPACK']  # doctest: +SKIP
    'lapack,blas'
 
 If you use ``pip`` to install ``pycvodes``, note that prior to installing pycvodes, you will need
