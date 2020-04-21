@@ -1,3 +1,7 @@
+v0.13.0
+=======
+- Reorganized pycvodes.config
+
 v0.12.2
 =======
 - Python compatibility fix
