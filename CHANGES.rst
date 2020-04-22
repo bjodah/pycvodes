@@ -1,3 +1,7 @@
+v0.13.1
+=======
+- Fix in bundled AnyODE
+
 v0.13.0
 =======
 - Reorganized pycvodes.config
