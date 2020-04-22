@@ -1,0 +1,27 @@
+Running Sphinx v3.0.1
+loading translations [en]... done
+loading pickled environment... done
+building [mo]: targets for 0 po files that are out of date
+building [html]: targets for 2 source files that are out of date
+updating environment: [config changed ('version')] 2 added, 0 changed, 0 removed
+reading sources... [ 50%] index
+reading sources... [100%] pycvodes
+
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... done
+preparing documents... done
+writing output... [ 50%] index
+writing output... [100%] pycvodes
+
+generating indices...  genindex py-modindexdone
+highlighting module code... [100%] pycvodes
+
+writing additional pages...  searchdone
+copying static files... ... done
+copying extra files... done
+dumping search index in English (code: en)... done
+dumping object inventory... done
+build succeeded, 4 warnings.
+
+The HTML pages are in _build/html.
