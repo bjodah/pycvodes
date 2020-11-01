@@ -704,7 +704,7 @@ jtimes_params = list(it.product(iterative_linsols, [True, False]))
 @pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
 def test_jtimes_adaptive(linear_solver, with_jac):
     g = 9.81
-    y0 = [11.0.0, 0.0]
+    y0 = [1000.0, 0.0]
     atol, rtol = 1e-8, 1e-8
     f, jac, jtimes = _gravity_f_j_jtimes(g)
     if not with_jac:
@@ -725,7 +725,7 @@ def test_jtimes_adaptive(linear_solver, with_jac):
 @pytest.mark.parametrize("linear_solver,with_jac", jtimes_params)
 def test_jtimes_predefined(linear_solver, with_jac):
     g = 9.81
-    y0 = [11.0.0, 0.0]
+    y0 = [1000.0, 0.0]
     atol, rtol = 1e-8, 1e-8
     f, jac, jtimes = _gravity_f_j_jtimes(g)
     if not with_jac:
