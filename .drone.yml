@@ -4,7 +4,7 @@ clone:
   submodule_override:
     external/anyode: git://github.com/bjodah/anyode.git
 build:
-  image: bjodah/bjodahimg20dev:2.1.0
+  image: bjodah/bjodahimg20dot:2.1.0.4
   environment:
     - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-11/bin/llvm-symbolizer
     - ASAN_OPTIONS=symbolize=1
