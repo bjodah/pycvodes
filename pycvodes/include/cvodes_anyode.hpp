@@ -382,10 +382,12 @@ std::unique_ptr<Integrator> get_integrator(
                 break; // pass
             case 1:
                 integr.set_jtimes_fn(jtimes_cb<OdeSys>);
+                break;
             case 2:
                 integr.set_jtimes_fn(jtsetup_cb<OdeSys>, jtimes_cb<OdeSys>);
+                break;
             default:
-                throw std::runtime_error("with_jtimes need to be 0, 1 or 2");
+                throw std::runtime_error(StreamFmt() << "with_jtimes need to be 0, 1 or 2, got: " << with_jtimes);
             }
             if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
                 integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
