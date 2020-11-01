@@ -110,7 +110,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
         indextype nyq = yq0.shape[yq0.ndim - 1]
         indextype ny = nyq - nquads
         bool with_jacobian = jac is not None
-        bool with_jtimes = jtimes is not None
+        bint with_jtimes = jtimes is not None
         CvodesPyOdeSys * odesys
         vector[int] root_indices
         vector[realtype] atol_vec
@@ -228,7 +228,7 @@ def predefined(rhs, jac,
         realtype * yqout = <realtype *>malloc(xout.size*(nderiv + 1)*nyq*sizeof(realtype))
         realtype * ew_ele_out = NULL
         bool with_jacobian = jac is not None
-        bool with_jtimes = jtimes is not None
+        bint with_jtimes = jtimes is not None
         int nreached
         CvodesPyOdeSys * odesys
         vector[int] root_indices
