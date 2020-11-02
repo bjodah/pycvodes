@@ -48,7 +48,7 @@ fi
 
 if [[ "${BUILD_DOCS:-0}" == "1" ]]; then
     python3 setup.py build_ext -i
-    python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
+    python3 -m pytest --cov $PKG_NAME --cov-report html  # --pep8
     ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
     python3 setup.py sdist
     ./scripts/generate_docs.sh
