@@ -35,7 +35,7 @@ namespace cvodes_anyode_parallel {
                    const bool return_on_root=false,
                    const int autorestart=0, // must be autonomous!
                    const bool return_on_error=false,
-                   const bool with_jtimes=false,
+                   const int with_jtimes=0,
                    int tidx=0,
                    realtype ** ew_ele=nullptr,
                    const std::vector<realtype> &constraints={},
@@ -88,7 +88,7 @@ namespace cvodes_anyode_parallel {
                      const unsigned nderiv=0,
                      const int autorestart=0, // must be autonomous!
                      const bool return_on_error=false,
-                     const bool with_jtimes=false,
+                     const int with_jtimes=0,
                      realtype ** ew_ele=nullptr,
                      const std::vector<realtype> &constraints={},
                      const long int msbj=0,
