@@ -183,6 +183,19 @@ int jac_band_cb(
     return handle_status_(status);
 }
 
+template <typename OdeSys>
+int jtsetup_cb(realtype t, N_Vector y, N_Vector fy, void * user_data){
+    auto t_start = std::chrono::high_resolution_clock::now();
+    auto& odesys = *static_cast<OdeSys*>(user_data);
+    AnyODE::Status status = odesys.jtimes_setup(t, NV_DATA_S(y), NV_DATA_S(fy));
+    if (status == AnyODE::Status::recoverable_error) {
+        throw std::runtime_error("There are only unrecoverable errors for JacTimesVec().");
+    }
+    static_cast<Integrator*>(odesys.integrator)->time_jtsetup += std::chrono::duration<double>(
+        std::chrono::high_resolution_clock::now() - t_start).count();
+    return handle_status_(status);
+}
+
 
 template <typename OdeSys>
 int jtimes_cb(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
@@ -262,7 +275,7 @@ std::unique_ptr<Integrator> get_integrator(
     const LinSol linear_solver=LinSol::DEFAULT,
     const int maxl=0,
     const realtype eps_lin=0.0,
-    const bool with_jtimes=false,
+    const int with_jtimes=0,
     const std::vector<realtype> &constraints={},
     const long int msbj=0,
     bool stab_lim_det=false)
@@ -364,8 +377,18 @@ std::unique_ptr<Integrator> get_integrator(
                 integr.set_prec_type(PrecType::None);
             }
             integr.set_iter_eps_lin(eps_lin);
-            if (with_jtimes)
+            switch(with_jtimes) {
+            case 0:
+                break; // pass
+            case 1:
                 integr.set_jtimes_fn(jtimes_cb<OdeSys>);
+                break;
+            case 2:
+                integr.set_jtimes_fn(jtsetup_cb<OdeSys>, jtimes_cb<OdeSys>);
+                break;
+            default:
+                throw std::runtime_error(cvodes_cxx::StreamFmt() << "with_jtimes need to be 0, 1 or 2, got: " << with_jtimes);
+            }
             if (linear_solver == LinSol::GMRES || linear_solver == LinSol::GMRES_CLASSIC) // GMRES
                 integr.set_gram_schmidt_type((linear_solver == LinSol::GMRES) ? GramSchmidtType::Modified : GramSchmidtType::Classical);
             else if (linear_solver == LinSol::BICGSTAB || linear_solver == LinSol::TFQMR) // BiCGStab, TFQMR
@@ -402,7 +425,7 @@ int
                 const bool return_on_root=false,
                 const int autorestart=0,
                 const bool return_on_error=false,
-                const bool with_jtimes=false,
+                const int with_jtimes=0,
                 int tidx=0,
                 realtype ** ew_ele=nullptr,
                 const std::vector<realtype> &constraints={},
@@ -481,7 +504,7 @@ int simple_predefined(OdeSys * const odesys,
                       const unsigned nderiv=0,
                       const int autorestart=0,
                       const bool return_on_error=false,
-                      const bool with_jtimes=false,
+                      const int with_jtimes=0,
                       realtype * ew_ele=nullptr,
                       const std::vector<realtype> &constraints={},
                       const long int msbj=0,
@@ -545,7 +568,7 @@ struct SolverSettings{
     int autorestart {0};
     bool return_on_error {true};
     bool with_jacobian {true};
-    bool with_jtimes {true};
+    int with_jtimes {1};
     bool stab_lim_det {false};
     std::vector<realtype> constraints={};
     long int msbj={0};

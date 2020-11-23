@@ -29,7 +29,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         bool,
         int,
         bool,
-        bool,
+        int,
         int,
         double **,
         vector[double]&,
@@ -59,7 +59,7 @@ cdef extern from "cvodes_anyode.hpp" namespace "cvodes_anyode":
         unsigned,
         int,
         bool,
-        bool,
+        int,
         double *,
         vector[double]&,
         bool

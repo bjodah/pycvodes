@@ -21,16 +21,16 @@ python3 setup.py sdist
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
-    CXX=clang++-10 CC=clang-10 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS" python3 setup.py build_ext -i
-    export PYTHON="env LD_PRELOAD=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/libclang_rt.asan-x86_64.so ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 python3" PYTHONPATH=$(pwd)
+    CXX=clang++-11 CC=clang-11 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS" python3 setup.py build_ext -i
+    export PYTHON="env LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 python3" PYTHONPATH=$(pwd)
     ./scripts/run_tests.sh
     LINKLIBS=$(${PYTHON} -c "from pycvodes._libs import print_libs_linkline as pll; pll()")
     #unset LD_PRELOAD ASAN_OPTIONS
     cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make; make clean; cd -
     cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make EXTRA_FLAGS=-DNDEBUG; make clean; cd -
     if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=/usr/lib/llvm-10/lib:$LIBRARY_PATH make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
-        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++-10 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
+        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=/usr/lib/llvm-11/lib:$LIBRARY_PATH make CXX=clang++-11 EXTRA_FLAGS=-fsanitize=address; make clean; cd -
+        cd tests/; LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++-11 EXTRA_FLAGS=-fsanitize=undefined; make clean; cd -
     fi
     unset PYTHONPATH PYTHON
 fi
@@ -48,7 +48,7 @@ fi
 
 if [[ "${BUILD_DOCS:-0}" == "1" ]]; then
     python3 setup.py build_ext -i
-    python3 -m pytest --pep8 --cov $PKG_NAME --cov-report html
+    python3 -m pytest --cov $PKG_NAME --cov-report html  # --pep8
     ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
     python3 setup.py sdist
     ./scripts/generate_docs.sh
