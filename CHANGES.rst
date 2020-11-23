@@ -1,5 +1,5 @@
-Unreleased
-==========
+v0.14.0
+=======
 - Allow use of jtimes_setup from CVodes (currently only from C++).
 
 v0.13.1
