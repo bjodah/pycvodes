@@ -753,6 +753,7 @@ public:
             LS_ = SUNLinSol_SPGMR(y_, static_cast<int>(ptyp), maxl);
 #else
             LS_ = SUNSPGMR(y_, static_cast<int>(ptyp), maxl);
+#endif
 #else
             flag = CVSpgmr(this->mem, static_cast<int>(ptyp), maxl);
 #endif
@@ -926,7 +927,7 @@ public:
     void set_max_steps_between_jac(long int msbj) {
 #if SUNDIALS_VERSION_MAJOR >= 5 && SUNDIALS_VERSION_MINOR >= 4
         int flag = CVodeSetJacEvalFrequency(this->mem, msbj+1);
-        check_ls_flag(flag);
+        cvspils_check_flag(flag);
 #else
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag = CVodeSetMaxStepsBetweenJac(this->mem, msbj);
