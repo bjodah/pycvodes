@@ -749,21 +749,33 @@ public:
         switch (solver) {
         case IterLinSolEnum::GMRES:
 #if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 4
+            LS_ = SUNLinSol_SPGMR(y_, static_cast<int>(ptyp), maxl);
+#else
             LS_ = SUNSPGMR(y_, static_cast<int>(ptyp), maxl);
+#endif
 #else
             flag = CVSpgmr(this->mem, static_cast<int>(ptyp), maxl);
 #endif
             break;
         case IterLinSolEnum::BICGSTAB:
 #if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 4
+            LS_ = SUNLinSol_SPBCGS(y_, static_cast<int>(ptyp), maxl);
+#else
             LS_ = SUNSPBCGS(y_, static_cast<int>(ptyp), maxl);
+#endif
 #else
             flag = CVSpbcg(this->mem, static_cast<int>(ptyp), maxl);
 #endif
             break;
         case IterLinSolEnum::TFQMR:
 #if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 4
+            LS_ = SUNLinSol_SPTFQMR(y_, static_cast<int>(ptyp), maxl);
+#else
             LS_ = SUNSPTFQMR(y_, static_cast<int>(ptyp), maxl);
+#endif
 #else
             flag = CVSptfqmr(this->mem, static_cast<int>(ptyp), maxl);
 #endif
@@ -842,11 +854,23 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 3
         switch(solver_){
         case IterLinSolEnum::GMRES:
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPGMRSetPrecType(LS_, (int)pretyp); break;
+#else
             flag = SUNSPGMRSetPrecType(LS_, (int)pretyp); break;
+#endif
         case IterLinSolEnum::BICGSTAB:
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPBCGSSetPrecType(LS_, (int)pretyp); break;
+#else
             flag = SUNSPBCGSSetPrecType(LS_, (int)pretyp); break;
+#endif
         case IterLinSolEnum::TFQMR:
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPTFQMRSetPrecType(LS_, (int)pretyp); break;
+#else
             flag = SUNSPTFQMRSetPrecType(LS_, (int)pretyp); break;
+#endif
         default:
             throw std::runtime_error("unknown solver kind.");
         }
@@ -859,7 +883,11 @@ public:
         int flag;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (solver_ == IterLinSolEnum::GMRES)
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPGMRSetGSType(LS_, (int)gs_type);
+#else
             flag = SUNSPGMRSetGSType(LS_, (int)gs_type);
+#endif
         else
             throw std::runtime_error("Setting Gram-Schmidt type only makes sense for GMRES");
 #else
@@ -874,9 +902,19 @@ public:
         case IterLinSolEnum::GMRES:
             throw std::runtime_error("GMRES has no max length option");
         case IterLinSolEnum::BICGSTAB:
-            flag = SUNSPBCGSSetMaxl(LS_, maxl); break;
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPBCGSSetMaxl(LS_, maxl);
+#else
+            flag = SUNSPBCGSSetMaxl(LS_, maxl);
+#endif
+            break;
         case IterLinSolEnum::TFQMR:
-            flag = SUNSPTFQMRSetMaxl(LS_, maxl); break;
+#if SUNDIALS_VERSION_MAJOR >= 4
+            flag = SUNLinSol_SPTFQMRSetMaxl(LS_, maxl);
+#else
+            flag = SUNSPTFQMRSetMaxl(LS_, maxl);
+#endif
+            break;
         default:
             throw std::runtime_error("unknown solver kind.");
         }
@@ -887,12 +925,17 @@ public:
     }
 // Linear solver options:
     void set_max_steps_between_jac(long int msbj) {
+#if SUNDIALS_VERSION_MAJOR >= 5 && SUNDIALS_VERSION_MINOR >= 4
+        int flag = CVodeSetJacEvalFrequency(this->mem, msbj+1);
+        cvspils_check_flag(flag);
+#else
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag = CVodeSetMaxStepsBetweenJac(this->mem, msbj);
         cvspils_check_flag(flag);
 #else
         ignore(msbj);
         throw std::runtime_error("set_max_steps_between_jac  requires sundials >=4.0.0");
+#endif
 #endif
     }
 // Getters:
