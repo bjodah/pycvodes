@@ -1,3 +1,7 @@
+v0.14.1
+=======
+- Avoid using deprecated C-API in CPython 3.9+
+
 v0.14.0
 =======
 - Allow use of jtimes_setup from CVodes (currently only from C++).
