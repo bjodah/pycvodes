@@ -18,6 +18,7 @@ build:
     - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt/sundials-5.5.0-noklu-nolapack-extended-int64
     - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt/sundials-5.5.0-noklu-nolapack-single-int32
     # sundials is underlinked...
+    - PATH=/opt/cpython-3.9-dbg/bin:$PATH python3.9 -m pip install --upgrade --upgrade-strategy=eager pytest-cov
     - PATH=/opt/cpython-3.9-dbg/bin:$PATH PYTHON=python3.9 LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt/sundials-5.5.0-klu-lapack
     - ./scripts/prepare_deploy.sh
     - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
