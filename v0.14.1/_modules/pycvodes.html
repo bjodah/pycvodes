@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pycvodes &mdash; pycvodes 0.13.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> pycvodes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.13.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../pycvodes.html">pycvodes package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pycvodes</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>pycvodes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pycvodes</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Python binding for cvodes from the sundials library.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">._cvodes</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">adaptive</span><span class="p">,</span> <span class="n">predefined</span><span class="p">,</span> <span class="n">requires_jac</span><span class="p">,</span> <span class="n">steppers</span><span class="p">,</span> <span class="n">fpes</span><span class="p">,</span> <span class="n">iterative_linsols</span><span class="p">,</span> <span class="n">sundials_version</span><span class="p">,</span> <span class="n">env</span> <span class="k">as</span> <span class="n">config</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._util</span> <span class="kn">import</span> <span class="n">_check_callable</span><span class="p">,</span> <span class="n">_check_indexing</span><span class="p">,</span> <span class="n">_check_jac_type</span>
+<span class="kn">from</span> <span class="nn">._release</span> <span class="kn">import</span> <span class="n">__version__</span>
+
+
+<div class="viewcode-block" id="get_include"><a class="viewcode-back" href="../pycvodes.html#pycvodes.get_include">[docs]</a><span class="k">def</span> <span class="nf">get_include</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="kn">import</span> <span class="n">resource_filename</span><span class="p">,</span> <span class="n">Requirement</span>
+    <span class="k">return</span> <span class="n">resource_filename</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="vm">__name__</span><span class="p">),</span>
+                             <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/include&#39;</span> <span class="o">%</span> <span class="vm">__name__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="integrate_adaptive"><a class="viewcode-back" href="../pycvodes.html#pycvodes.integrate_adaptive">[docs]</a><span class="k">def</span> <span class="nf">integrate_adaptive</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">xend</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">dx0</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">dx_min</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span> <span class="n">dx_max</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span> <span class="n">nsteps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nderiv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">roots</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_on_root</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">check_callable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check_indexing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Integrates a system of ordinary differential equations.</span>
+
+<span class="sd">    Solves the initial value problem (IVP) defined by the user supplied</span>
+<span class="sd">    arguments. The solver chooses at what values of the independent variable</span>
+<span class="sd">    results should be reported.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rhs : callable</span>
+<span class="sd">        Function with signature f(t, y, fout) which modifies fout *inplace*.</span>
+<span class="sd">    jac : callable</span>
+<span class="sd">        Function with signature either jac(t, y, jmat_out, dfdx_out) for</span>
+<span class="sd">        dense/banded jacobians, or jac(t, y, data, colptrs, rowvals) for</span>
+<span class="sd">        sparse (CSC) jacobians. ``jac`` should modify ``jmat_out``, ``dfdx_out``</span>
+<span class="sd">        (dense, banded) or (``data``, ``colptrs``, ``rowvals``) *inplace*.</span>
+<span class="sd">        (see also ``lband``, ``uband``, ``nnz``)</span>
+<span class="sd">    y0 : array_like</span>
+<span class="sd">        Initial values of the dependent variables.</span>
+<span class="sd">    x0 : float</span>
+<span class="sd">        Initial value of the independent variable.</span>
+<span class="sd">    xend : float</span>
+<span class="sd">        Stopping value for the independent variable.</span>
+<span class="sd">    dx0 : float</span>
+<span class="sd">        Initial step-size.</span>
+<span class="sd">    atol : float</span>
+<span class="sd">        Absolute tolerance.</span>
+<span class="sd">    rtol : float</span>
+<span class="sd">        Relative tolerance.</span>
+<span class="sd">    dx_min : float</span>
+<span class="sd">        Minimum step (default: 0.0).</span>
+<span class="sd">    dx_max : float</span>
+<span class="sd">        Maximum step (default: 0.0).</span>
+<span class="sd">    nsteps : int</span>
+<span class="sd">        Maximum number of steps (default: 500).</span>
+<span class="sd">    method : str</span>
+<span class="sd">        One of: &#39;adams&#39; or &#39;bdf&#39; (default: &#39;bdf&#39;)</span>
+<span class="sd">    nderiv : int</span>
+<span class="sd">        Number of derivatives (default: 0).</span>
+<span class="sd">    roots : callback</span>
+<span class="sd">        With signature ``roots(x, yarr[:ny], out[:nroots]) -&gt; None``.</span>
+<span class="sd">    nroots : int</span>
+<span class="sd">        Number of root functions in roots.</span>
+<span class="sd">    return_on_root : bool</span>
+<span class="sd">        Exit early (on first found root).</span>
+<span class="sd">    check_callable : bool</span>
+<span class="sd">        perform signature sanity checks on ``rhs`` and ``jac``</span>
+<span class="sd">    check_indexing : bool</span>
+<span class="sd">        Perform item setting sanity checks on ``rhs`` and ``jac``.</span>
+<span class="sd">    \\*\\*kwargs:</span>
+<span class="sd">        &#39;lband&#39; : int</span>
+<span class="sd">            Number of lower bands.</span>
+<span class="sd">            Indexing: ``banded[row_i - col_i + uband, col_i]``.</span>
+<span class="sd">        &#39;uband&#39; : int</span>
+<span class="sd">            Number of upper bands.</span>
+<span class="sd">            Indexing: ``banded[row_i - col_i + uband, col_i]``.</span>
+<span class="sd">        &#39;iter_type&#39; : str (default: &#39;default&#39;)</span>
+<span class="sd">            One of: &#39;default&#39;, &#39;functional&#39;, &#39;newton&#39;</span>
+<span class="sd">        &#39;linear_solver&#39;: str (default: &#39;default&#39;)</span>
+<span class="sd">            One of: &#39;default&#39;, &#39;dense&#39;, &#39;banded&#39;, &#39;gmres&#39;,</span>
+<span class="sd">            &#39;gmres_classic&#39;, &#39;bicgstab&#39;, &#39;tfqmr&#39;</span>
+<span class="sd">        &#39;return_on_error&#39; : bool</span>
+<span class="sd">            Returns on error without raising an excpetion (with ``&#39;success&#39;==False``).</span>
+<span class="sd">        &#39;autorestart&#39; : int</span>
+<span class="sd">            Useful for autonomous systems where conditions change during integration.</span>
+<span class="sd">            Will restart the integration with ``x==0``. Maximum number of steps is then</span>
+<span class="sd">            given by ``autorestart * nsteps``.</span>
+<span class="sd">        &#39;record_rhs_xvals&#39; : bool</span>
+<span class="sd">            When True: will return x values for rhs calls in ``info[&#39;rhs_xvals&#39;]``.</span>
+<span class="sd">        &#39;record_jac_xvals&#39; : bool</span>
+<span class="sd">            When True will return x values for jac calls in ``info[&#39;jac_xvals&#39;]``.</span>
+<span class="sd">        &#39;record_order&#39; : bool</span>
+<span class="sd">            When True will return used time stepper order in ``info[&#39;orders&#39;]``.</span>
+<span class="sd">        &#39;record_fpe&#39; : bool</span>
+<span class="sd">            When True will return observed floating point errors in ``info[&#39;fpes&#39;]``. (see ``fpes``)</span>
+<span class="sd">        &#39;record_steps&#39; : bool</span>
+<span class="sd">            When True will return stepsizes taken in ``info[&#39;steps&#39;]``.</span>
+<span class="sd">        &#39;dx0cb&#39; : callable</span>
+<span class="sd">            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.</span>
+<span class="sd">            Signature: ``f(x, y[:]) -&gt; float``.</span>
+<span class="sd">        &#39;dx_max_cb&#39; : callable</span>
+<span class="sd">            Callback for calculating dx_max.</span>
+<span class="sd">            Signature: ``f(x, y[:]) -&gt; float``.</span>
+<span class="sd">        &#39;autonomous_exprs&#39; bool</span>
+<span class="sd">            Whether expressions contain the independent variable. If not, autorestart</span>
+<span class="sd">            is allowed to shift the independent variable to zero at restart).</span>
+<span class="sd">        &#39;nnz&#39; : int</span>
+<span class="sd">            Maximum number of nonzero entries in the sparse (CSC) jacobian (default: -1).</span>
+<span class="sd">            Must set ``nnz &gt;= 0`` and ``linear_solver`` to &#39;klu&#39; to enable use of sparse</span>
+<span class="sd">            ``jac`` signature.</span>
+<span class="sd">        &#39;jtimes&#39; : callable</span>
+<span class="sd">            Function with signature f(v, Jv, t, y, fy) to calculate the product of the</span>
+<span class="sd">            Jacobian evaluated at t, y with a vector v. Should modify Jv *inplace*.</span>
+<span class="sd">            For use with linear solvers &#39;gmres&#39;, &#39;gmres_classic&#39;, &#39;bicgstab&#39;, &#39;tfqmr&#39;.</span>
+<span class="sd">        &#39;ew_ele&#39; : bool</span>
+<span class="sd">            Whether to return error_weights, estimated_local_errors in info dict.</span>
+<span class="sd">        &#39;constraints&#39;: array</span>
+<span class="sd">            Per component constraints 0.0: no constraint, 1.0: &gt;=0, -1.0: &lt;=0, 2.0: &gt;0.0, -2.0: &lt;0.0.</span>
+<span class="sd">        &#39;max_steps_between_jac&#39;: int</span>
+<span class="sd">             Maximum  number  of  timesteps to wait before recomputation of the Jacobian or</span>
+<span class="sd">             recommendation to update the preconditioner.</span>
+<span class="sd">        &#39;stab_lim_det&#39;: bool</span>
+<span class="sd">             Use CVodes built in stability limit detection. (default: False)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (xout, yout, info):</span>
+<span class="sd">        xout: 1-dimensional array of values for the independent variable</span>
+<span class="sd">        yout: 2-dimensional array of the dependent variables (axis 1) for</span>
+<span class="sd">            values corresponding to xout (axis 0).</span>
+<span class="sd">        info: Dictionary with information about the integration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sanity checks to reduce risk of having a segfault:</span>
+    <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lband&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uband&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">nnz</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nnz&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">_check_jac_type</span><span class="p">(</span><span class="n">lband</span><span class="o">=</span><span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="o">=</span><span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_callable</span><span class="p">:</span>
+        <span class="n">_check_callable</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_indexing</span><span class="p">:</span>
+        <span class="n">_check_indexing</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">adaptive</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">y0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">x0</span><span class="p">,</span> <span class="n">xend</span><span class="p">,</span>
+                    <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">method</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;adams&#39;</span> <span class="k">if</span> <span class="n">jac</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;bdf&#39;</span><span class="p">),</span>
+                    <span class="n">nsteps</span><span class="p">,</span> <span class="n">dx0</span><span class="p">,</span> <span class="n">dx_min</span><span class="p">,</span> <span class="n">dx_max</span><span class="p">,</span> <span class="n">nderiv</span><span class="o">=</span><span class="n">nderiv</span><span class="p">,</span> <span class="n">roots</span><span class="o">=</span><span class="n">roots</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">,</span>
+                    <span class="n">return_on_root</span><span class="o">=</span><span class="n">return_on_root</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="integrate_predefined"><a class="viewcode-back" href="../pycvodes.html#pycvodes.integrate_predefined">[docs]</a><span class="k">def</span> <span class="nf">integrate_predefined</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">xout</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">jac_type</span><span class="o">=</span><span class="s2">&quot;dense&quot;</span><span class="p">,</span>
+                         <span class="n">dx0</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span> <span class="n">dx_min</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span> <span class="n">dx_max</span><span class="o">=.</span><span class="mi">0</span><span class="p">,</span> <span class="n">nsteps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">nderiv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">roots</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">check_callable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">check_indexing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Integrates a system of ordinary differential equations.</span>
+
+<span class="sd">    Solves the initial value problem (IVP) defined by the user supplied</span>
+<span class="sd">    arguments. The user chooses at what values of the independent variable</span>
+<span class="sd">    results should be reported.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rhs : callable</span>
+<span class="sd">        Function with signature f(t, y, fout) which modifies fout *inplace*.</span>
+<span class="sd">    jac : callable</span>
+<span class="sd">        Function with signature either jac(t, y, jmat_out, dfdx_out) for</span>
+<span class="sd">        dense/banded jacobians, or jac(t, y, data, colptrs, rowvals) for</span>
+<span class="sd">        sparse (CSC) jacobians. ``jac`` should modify ``jmat_out``, ``dfdx_out``</span>
+<span class="sd">        (dense, banded) or (``data``, ``colptrs``, ``rowvals``) *inplace*.</span>
+<span class="sd">        (see also ``lband``, ``uband``, ``nnz``)</span>
+<span class="sd">    y0 : array_like</span>
+<span class="sd">        Initial values of the dependent variables.</span>
+<span class="sd">    xout : array_like</span>
+<span class="sd">        Values of the independent variable.</span>
+<span class="sd">    dx0 : float</span>
+<span class="sd">        Initial step-size.</span>
+<span class="sd">    atol : float</span>
+<span class="sd">        Absolute tolerance.</span>
+<span class="sd">    rtol : float</span>
+<span class="sd">        Relative tolerance.</span>
+<span class="sd">    dx_min : float</span>
+<span class="sd">        Minimum step (default: 0.0).</span>
+<span class="sd">    dx_max : float</span>
+<span class="sd">        Maximum step (default: 0.0).</span>
+<span class="sd">    nsteps : int</span>
+<span class="sd">        Maximum number of steps (default: 500).</span>
+<span class="sd">    method : str</span>
+<span class="sd">        One of: &#39;adams&#39; or &#39;bdf&#39; (default: &#39;bdf&#39;).</span>
+<span class="sd">    nderiv : int</span>
+<span class="sd">        Number of derivatives (default: 0).</span>
+<span class="sd">    roots : callback (default: None)</span>
+<span class="sd">        With signature ``roots(x, yarr[:ny], out[:nroots]) -&gt; None``,</span>
+<span class="sd">        see info[&#39;root_indices&#39;], note that xout is unaffected.</span>
+<span class="sd">    nroots : int (default: 0)</span>
+<span class="sd">        Number of root functions in roots.</span>
+<span class="sd">    check_callable : bool (default: False)</span>
+<span class="sd">        Perform signature sanity checks on ``rhs`` and ``jac``.</span>
+<span class="sd">    check_indexing : bool (default: False)</span>
+<span class="sd">        Perform item setting sanity checks on ``rhs`` and ``jac``.</span>
+<span class="sd">    \\*\\*kwargs:</span>
+<span class="sd">        &#39;lband&#39; : int</span>
+<span class="sd">            Number of lower bands.</span>
+<span class="sd">            Indexing: ``banded[row_i - col_i + uband, col_i]``.</span>
+<span class="sd">        &#39;uband&#39; : int</span>
+<span class="sd">            Number of upper bands.</span>
+<span class="sd">            Indexing: ``banded[row_i - col_i + uband, col_i]``.</span>
+<span class="sd">        &#39;iter_type&#39; : str (default: &#39;default&#39;)</span>
+<span class="sd">            One of: &#39;default&#39;, &#39;functional&#39;, &#39;newton&#39;.</span>
+<span class="sd">        &#39;linear_solver&#39; : str (default: &#39;default&#39;)</span>
+<span class="sd">            One of: &#39;default&#39;, &#39;dense&#39;, &#39;banded&#39;, &#39;gmres&#39;,</span>
+<span class="sd">            &#39;gmres_classic&#39;, &#39;bicgstab&#39;, &#39;tfqmr&#39;, &#39;klu&#39;.</span>
+<span class="sd">        &#39;return_on_error&#39; : bool</span>
+<span class="sd">            Returns on error without raising an excpetion (with ``&#39;success&#39;==False``).</span>
+<span class="sd">        &#39;autorestart&#39; : int</span>
+<span class="sd">            Useful for autonomous systems where conditions change during integration.</span>
+<span class="sd">            Will restart the integration with ``x==0``. Maximum number of steps is then</span>
+<span class="sd">            given by ``2**autorestart * nsteps``.</span>
+<span class="sd">        &#39;record_rhs_xvals&#39; : bool</span>
+<span class="sd">            When True: will return x values for rhs calls in ``info[&#39;rhs_xvals&#39;]``.</span>
+<span class="sd">        &#39;record_jac_xvals&#39; : bool</span>
+<span class="sd">            When True will return x values for jac calls in ``info[&#39;jac_xvals&#39;]``.</span>
+<span class="sd">        &#39;record_order&#39; : bool</span>
+<span class="sd">            When True will return used time stepper order in ``info[&#39;orders&#39;]``.</span>
+<span class="sd">        &#39;record_fpe&#39; : bool</span>
+<span class="sd">            When True will return observed floating point errors in ``info[&#39;fpes&#39;]``. (see ``fpes``)</span>
+<span class="sd">        &#39;record_steps&#39; : bool</span>
+<span class="sd">            When True will return stepsizes taken in ``info[&#39;steps&#39;]``.</span>
+<span class="sd">        &#39;dx0cb&#39;: callable</span>
+<span class="sd">            Callback for calculating dx0 (make sure to pass ``dx0==0.0``) to enable.</span>
+<span class="sd">            Signature: ``f(x, y[:]) -&gt; float``.</span>
+<span class="sd">        &#39;dx_max_cb&#39; : callable</span>
+<span class="sd">            Callback for calculating dx_max.</span>
+<span class="sd">            Signature: ``f(x, y[:]) -&gt; float``.</span>
+<span class="sd">        &#39;autonomous_exprs&#39; : bool</span>
+<span class="sd">            Whether expressions contain the independent variable. If not, autorestart</span>
+<span class="sd">            is allowed to shift the independent variable to zero at restart).</span>
+<span class="sd">        &#39;nnz&#39; : int</span>
+<span class="sd">            Maximum number of nonzero entries in the sparse (CSC) jacobian (default: -1).</span>
+<span class="sd">            Must set ``nnz &gt;= 0`` and ``linear_solver`` to &#39;klu&#39; to enable use of sparse</span>
+<span class="sd">            ``jac`` signature.</span>
+<span class="sd">        &#39;jtimes&#39; : callable</span>
+<span class="sd">            Function with signature f(v, Jv, t, y, fy) to calculate the product of the</span>
+<span class="sd">            Jacobian evaluated at t, y with a vector v. Should modify Jv *inplace*.</span>
+<span class="sd">            For use with linear solvers &#39;gmres&#39;, &#39;gmres_classic&#39;, &#39;bicgstab&#39;, &#39;tfqmr&#39;.</span>
+<span class="sd">        &#39;ew_ele&#39; : bool</span>
+<span class="sd">            Whether to return error_weights, estimated_local_errors in info dict.</span>
+<span class="sd">        &#39;constraints&#39;: array</span>
+<span class="sd">            Per component constraints 0.0: no constraint, 1.0: &gt;=0, -1.0: &lt;=0, 2.0: &gt;0.0, -2.0: &lt;0.0.</span>
+<span class="sd">        &#39;max_steps_between_jac&#39;: int</span>
+<span class="sd">             Maximum  number  of  timesteps to wait before recomputation of the Jacobian or</span>
+<span class="sd">             recommendation to update the preconditioner.</span>
+<span class="sd">        &#39;stab_lim_det&#39;: bool</span>
+<span class="sd">             Use CVodes built in stability limit detection. (default: False)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (yout, info):</span>
+<span class="sd">        yout: 2-dimensional array of the dependent variables (axis 1) for</span>
+<span class="sd">            values corresponding to xout (axis 0)</span>
+<span class="sd">        info: Dictionary with information about the integration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sanity checks to reduce risk of having a segfault:</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">xout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lband&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uband&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">nnz</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nnz&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">_check_jac_type</span><span class="p">(</span><span class="n">lband</span><span class="o">=</span><span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="o">=</span><span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_callable</span><span class="p">:</span>
+        <span class="n">_check_callable</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_indexing</span><span class="p">:</span>
+        <span class="n">_check_indexing</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">lband</span><span class="p">,</span> <span class="n">uband</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">predefined</span><span class="p">(</span>
+        <span class="n">rhs</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">y0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">xout</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">method</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;adams&#39;</span> <span class="k">if</span> <span class="n">jac</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;bdf&#39;</span><span class="p">),</span>
+        <span class="n">nsteps</span><span class="p">,</span> <span class="n">dx0</span><span class="p">,</span> <span class="n">dx_min</span><span class="p">,</span> <span class="n">dx_max</span><span class="p">,</span> <span class="n">nderiv</span><span class="o">=</span><span class="n">nderiv</span><span class="p">,</span> <span class="n">roots</span><span class="o">=</span><span class="n">roots</span><span class="p">,</span>
+        <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Bjoern I. Dahlgren &lt;bjodah@gmail.com&gt;
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
