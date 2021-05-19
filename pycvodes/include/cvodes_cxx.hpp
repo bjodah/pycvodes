@@ -1357,7 +1357,7 @@ public:
             for (int i=0; i<ny; ++i) {
 #if PYCVODES_CLIP_TO_CONSTRAINTS == 1
                 if (constraints_.size() and constraints_[i] == 1.0 and y[i] < 0) {
-                    if (this->verbosity > 60) { std::clog << "clipping y[" << i << "] to zero.\n"; }
+                    if (this->verbosity > 40) { std::clog << "clipping y[" << i << "] to zero.\n"; }
                     yout(tidx, 0, i) = 0.0;
                 } else {
                     yout(tidx, 0, i) = y[i];
@@ -1548,7 +1548,7 @@ public:
                     if (constraints_.size()) {
                         for (int i=0; i<ny; ++i){
                             if (constraints_[i] == 1.0 and yqout[i + (iout-1)*((nderiv+1)*ny+nq)] < 0) {
-                                if (this->verbosity > 60) { std::clog << "clipping to y[" << i << "] to zero.\n"; }
+                                if (this->verbosity > 40) { std::clog << "clipping to y[" << i << "] to zero.\n"; }
                                 yqout[i + (iout-1)*((nderiv+1)*ny+nq)] = 0;
                             }
                         }
