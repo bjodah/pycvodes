@@ -43,7 +43,8 @@ if len(RELEASE_VERSION) > 1:
     __version__ = RELEASE_VERSION[1:]
 else:  # set `__version__` from _release.py:
     TAGGED_RELEASE = False
-    exec(open(release_py_path).read())
+    with open(release_py_path) as ifh:
+        exec(ifh.read())
     if __version__.endswith('git'):
         try:
             _git_version = subprocess.check_output(
@@ -189,8 +190,8 @@ if __name__ == '__main__':
             # depending on tagged version (set PYCVODES_RELEASE_VERSION)
             # this will ensure source distributions contain the correct version
             shutil.move(release_py_path, release_py_path+'__temp__')
-            open(release_py_path, 'wt').write(
-                "__version__ = '{}'\n".format(__version__))
+            with open(release_py_path, 'wt') as ofh:
+                ofh.write("__version__ = '{}'\n".format(__version__))
         setup(**setup_kwargs)
     finally:
         if TAGGED_RELEASE:
