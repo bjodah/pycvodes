@@ -27,7 +27,7 @@ git clean -xfd
 
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-    (cd examples/; ../scripts/render_index.sh *.html)
+#    (cd examples/; ../scripts/render_index.sh *.html)
 fi
 
 if [[ "${BUILD_DOCS:-0}" == "1" ]]; then

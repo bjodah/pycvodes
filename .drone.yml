@@ -4,7 +4,7 @@ clone:
   submodule_override:
     external/anyode: git://github.com/bjodah/anyode.git
 build:
-  image: bjodah/bjodahimg20dot:21.7.b
+  image: bjodah/bjodahimg20dot:21.7.e
   environment:
     - PYCVODES_STRICT=1
     - CPATH=/usr/include/suitesparse
