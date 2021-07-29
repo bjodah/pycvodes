@@ -41,7 +41,7 @@ fi
 if [[ "${LOW_PRECISION:-0}" != "1" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
     CXX=clang++-12 CC=clang-12 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 $CFLAGS" ${PYTHON:-python3} setup.py build_ext -i
-    export PYTHON="env LD_PRELOAD=$(clang++-12 -print-file-name libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}" PYTHONPATH=$(pwd)
+    export PYTHON="env LD_PRELOAD=$(clang++-12 --print-file-name=libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}" PYTHONPATH=$(pwd)
     export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-12/bin/llvm-symbolizer
     export ASAN_OPTIONS=symbolize=1
     ./scripts/run_tests.sh
