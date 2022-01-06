@@ -621,7 +621,7 @@ def test_constraints():
 
 @high_precision
 @pytest.mark.skipif(sundials_version < (4, 0, 0), reason="Sundials >=4.0.0 req. for CVodeSetMaxStepsBetweenJac")
-def test_set_max_steps_between_jac():
+def test_set_max_num_steps_between_jac():
     k = 1e23, 3.0, 4.0
     y0 = [.7, .0, .0]
     x0, xend = 0, 5
@@ -629,7 +629,7 @@ def test_set_max_steps_between_jac():
     f, j = _get_f_j(k)
     xout, yout, info = integrate_adaptive(
         f, j, y0, x0, xend,
-        max_steps_between_jac=5,  # 1e6=>6, 100=>49, 50 => 92, 25=>137, 10=>270, 5=>276, 2=>284, 1=>292
+        max_num_steps_between_jac=5,  # 1e6=>6, 100=>49, 50 => 92, 25=>137, 10=>270, 5=>276, 2=>284, 1=>292
         **kwargs)
     assert info['njev'] > 200
 

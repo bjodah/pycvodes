@@ -924,7 +924,7 @@ public:
         this->cvspils_check_flag(flag);
     }
 // Linear solver options:
-    void set_max_steps_between_jac(long int msbj) {
+    void set_max_num_steps_between_jac(long int msbj) {
 #if SUNDIALS_VERSION_MAJOR >= 5 && SUNDIALS_VERSION_MINOR >= 4
         int flag = CVodeSetJacEvalFrequency(this->mem, msbj+1);
         cvspils_check_flag(flag);
@@ -934,7 +934,7 @@ public:
         cvspils_check_flag(flag);
 #else
         ignore(msbj);
-        throw std::runtime_error("set_max_steps_between_jac  requires sundials >=4.0.0");
+        throw std::runtime_error("set_max_num_steps_between_jac  requires sundials >=4.0.0");
 #endif
 #endif
     }

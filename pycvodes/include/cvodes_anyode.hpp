@@ -398,7 +398,7 @@ std::unique_ptr<Integrator> get_integrator(
         }
     }
     if (msbj)
-        integr.set_max_steps_between_jac(msbj);
+        integr.set_max_num_steps_between_jac(msbj);
     return integr_ptr;
 }
 
