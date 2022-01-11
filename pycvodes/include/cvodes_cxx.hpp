@@ -1325,7 +1325,7 @@ public:
                             this->set_tol(1e-3, 1e-3); if (this->verbosity > 0) std::clog << " - using atol=1e-3, rtol=1e-3";
                             this->set_dense_jac_fn(nullptr); if (this->verbosity > 0) std::clog << " - using finite differences.\n"; // Hail Mary
                         }
-                        if (this->verbosity > 0) std::cerr << '\n';
+                        if (this->verbosity > 0) std::clog << '\n';
                         if (tidx > mxsteps){
                             this->set_max_num_steps(mxsteps + autorestart_additional_steps);
                         }
@@ -1399,6 +1399,9 @@ public:
             } else {
                 *xyqout = (realtype *)new_xyqout;
             }
+        }
+        if (this->verbosity > 0) {
+            std::fflush(stderr);
         }
         return tidx;
     }
@@ -1568,6 +1571,9 @@ public:
                     break;
                 }
             }
+        }
+        if (this->verbosity > 0) {
+            std::fflush(stderr);
         }
         return iout;
     }
