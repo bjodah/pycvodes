@@ -20,10 +20,8 @@ namespace sundials_cxx {
         struct VectorBase_{
             N_Vector n_vec {nullptr};
             VectorBase_(N_Vector v) : n_vec(v) {}
-            virtual ~VectorBase_(){
-                N_VDestroy_Serial(this->n_vec);
-            }
-            long int size() const {
+            virtual ~VectorBase_() = default;
+            [[nodiscard]] long int size() const {
                 return NV_LENGTH_S(this->n_vec);
             }
             realtype *get_data_ptr() const {
@@ -32,7 +30,7 @@ namespace sundials_cxx {
             void set_data_ptr(realtype * data){
                 NV_DATA_S(this->n_vec) = data;
             }
-            realtype& operator[](long int idx) const{
+            [[nodiscard]] realtype& operator[](long int idx) const{
                 return *(NV_DATA_S(this->n_vec)+idx);
             }
             void dump(realtype * const out) const {
@@ -52,18 +50,50 @@ namespace sundials_cxx {
 
         struct Vector : public VectorBase_ {
             // Vector owns the memory containing data
-            Vector(long int n) :
-                VectorBase_(N_VNew_Serial(n)) {}
-            Vector(const Vector& v)
-                : VectorBase_(N_VNew_Serial(v.size())) { // copy-constructor
+            Vector(long int n
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+                ) :
+                VectorBase_(N_VNew_Serial(n
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+                                )) {}
+            Vector(const Vector& v
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VNew_Serial(v.size()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) { // copy-constructor
                 v.dump(get_data_ptr());
             }
-            Vector(long int n, const realtype * const data)
-                : VectorBase_(N_VNew_Serial(n)) { // "copy-constructor"
+            Vector(long int n, const realtype * const data
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VNew_Serial(n
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) { // "copy-constructor"
                 load(data);
             }
-            Vector(const std::vector<realtype>& v)
-                : VectorBase_(N_VNew_Serial(v.size())) { // "copy-constructor"
+            Vector(const std::vector<realtype>& v
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VNew_Serial(v.size()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) { // "copy-constructor"
                 load(&v[0]);
             }
             Vector& operator=(const Vector& v){ // Copy assignment
@@ -72,22 +102,58 @@ namespace sundials_cxx {
                 load(v.get_data_ptr());
                 return *this;
             }
+            ~Vector() override {
+                N_VDestroy_Serial(this->n_vec);
+            }
+
         };
 
         struct VectorView : public VectorBase_ {
             // VectorView DOES NOT own the memory containing data
 
-            VectorView(long int n, realtype * const data)
-                : VectorBase_(N_VMake_Serial(n, const_cast<realtype*>(data))) {}
+            VectorView(long int n, realtype * const data
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VMake_Serial(n, const_cast<realtype*>(data)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) {}
 
-            VectorView(const VectorView& v)
-                : VectorBase_(N_VMake_Serial(v.size(), v.get_data_ptr())) {} // copy-constructor
+            VectorView(const VectorView& v
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VMake_Serial(v.size(), v.get_data_ptr()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) {} // copy-constructor
 
-            VectorView(const Vector& v)
-                : VectorBase_(N_VMake_Serial(v.size(), v.get_data_ptr())) {}
+            VectorView(const Vector& v
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+)
+                : VectorBase_(N_VMake_Serial(v.size(), v.get_data_ptr()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) {}
 
-            VectorView(const std::vector<realtype>& v)
-                : VectorBase_(N_VMake_Serial(v.size(), const_cast<realtype*>(&v[0]))) {}
+            VectorView(const std::vector<realtype>& v
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , SUNContext ctx
+#endif
+                )
+                : VectorBase_(N_VMake_Serial(v.size(), const_cast<realtype*>(&v[0])
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+)) {}
 
             VectorView& operator=(const Vector& v){ // Copy assignment
                 if (v.size() != this->size())

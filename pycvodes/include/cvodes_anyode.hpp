@@ -286,7 +286,11 @@ std::unique_ptr<Integrator> get_integrator(
 #endif
     const int nroots = odesys->get_nroots();
     const int nq = odesys->get_nquads();
-    auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type);
+    auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , std::make_shared<sundials::Context>(nullptr)
+#endif
+);
     auto &integr = *integr_ptr;
     integr.autonomous_exprs = odesys->autonomous_exprs;
     integr.record_order = odesys->record_order;
@@ -298,10 +302,18 @@ std::unique_ptr<Integrator> get_integrator(
     if (nroots > 0)
         integr.root_init(nroots, roots_cb<OdeSys>);
     if (nq > 0){
-        sundials_cxx::nvector_serial::VectorView q0(nq, const_cast<realtype*>(yq0)+ny);
+        sundials_cxx::nvector_serial::VectorView q0(nq, const_cast<realtype*>(yq0)+ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                                    , *(integr.ctx)
+#endif
+);
         integr.quad_init(quads_cb<OdeSys>, q0.n_vec);
         if (atol.size() == (size_t)(ny + nq)){
-            sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny);
+            sundials_cxx::nvector_serial::VectorView quad_atol(nq, atol.data()+ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                                    , *(integr.ctx)
+#endif
+);
             integr.set_quad_err_con(true);
             integr.set_quad_tol(rtol, quad_atol.n_vec);
         } else if (atol.size() == 1) {
@@ -314,7 +326,11 @@ std::unique_ptr<Integrator> get_integrator(
     } else if (atol.size() == (size_t)ny) {
         integr.set_tol(rtol, atol);
     } else if (atol.size() == (size_t)(ny+nq)) {
-        sundials_cxx::nvector_serial::VectorView atol_(ny, atol.data());
+        sundials_cxx::nvector_serial::VectorView atol_(ny, atol.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                                    , *(integr.ctx)
+#endif
+);
         integr.set_tol(rtol, atol_.n_vec);
     } else {
         throw std::runtime_error("atol of incorrect length");

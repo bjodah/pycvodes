@@ -263,6 +263,9 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     IterType iter_;
     SUNNonlinearSolver NLS_;
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+    std::shared_ptr<sundials::Context> ctx;
+#endif
     CVRhsFn cb_ {nullptr};
     void * user_data_ {nullptr};
     long int mxsteps_;
@@ -279,9 +282,21 @@ public:
     double time_rhs {0}, time_jac {0}, time_roots {0}, time_quads {0}, time_prec {0}, time_jtimes {0}, time_jtsetup {0};
     std::vector<int> orders_seen, fpes_seen;
     std::vector<double> steps_seen, mxss_seen;  // Conversion from float / long double not a problem.
-    Integrator(const LMM lmm, const IterType iter) {
+    Integrator(const LMM lmm, const IterType iter
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , std::shared_ptr<sundials::Context> sun_ctx
+#endif
+)
+#if SUNDIALS_VERSION_MAJOR >= 6
+        : ctx(sun_ctx)
+#endif
+ {
 #if SUNDIALS_VERSION_MAJOR >= 4
-        this->mem = CVodeCreate(static_cast<int>(lmm));
+     this->mem = CVodeCreate(static_cast<int>(lmm),
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         this->iter_ = iter;
 #else
         this->mem = CVodeCreate(static_cast<int>(lmm), static_cast<int>(iter));
@@ -350,7 +365,11 @@ public:
         this->init(cb, t0, y.n_vec);
     }
     void init(CVRhsFn cb, realtype t0, const realtype * const y, int ny) {
-        SVector yvec (ny, const_cast<realtype*>(y));
+        SVector yvec (ny, const_cast<realtype*>(y)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         this->init(cb, t0, yvec.n_vec);
         // it is ok that yvec is destructed here
         // (see CVodeInit in cvodes.c which at L848 calls cvAllocVectors (L3790))
@@ -369,7 +388,11 @@ public:
         reinit(t0, y.n_vec);
     }
     void reinit(realtype t0, const realtype * const y, int ny){
-        SVector yvec (ny, const_cast<realtype*>(y));
+        SVector yvec (ny, const_cast<realtype*>(y)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         reinit(t0, yvec.n_vec);
     }
     // Root finding
@@ -394,7 +417,11 @@ public:
             check_flag(flag);
     }
     void quad_init(CVQuadRhsFn fQ, std::vector<realtype>& yQ0){
-        SVector yQ0_(yQ0.size(), yQ0.data());
+        SVector yQ0_(yQ0.size(), yQ0.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         quad_init(fQ, yQ0_.n_vec);
     }
     void quad_reinit(const N_Vector yQ0){
@@ -410,7 +437,11 @@ public:
         quad_reinit(yQ0.n_vec);
     };
     void quad_reinit(std::vector<realtype>& yQ0){
-        SVector yQ0_(yQ0.size(), yQ0.data());
+        SVector yQ0_(yQ0.size(), yQ0.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         quad_reinit(yQ0_.n_vec);
     }
     // Main solver optional input functions
@@ -471,7 +502,11 @@ public:
             throw std::runtime_error("CVodeSVtolerances failed.");
     }
     void set_tol(realtype rtol, std::vector<realtype> &atol){
-        SVector atol_(atol.size(), atol.data());
+        SVector atol_(atol.size(), atol.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         set_tol(rtol, atol_.n_vec);
     }
     void set_quad_err_con(bool errconQ){ // quad_init must have been called
@@ -508,7 +543,11 @@ public:
     //     set_quad_tol(reltolQ, abstolQ.n_vec);
     // }
     void set_quad_tol(realtype reltolQ, std::vector<realtype> &abstolQ){
-        SVector atol_(abstolQ.size(), abstolQ.data());
+        SVector atol_(abstolQ.size(), abstolQ.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         set_quad_tol(reltolQ, atol_.n_vec);
     }
     // set stop time
@@ -542,7 +581,11 @@ public:
         if (A_ == nullptr){
             if (A_)
                 throw std::runtime_error("matrix already set");
-            A_ = SUNDenseMatrix(ny, ny);
+            A_ = SUNDenseMatrix(ny, ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
             if (!A_)
                 throw std::runtime_error("SUNDenseMatrix failed.");
         }
@@ -556,7 +599,11 @@ public:
 #    else
                 SUNDenseLinearSolver
 #    endif
-                (y_, A_);
+                (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #  else
             LS_ = SUNLapackDense(y_, A_);
 #  endif
@@ -616,6 +663,9 @@ public:
 #  if SUNDIALS_VERSION_MAJOR < 4
                                , mlower+mupper
 #  endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
                 );
             if (!A_)
                 throw std::runtime_error("SUNDenseMatrix failed.");
@@ -630,7 +680,11 @@ public:
                 # else
                 SUNBandLinearSolver
                 #endif
-                (y_, A_);
+                (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #  else
             LS_ =
                 # if SUNDIALS_VERSION_MAJOR >= 4
@@ -638,7 +692,11 @@ public:
                 #else
                 SUNLapackBand
                 #endif
-                (y_, A_);
+                (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #  endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
@@ -750,7 +808,11 @@ public:
         case IterLinSolEnum::GMRES:
 #if SUNDIALS_VERSION_MAJOR >= 3
 #if SUNDIALS_VERSION_MAJOR >= 4
-            LS_ = SUNLinSol_SPGMR(y_, static_cast<int>(ptyp), maxl);
+            LS_ = SUNLinSol_SPGMR(y_, static_cast<int>(ptyp), maxl
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #else
             LS_ = SUNSPGMR(y_, static_cast<int>(ptyp), maxl);
 #endif
@@ -761,7 +823,11 @@ public:
         case IterLinSolEnum::BICGSTAB:
 #if SUNDIALS_VERSION_MAJOR >= 3
 #if SUNDIALS_VERSION_MAJOR >= 4
-            LS_ = SUNLinSol_SPBCGS(y_, static_cast<int>(ptyp), maxl);
+            LS_ = SUNLinSol_SPBCGS(y_, static_cast<int>(ptyp), maxl
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #else
             LS_ = SUNSPBCGS(y_, static_cast<int>(ptyp), maxl);
 #endif
@@ -772,7 +838,11 @@ public:
         case IterLinSolEnum::TFQMR:
 #if SUNDIALS_VERSION_MAJOR >= 3
 #if SUNDIALS_VERSION_MAJOR >= 4
-            LS_ = SUNLinSol_SPTFQMR(y_, static_cast<int>(ptyp), maxl);
+            LS_ = SUNLinSol_SPTFQMR(y_, static_cast<int>(ptyp), maxl
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
 #else
             LS_ = SUNSPTFQMR(y_, static_cast<int>(ptyp), maxl);
 #endif
@@ -961,7 +1031,11 @@ public:
         this->get_err_weights(ew.n_vec);
     }
     void get_err_weights(realtype * ew) const {
-        SVectorV ew_(ny, ew);
+        SVectorV ew_(ny, ew
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         this->get_err_weights(ew_.n_vec);
     }
     void get_est_local_errors(N_Vector ele) const {
@@ -971,7 +1045,11 @@ public:
         this->get_est_local_errors(ele.n_vec);
     }
     void get_est_local_errors(realtype * ele) const {
-        SVectorV ele_(ny, ele);
+        SVectorV ele_(ny, ele
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         this->get_est_local_errors(ele_.n_vec);
     }
     void set_constraints(N_Vector constraints) {
@@ -993,7 +1071,11 @@ public:
 #endif
     }
     void set_constraints(const std::vector<realtype> &constraints) {
-        SVector sv_constraints(constraints.size(), constraints.data());
+        SVector sv_constraints(constraints.size(), constraints.data()
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
         set_constraints(sv_constraints.n_vec);
     }
 
@@ -1201,9 +1283,21 @@ public:
                  realtype ** ew_ele=nullptr // length(ew_ele) must be == 2*td*ny if not nullptr
         ){
         int status;
-        SVector y {ny};
-        SVector yQ {nq};
-        SVector work {ny};
+        SVector y {ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
+        SVector yQ {nq
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
+        SVector work {ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
         long int mxsteps = get_max_num_steps();
         if (*td < 1)
             throw std::logic_error("Expected td >= 1");
@@ -1236,7 +1330,11 @@ public:
             this->set_stab_lim_det(stab_lim_det_);
         }
         if (nq){
-            auto yQ0 = SVector(nq, &qout(tidx, 0));
+            auto yQ0 = SVector(nq, &qout(tidx, 0)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
             this->quad_reinit(yQ0);
         }
         if (nderiv >= 1){
@@ -1424,9 +1522,21 @@ public:
         int iout = 0;
         realtype cur_t=tout[0];
         int status;
-        SVector y {ny};
-        SVector yQ {nq};
-        SVector work {ny};
+        SVector y {ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
+        SVector yQ {nq
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
+        SVector work {ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+};
         long int mxsteps = get_max_num_steps();
         for (int i=0; i<ny; ++i)
             y[i] = yq0[i];
@@ -1435,7 +1545,11 @@ public:
             this->set_stab_lim_det(stab_lim_det_);
         }
         if (nq){
-            auto yQ0 = SVector(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny);
+            auto yQ0 = SVector(nq, const_cast<realtype*>(yq0) + (nderiv+1)*ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#endif
+);
             this->quad_reinit(yQ0);
         }
         if (record_order)
