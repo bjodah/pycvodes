@@ -19,10 +19,21 @@ int rhs_cb3(realtype /* t */, N_Vector y, N_Vector f, void * /* user_data */){
 
 
 TEST_CASE( "methods", "[Integrator]" ) {
-    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+#if SUNDIALS_VERSION_MAJOR >= 6
+    auto ctx = std::make_shared<sundials::Context>(nullptr);
+#endif
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                        , ctx
+#endif
+        );
     std::vector<realtype> y(1, 1.0);
     realtype t, yref;
-    SVector yout(1);
+    SVector yout(1
+#if SUNDIALS_VERSION_MAJOR >= 6
+                 , ctx
+#endif
+);
     intgr.init(rhs_cb, 0.0, &y[0], 1);
     intgr.set_tol(1e-10, 1e-10);
     intgr.step(1.0, yout, &t, cvodes_cxx::Task::Normal);
@@ -38,7 +49,14 @@ realtype get_dx_max(realtype /* x */, const realtype * const /* y */){
 
 TEST_CASE( "adaptive", "[Integrator]" ) {
     const int ny = 1;
-    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+#if SUNDIALS_VERSION_MAJOR >= 6
+    auto ctx = std::make_shared<sundials::Context>(nullptr);
+#endif
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                        , ctx
+#endif
+);
     std::vector<int> root_indices;
     int td = 1;  // trailing dimension
     realtype * xyout = (realtype*)malloc(td*(ny+1)*sizeof(realtype));
@@ -76,7 +94,15 @@ realtype get_dx_max2(realtype /* x */, const realtype * const /* y */){
 
 TEST_CASE( "predefined", "[Integrator]" ) {
     const int ny = 1;
-    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+#if SUNDIALS_VERSION_MAJOR >= 6
+    auto ctx = std::make_shared<sundials::Context>(nullptr);
+#endif
+
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                        , ctx
+#endif
+);
     std::vector<realtype> y(1, 1.0);
     std::vector<int> root_indices;
     bool return_on_error=false;
@@ -104,7 +130,14 @@ TEST_CASE( "predefined", "[Integrator]" ) {
 
 TEST_CASE( "predefined_autorestart", "[Integrator]" ) {
     const int ny = 3;
-    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional);
+#if SUNDIALS_VERSION_MAJOR >= 6
+    auto ctx = std::make_shared<sundials::Context>(nullptr);
+#endif
+    auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                        , ctx
+#endif
+);
     std::vector<realtype> y(ny, 1.0);
     std::vector<int> root_indices;
     bool return_on_error=false;
