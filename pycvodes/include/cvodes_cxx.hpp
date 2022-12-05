@@ -263,14 +263,14 @@ class Integrator{ // Thin wrapper class of CVode in CVODES
     IterType iter_;
     SUNNonlinearSolver NLS_;
 #endif
-#if SUNDIALS_VERSION_MAJOR >= 6
-    std::shared_ptr<sundials::Context> ctx;
-#endif
     CVRhsFn cb_ {nullptr};
     void * user_data_ {nullptr};
     long int mxsteps_;
 public:
     void *mem {nullptr};
+#if SUNDIALS_VERSION_MAJOR >= 6
+    std::shared_ptr<sundials::Context> ctx;
+#endif
     long int ny {0};
     int nq {0};
     int verbosity = 50;  // "50%" -- plenty of room for future tuning.
@@ -284,18 +284,17 @@ public:
     std::vector<double> steps_seen, mxss_seen;  // Conversion from float / long double not a problem.
     Integrator(const LMM lmm, const IterType iter
 #if SUNDIALS_VERSION_MAJOR >= 6
-                   , std::shared_ptr<sundials::Context> sun_ctx
-#endif
-)
-#if SUNDIALS_VERSION_MAJOR >= 6
+               , std::shared_ptr<sundials::Context> sun_ctx)
         : ctx(sun_ctx)
+#else
+          )
 #endif
  {
 #if SUNDIALS_VERSION_MAJOR >= 4
-     this->mem = CVodeCreate(static_cast<int>(lmm),
-#if SUNDIALS_VERSION_MAJOR >= 6
+     this->mem = CVodeCreate(static_cast<int>(lmm)
+# if SUNDIALS_VERSION_MAJOR >= 6
                    , *ctx
-#endif
+# endif
 );
         this->iter_ = iter;
 #else
@@ -310,12 +309,15 @@ public:
         if (this->errfp)
             fclose(errfp);
 #if SUNDIALS_VERSION_MAJOR >= 3
-        if (this->y_)
+        if (this->y_) {
             N_VDestroy(this->y_);
-        if (this->A_)
+        }
+        if (this->A_) {
             SUNMatDestroy(this->A_);
-        if (this->LS_)
+        }
+        if (this->LS_) {
             SUNLinSolFree(this->LS_);
+        }
 #endif
 #if SUNDIALS_VERSION_MAJOR >= 4
         SUNNonlinSolFree(NLS_);
@@ -325,9 +327,14 @@ public:
     void init(CVRhsFn cb, realtype t0, N_Vector y) {
         this->ny = NV_LENGTH_S(y);
 #if SUNDIALS_VERSION_MAJOR >= 3
-        if (y_)
+        if (y_) {
             throw std::runtime_error("y_ already allocated");
-        y_ = N_VNew_Serial(NV_LENGTH_S(y));
+        }
+        y_ = N_VNew_Serial(NV_LENGTH_S(y)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+);
         std::memcpy(NV_DATA_S(y_), NV_DATA_S(y), ny*sizeof(realtype));
 #else
         auto y_ = y;
@@ -344,10 +351,18 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 4
         int flag;
         if (this->iter_ == IterType::Newton) {
-            NLS_ = SUNNonlinSol_Newton(y_);
+            NLS_ = SUNNonlinSol_Newton(y_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+);
         } else if (this->iter_ == IterType::Functional) {
             const int n_accel_vecs = 0; // number of Anderson acceleration vectors (TODO: customizable)
-            NLS_ = SUNNonlinSol_FixedPoint(y_, n_accel_vecs);
+            NLS_ = SUNNonlinSol_FixedPoint(y_, n_accel_vecs
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+);
             flag = CVodeSetNonlinearSolver(this->mem, NLS_);
             if (flag == CV_SUCCESS) {
                 ; // pass
@@ -582,9 +597,9 @@ public:
             if (A_)
                 throw std::runtime_error("matrix already set");
             A_ = SUNDenseMatrix(ny, ny
-#if SUNDIALS_VERSION_MAJOR >= 6
+# if SUNDIALS_VERSION_MAJOR >= 6
                    , *ctx
-#endif
+# endif
 );
             if (!A_)
                 throw std::runtime_error("SUNDenseMatrix failed.");
@@ -600,19 +615,36 @@ public:
                 SUNDenseLinearSolver
 #    endif
                 (y_, A_
-#if SUNDIALS_VERSION_MAJOR >= 6
+#   if SUNDIALS_VERSION_MAJOR >= 6
                    , *ctx
-#endif
+#   endif
 );
 #  else
-            LS_ = SUNLapackDense(y_, A_);
+            LS_ =
+#    if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_LapackDense
+#    else
+                SUNLapackDense
+#    endif
+                (y_, A_
+#   if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#   endif
+);
 #  endif
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
-        status = CVDlsSetLinearSolver(this->mem, LS_, A_);
-        if (status < 0)
+        status =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetLinearSolver
+#else
+            CVDlsSetLinearSolver
+#endif
+            (this->mem, LS_, A_);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
+        }
 #else
 #  if PYCVODES_NO_LAPACK == 1
         status = CVDense(this->mem, ny);
@@ -641,13 +673,27 @@ public:
         ){
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
-        status = CVDlsSetJacFn(this->mem, djac);
-        if (status < 0)
-            throw std::runtime_error("CVDlsSetJacFn failed.");
+        status =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetJacFn
 #else
-        status = CVDlsSetDenseJacFn(this->mem, djac);
-        if (status < 0)
+            CVDlsSetJacFn
+#endif
+(this->mem, djac);
+        if (status < 0) {
+            throw std::runtime_error("CVDlsSetJacFn failed.");
+        }
+#else
+        status =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetDenseJacFn
+#else
+            CVDlsSetDenseJacFn
+#endif
+            (this->mem, djac);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetDenseJacFn failed.");
+        }
 #endif
     }
 
@@ -701,9 +747,16 @@ public:
             if (!LS_)
                 throw std::runtime_error("SUNDenseLinearSolver failed.");
         }
-        status = CVDlsSetLinearSolver(this->mem, LS_, A_);
-        if (status < 0)
+        status =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetLinearSolver
+#else
+            CVDlsSetLinearSolver
+#endif
+            (this->mem, LS_, A_);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
+        }
 #else
         status =
 #  if PYCVODES_NO_LAPACK == 1
@@ -724,7 +777,9 @@ public:
     }
 
     void set_band_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVDlsBandJacFn
@@ -734,13 +789,21 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (A_ == nullptr || LS_ == nullptr)
             throw std::runtime_error("set_linear_solver_to_banded not called?");
-        status = CVDlsSetJacFn(this->mem, djac);
-        if (status < 0)
+        status =
+# if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetJacFn
+# else
+            CVDlsSetJacFn
+# endif
+            (this->mem, djac);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetJacFn failed.");
+        }
 #else
         status = CVDlsSetBandJacFn(this->mem, djac);
-        if (status < 0)
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetBandJacFn failed.");
+        }
 #endif
     }
 
@@ -753,22 +816,46 @@ public:
     int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (A_ == nullptr){
-            if (A_)
-                throw std::runtime_error("matrix already set");
-            A_ = SUNSparseMatrix(ny, ny, nnz, CSC_MAT);
+            if (A_) {
+              throw std::runtime_error("matrix already set");
+            }
+            A_ = SUNSparseMatrix(ny, ny, nnz, CSC_MAT
+#   if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#   endif
+);
             if (!A_)
                 throw std::runtime_error("SUNSparseMatrix failed.");
         }
         if (LS_ == nullptr){
-            if (LS_)
+            if (LS_) {
                 throw std::runtime_error("linear solver already set");
-            LS_ = SUNKLU(y_, A_);
-            if (!LS_)
+            }
+            LS_ =
+#   if SUNDIALS_VERSION_MAJOR >= 4
+              SUNLinSol_KLU
+#   else
+              SUNKLU
+#   endif
+                (y_, A_
+#   if SUNDIALS_VERSION_MAJOR >= 6
+                   , *ctx
+#   endif
+              );
+            if (!LS_) {
                 throw std::runtime_error("SUNKLU failed.");
+            }
         }
-        status = CVDlsSetLinearSolver(this->mem, LS_, A_);
-        if (status < 0)
+        status =
+#   if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetLinearSolver
+#   else
+            CVDlsSetLinearSolver
+#   endif
+            (this->mem, LS_, A_);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetLinearSolver failed.");
+        }
 #else
         status = CVKLU(this->mem, ny, nnz, CSC_MAT);
         if (status != CVSLS_SUCCESS) {
@@ -787,9 +874,16 @@ public:
         djac) {
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
-        status = CVDlsSetJacFn(this->mem, djac);
-        if (status < 0)
+        status =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetJacFn
+#else
+            CVDlsSetJacFn
+#endif
+            (this->mem, djac);
+        if (status < 0) {
             throw std::runtime_error("CVDlsSetJacFn failed.");
+        }
 #else
         status = CVSlsSetSparseJacFn(this->mem, djac);
         if (status < 0)
@@ -894,7 +988,13 @@ public:
     }
     void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
 #if SUNDIALS_VERSION_MAJOR >= 3
-        int flag = CVSpilsSetJacTimes(this->mem, NULL, jtimes);
+        int flag =
+# if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetJacTimes
+# else
+            CVSpilsSetJacTimes
+# endif
+            (this->mem, NULL, jtimes);
 #else
         int flag = CVSpilsSetJacTimesVecFn(this->mem, jtimes);
 #endif
@@ -912,11 +1012,23 @@ public:
     }
 #endif
     void set_preconditioner(CVSpilsPrecSetupFn setup_fn, CVSpilsPrecSolveFn solve_fn){
-        int flag = CVSpilsSetPreconditioner(this->mem, setup_fn, solve_fn);
+        int flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetPreconditioner
+#else
+            CVSpilsSetPreconditioner
+#endif
+            (this->mem, setup_fn, solve_fn);
         this->cvspils_check_flag(flag);
     }
     void set_iter_eps_lin(realtype delta){
-        int flag = CVSpilsSetEpsLin(this->mem, delta);
+        int flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeSetEpsLin
+#else
+            CVSpilsSetEpsLin
+#endif
+            (this->mem, delta);
         this->cvspils_check_flag(flag, true);
     }
     void set_prec_type(PrecType pretyp){
@@ -1083,7 +1195,13 @@ public:
     long int get_n_lin_iters() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumLinIters(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumLinIters
+#else
+            CVSpilsGetNumLinIters
+#endif
+            (this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1091,7 +1209,13 @@ public:
     long int get_n_prec_evals() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumPrecEvals(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumPrecEvals
+#else
+            CVSpilsGetNumPrecEvals
+#endif
+            (this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1099,7 +1223,13 @@ public:
     long int get_n_prec_solves() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumPrecSolves(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumPrecSolves
+#else
+            CVSpilsGetNumPrecSolves
+#endif
+(this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1107,7 +1237,13 @@ public:
     long int get_n_conv_fails() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumConvFails(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumLinConvFails
+#else
+            CVSpilsGetNumConvFails
+#endif
+            (this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1115,7 +1251,13 @@ public:
     long int get_n_jac_times_evals() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumJtimesEvals(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumLinIters
+#else
+            CVodeGetNumJtimesEvals
+#endif
+            (this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1123,7 +1265,13 @@ public:
     long int get_n_iter_rhs() const {
         long int res=0;
         int flag;
-        flag = CVSpilsGetNumRhsEvals(this->mem, &res);
+        flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumRhsEvals
+#else
+            CVSpilsGetNumRhsEvals
+#endif
+            (this->mem, &res);
         this->cvspils_check_flag(flag);
         return res;
     }
@@ -1203,14 +1351,26 @@ public:
     }
     long int get_n_dls_jac_evals() const {
         long int res=0;
-        int flag = CVDlsGetNumJacEvals(this->mem, &res);
+        int flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumJacEvals
+#else
+            CVDlsGetNumJacEvals
+#endif
+            (this->mem, &res);
         cvdls_check_flag(flag);
         return res;
     }
 
     long int get_n_dls_rhs_evals() const {
         long int res=0;
-        int flag = CVDlsGetNumRhsEvals(this->mem, &res);
+        int flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+            CVodeGetNumRhsEvals
+#else
+            CVDlsGetNumRhsEvals
+#endif
+(this->mem, &res);
         cvdls_check_flag(flag);
         return res;
     }
@@ -1254,10 +1414,11 @@ public:
             check_flag(flag);
         }
     }
-    void call_rhs(realtype t, SVector y, SVector &ydot){
+    void call_rhs(realtype t, SVector& y, SVector &ydot){
         int status = this->cb_(t, y.n_vec, ydot.n_vec, this->user_data_);
-        if (status)
+        if (status) {
             throw std::runtime_error("call_rhs failed.");
+        }
     }
     void unsuccessful_step_throw_(int flag){
         throw std::runtime_error(StreamFmt() << std::scientific << "Unsuccessful step (t="
@@ -1398,23 +1559,29 @@ public:
                             std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << " Autorestart (" << autorestart << ") t=" << cur_t
                                       << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals()  << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
                             if (status >= 0) {
-                                N_Vector ele, ew;
-                                ele = N_VNew_Serial(ny);
-                                ew = N_VNew_Serial(ny);
-                                get_est_local_errors(ele);
-                                get_err_weights(ew);
-                                realtype mx = 0.0;
-                                int mxi = -1;
-                                for (unsigned i=0; i < ny; ++i){
-                                    const realtype cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
-                                    if (cur > mx){
-                                        mxi = i;
-                                        mx = cur;
-                                    }
-                                }
-                                N_VDestroy_Serial(ele);
-                                N_VDestroy_Serial(ew);
-                                std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
+                              SVector ele {
+                                  ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+                              }, ew {
+                                  ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+                              };
+                              get_est_local_errors(ele);
+                              get_err_weights(ew);
+                              realtype mx = 0.0;
+                              int mxi = -1;
+                              for (unsigned i = 0; i < ny; ++i) {
+                                  const realtype cur = ele[i] * ew[i];
+                                  if (cur > mx) {
+                                      mxi = i;
+                                      mx = cur;
+                                  }
+                              }
+                              std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                             }
                         }
                         if (status == CV_CONV_FAILURE && autorestart == 1 && this->autorestart_relax_tolerances_last_restart) {
@@ -1629,22 +1796,27 @@ public:
                         std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ": Autorestart (" << autorestart << ") t=" << cur_t
                                   << " nstp= " << get_n_steps() << " nfev=" << get_n_rhs_evals() << " ae=" << ((autonomous_exprs) ? 't' : 'f') << "\n";
                         if (status >= 0) {
-                            N_Vector ele, ew;
-                            ele = N_VNew_Serial(ny);
-                            ew = N_VNew_Serial(ny);
+                            SVector ele{ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+                            }, ew {
+ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                                  , *ctx
+#endif
+                                };
                             get_est_local_errors(ele);
                             get_err_weights(ew);
                             realtype mx = 0.0;
                             int mxi = -1;
                             for (unsigned i=0; i < ny; ++i){
-                                const realtype cur = NV_DATA_S(ele)[i]*NV_DATA_S(ew)[i];
+                                const realtype cur = ele[i]*ew[i];
                                 if (cur > mx){
                                     mxi = i;
                                     mx = cur;
                                 }
                             }
-                            N_VDestroy_Serial(ele);
-                            N_VDestroy_Serial(ew);
                             std::clog << "cvodes_cxx.hpp:" << __LINE__ << ":" << __FUNCTION__ << ":     max(ew[i]*ele[i]) = " << mx << ", i=" << mxi << "\n";
                         }
                     }

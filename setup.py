@@ -132,7 +132,7 @@ class BuildExt(build_ext):
         opts = self.c_opts.get(ct, [])
         if ct == 'unix':
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append('--std=c++11')
+            opts.append('--std=c++14')
             if sys.platform == 'darwin' and re.search("clang", self.compiler.compiler[0]) is not None:
                 opts += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
         elif ct == 'msvc':

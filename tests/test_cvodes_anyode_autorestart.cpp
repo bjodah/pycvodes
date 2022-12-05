@@ -12,13 +12,13 @@ TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
     OdeSys odesys(&p[0]);
     int td = 1;
     realtype * xyout = (realtype*)malloc(td*(odesys.get_ny()+1)*sizeof(realtype));
-    xyout[0] = 0; // t0
+    realtype t0=0, tend=60;
+    xyout[0] = t0;
     xyout[1] = 8.99937e-07;
     xyout[2] = 0.000693731;
     xyout[3] = 0.000264211;
     xyout[4] = 0.000340312;
     xyout[5] = 4.11575e-05;
-    realtype t0=0, tend=60;
     std::vector<int> root_indices;
 
     const long int mxsteps=0;

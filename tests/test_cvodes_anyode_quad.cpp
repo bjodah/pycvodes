@@ -51,11 +51,11 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     realtype * xyqout = (realtype*)malloc(td*(odesys.get_ny()+odesys.get_nquads()+1)*sizeof(realtype));
     realtype A = 42.0;
     realtype k = 0.7;
-    xyqout[0] = 0; // t0
+    realtype t0=0, tend=4.0;
+    xyqout[0] = t0;
     xyqout[1] = A; // y0
     xyqout[2] = 2.0; // q0
     xyqout[3] = 3.0; // q1
-    realtype t0=0, tend=4.0;
     std::vector<int> root_indices;
 
     const long int mxsteps=0;

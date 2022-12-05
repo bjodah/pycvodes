@@ -41,6 +41,7 @@ TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec", "[simple_adaptive]" ) {
     auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {atol}, rtol, cvodes_cxx::LMM::BDF, tend, root_indices,
                                                mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
                                                maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes);
+    REQUIRE( nout > 1 );
     REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
     REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
     free(xyout);

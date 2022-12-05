@@ -7,13 +7,13 @@ clone:
 
 pipeline:
   build:
-    image: bjodah/bjodahimg22dot:nov22.a.2
+    image: bjodah/bjodahimg22dev:nov22.a
     environment:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-      - CC=gcc-11
-      - CXX=g++-11
+      - CC=gcc-12
+      - CXX=g++-12
     commands:
       - git fetch -tq  # used by ``git describe``
       - .ci/run_ci.sh pycvodes /opt/sundials-6.4.1-release
@@ -22,6 +22,7 @@ pipeline:
       # sundials is underlinked...
       - PATH=/opt/cpython-3.11-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
       - PATH=/opt/cpython-3.11-debug/bin:$PATH PYTHON=python3.11 CFLAGS="-Werror -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt/sundials-5.8.0-release
+      - ./scripts/run_tests.sh
       - ./scripts/prepare_deploy.sh
       - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
       - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'

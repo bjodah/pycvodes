@@ -36,9 +36,10 @@ TEST_CASE( "adaptive_autorestart_tricky", "[simple_adaptive]" ) {
     xyout[2] = 0.00014677490343001067;
     xyout[3] = 9.536739572030514e-05;
     xyout[4] = 1.6877253332428752e-11;
-    auto tout_yout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {atol}, rtol, cvodes_cxx::LMM::BDF, tend, root_indices,
+    auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {atol}, rtol, cvodes_cxx::LMM::BDF, tend, root_indices,
                                                     mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
                                                     maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error);
+    REQUIRE( nout > 1 );
     // REQUIRE( odesys.current_info.nfo_int["n_steps"] > 1 );
     // REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
     free(xyout);

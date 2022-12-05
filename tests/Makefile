@@ -2,8 +2,16 @@ CXX ?= g++
 PYTHON ?= python3
 PYCVODES_NO_LAPACK ?= 0
 PYCVODES_NO_KLU ?= 0
-CXXFLAGS ?= -std=c++20 -Wall -Wextra -Werror -pedantic -g -ggdb -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
-EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+CXXFLAGS ?= -std=c++20 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
+ifneq (,$(findstring clang,$(CXX)))
+	# Found "clang" in CXX
+	CXXFLAGS += -glldb
+	EXTRA_FLAGS ?=
+else
+	CXXFLAGS += -ggdb3
+	EXTRA_FLAGS ?=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+endif
+
 CXXFLAGS += $(EXTRA_FLAGS) $(CFLAGS)
 INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
 DEFINES ?=
@@ -21,23 +29,23 @@ TARGETS += test_cvodes_anyode_sparse
 endif
 
 test: $(TARGETS) test_cvodes_anyode_parallel
-	./test_cvodes_anyode --abortx 1
-	./test_cvodes_anyode_autorestart --abortx 1
-	./test_cvodes_anyode_quad --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_autorestart --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_quad --abortx 1
 ifneq ($(PYCVODES_NO_LAPACK),1)
-	./test_cvodes_anyode_svd --abortx 1
-	./test_tough_case --abortx 1
-	./test_cvodes_anyode_jtimes --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_svd --abortx 1
+	$(CONTEXT) ./test_tough_case --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_jtimes --abortx 1
 endif
 ifneq ($(PYCVODES_NO_KLU), 1)
-	./test_cvodes_anyode_sparse --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_sparse --abortx 1
 endif
-	./test_cvodes_cxx --abortx 1
-	./test_sundials_cxx --abortx 1
+	$(CONTEXT) ./test_cvodes_cxx --abortx 1
+	$(CONTEXT) ./test_sundials_cxx --abortx 1
 ifeq ($(CXX),clang++-11)
 	@echo "skipping openmp when using clang"
 else
-	./test_cvodes_anyode_parallel --abortx 1
+	$(CONTEXT) ./test_cvodes_anyode_parallel --abortx 1
 endif
 	$(PYTHON) ./_test_cvodes_anyode.py
 

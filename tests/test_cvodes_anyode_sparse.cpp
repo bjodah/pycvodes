@@ -63,6 +63,7 @@ TEST_CASE( "adaptive_sparse_jac", "[simple_adaptive]" ) {
                                                mxsteps, dx0, dx_min, dx_max, with_jacobian, iter_type, linear_solver,
                                                maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error,
                                                with_jtimes);
+    REQUIRE( nout > 1 );
     REQUIRE( odesys.current_info.nfo_int["njev"] > 0 );
     free(colptrs);
     free(rowvals);

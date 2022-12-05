@@ -118,7 +118,7 @@ TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
-    yout(0) = 1.0;
+    yout(0) = y0;
     auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::Adams, 1.0, root_indices, 1005);
     for (int i = 0; i < nout; ++i){
         REQUIRE( std::abs(std::exp(-xout(i)) - yout(i)) < 1e-8 );
@@ -139,7 +139,7 @@ TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
 #define xout(ti) xyout[2*ti]
 #define yout(ti) xyout[2*ti + 1]
     xout(0) = 0.0;
-    yout(0) = 1.0;
+    yout(0) = y0;
     auto nout = cvodes_anyode::simple_adaptive(&xyout, &td, &odesys, {1e-10}, 1e-10, cvodes_cxx::LMM::Adams, 1.0, root_indices, 1100, 0.0, 0.0, 1e-3);
     for (int i = 0; i < nout; ++i){
         REQUIRE( std::abs(std::exp(-xout(i)) - yout(i)) < 1e-8 );

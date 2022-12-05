@@ -29,6 +29,7 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
         mxsteps, &dx0[0], &dx_min[0], &dx_max[0]);
     for (int idx=0; idx<nsys; ++idx){
         const auto& roots = results[idx].second;
+        REQUIRE( roots.size() == 0 );  // no roots enabled.
         for (int j=0; j <= results[idx].first; ++j){
             REQUIRE( std::abs(y0[idx]*std::exp(t0[idx]-xyout_arr[idx][2*j])
                               - xyout_arr[idx][2*j+1]) < 1e-8 );
