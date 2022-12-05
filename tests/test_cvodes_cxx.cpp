@@ -31,7 +31,7 @@ TEST_CASE( "methods", "[Integrator]" ) {
     realtype t, yref;
     SVector yout(1
 #if SUNDIALS_VERSION_MAJOR >= 6
-                 , ctx
+                 , *ctx
 #endif
 );
     intgr.init(rhs_cb, 0.0, &y[0], 1);
