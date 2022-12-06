@@ -1,3 +1,7 @@
+v0.14.2
+=======
+- Support Sundials-6.x
+
 v0.14.1
 =======
 - Avoid using deprecated C-API in CPython 3.9+

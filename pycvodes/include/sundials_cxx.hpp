@@ -20,7 +20,11 @@ namespace sundials_cxx {
         struct VectorBase_{
             N_Vector n_vec {nullptr};
             VectorBase_(N_Vector v) : n_vec(v) {}
-            virtual ~VectorBase_() = default;
+            virtual ~VectorBase_() //= default;
+            {
+                N_VDestroy_Serial(this->n_vec);
+            }
+
             [[nodiscard]] long int size() const {
                 return NV_LENGTH_S(this->n_vec);
             }
@@ -102,9 +106,8 @@ namespace sundials_cxx {
                 load(v.get_data_ptr());
                 return *this;
             }
-            ~Vector() override {
-                N_VDestroy_Serial(this->n_vec);
-            }
+            // ~Vector() override {
+            // }
 
         };
 
