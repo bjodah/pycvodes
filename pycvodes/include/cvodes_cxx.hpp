@@ -664,7 +664,9 @@ public:
     }
 
     void set_dense_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVDlsDenseJacFn
@@ -674,23 +676,17 @@ public:
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         status =
-#if SUNDIALS_VERSION_MAJOR >= 6
+# if SUNDIALS_VERSION_MAJOR >= 6
             CVodeSetJacFn
-#else
+# else
             CVDlsSetJacFn
-#endif
+# endif
 (this->mem, djac);
         if (status < 0) {
             throw std::runtime_error("CVDlsSetJacFn failed.");
         }
 #else
-        status =
-#if SUNDIALS_VERSION_MAJOR >= 6
-            CVodeSetDenseJacFn
-#else
-            CVDlsSetDenseJacFn
-#endif
-            (this->mem, djac);
+        status = CVDlsSetDenseJacFn(this->mem, djac);
         if (status < 0) {
             throw std::runtime_error("CVDlsSetDenseJacFn failed.");
         }
@@ -866,7 +862,9 @@ public:
     }
 
     void set_sparse_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVSlsSparseJacFn
@@ -875,11 +873,11 @@ public:
         int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
         status =
-#if SUNDIALS_VERSION_MAJOR >= 6
+# if SUNDIALS_VERSION_MAJOR >= 6
             CVodeSetJacFn
-#else
+# else
             CVDlsSetJacFn
-#endif
+# endif
             (this->mem, djac);
         if (status < 0) {
             throw std::runtime_error("CVDlsSetJacFn failed.");
@@ -986,7 +984,13 @@ public:
             throw std::runtime_error("Bad input.");
         }
     }
-    void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
+    void set_jtimes_fn(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacTimesVecFn
+#else
+        CVSpilsJacTimesVecFn
+#endif
+        jtimes){
 #if SUNDIALS_VERSION_MAJOR >= 3
         int flag =
 # if SUNDIALS_VERSION_MAJOR >= 6
@@ -1001,8 +1005,19 @@ public:
         this->cvspils_check_flag(flag);
     }
 #if SUNDIALS_VERSION_MAJOR >=3
-    void set_jtimes_fn(CVSpilsJacTimesSetupFn jtsetup,
-                       CVSpilsJacTimesVecFn jtimes){
+    void set_jtimes_fn(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacTimesSetupFn
+#else
+        CVSpilsJacTimesSetupFn
+#endif
+        jtsetup,
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacTimesVecFn
+#else
+        CVSpilsJacTimesVecFn
+#endif
+        jtimes){
 #if SUNDIALS_VERSION_MAJOR >=4
         int flag = CVodeSetJacTimes(this->mem, jtsetup, jtimes);
 #else
@@ -1011,7 +1026,20 @@ public:
         this->cvspils_check_flag(flag);
     }
 #endif
-    void set_preconditioner(CVSpilsPrecSetupFn setup_fn, CVSpilsPrecSolveFn solve_fn){
+    void set_preconditioner(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsPrecSetupFn
+#else
+        CVSpilsPrecSetupFn
+#endif
+        setup_fn,
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsPrecSolveFn
+#else
+        CVSpilsPrecSolveFn
+#endif
+        solve_fn
+        ){
         int flag =
 #if SUNDIALS_VERSION_MAJOR >= 6
             CVodeSetPreconditioner
@@ -1036,27 +1064,27 @@ public:
 #if SUNDIALS_VERSION_MAJOR >= 3
         switch(solver_){
         case IterLinSolEnum::GMRES:
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPGMRSetPrecType(LS_, (int)pretyp); break;
-#else
+# else
             flag = SUNSPGMRSetPrecType(LS_, (int)pretyp); break;
-#endif
+# endif
         case IterLinSolEnum::BICGSTAB:
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPBCGSSetPrecType(LS_, (int)pretyp); break;
-#else
+# else
             flag = SUNSPBCGSSetPrecType(LS_, (int)pretyp); break;
-#endif
+# endif
         case IterLinSolEnum::TFQMR:
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPTFQMRSetPrecType(LS_, (int)pretyp); break;
-#else
+# else
             flag = SUNSPTFQMRSetPrecType(LS_, (int)pretyp); break;
-#endif
+# endif
         default:
             throw std::runtime_error("unknown solver kind.");
         }
-#else
+#else // SUNDIALS_VERSION_MAJOR < 3
         flag = CVSpilsSetPrecType(this->mem, (int)pretyp);
 #endif
         this->cvspils_check_flag(flag, true);
@@ -1065,14 +1093,14 @@ public:
         int flag;
 #if SUNDIALS_VERSION_MAJOR >= 3
         if (solver_ == IterLinSolEnum::GMRES)
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPGMRSetGSType(LS_, (int)gs_type);
-#else
+# else
             flag = SUNSPGMRSetGSType(LS_, (int)gs_type);
-#endif
+# endif
         else
             throw std::runtime_error("Setting Gram-Schmidt type only makes sense for GMRES");
-#else
+#else // SUNDIALS_VERSION_MAJOR < 3
         flag = CVSpilsSetGSType(this->mem, (int)gs_type);
 #endif
         this->cvspils_check_flag(flag, true);
@@ -1084,23 +1112,23 @@ public:
         case IterLinSolEnum::GMRES:
             throw std::runtime_error("GMRES has no max length option");
         case IterLinSolEnum::BICGSTAB:
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPBCGSSetMaxl(LS_, maxl);
-#else
+# else
             flag = SUNSPBCGSSetMaxl(LS_, maxl);
-#endif
+# endif
             break;
         case IterLinSolEnum::TFQMR:
-#if SUNDIALS_VERSION_MAJOR >= 4
+# if SUNDIALS_VERSION_MAJOR >= 4
             flag = SUNLinSol_SPTFQMRSetMaxl(LS_, maxl);
-#else
+# else
             flag = SUNSPTFQMRSetMaxl(LS_, maxl);
-#endif
+# endif
             break;
         default:
             throw std::runtime_error("unknown solver kind.");
         }
-#else
+#else // SUNDIALS_VERSION_MAJOR < 3
         flag = CVSpilsSetMaxl(this->mem, maxl);
 #endif
         this->cvspils_check_flag(flag);
