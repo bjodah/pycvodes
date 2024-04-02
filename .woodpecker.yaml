@@ -2,7 +2,7 @@ when:
   - event: [pull_request, tag, cron, push]
 
 steps:
-  - name: build
+  - name: build-and-test
     image: docker.io/bjodah/tomevermes-heavy:23.b.2.1.1
     environment:
       - PYCVODES_STRICT=1
@@ -23,7 +23,8 @@ steps:
       - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
       - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 
-  -name: deploy-public-html
+
+  - name: deploy-public-html
     image: docker.io/bjodah/tomevermes-heavy:23.b.2.1.1
     commands:
       - tar czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
@@ -33,4 +34,4 @@ steps:
      - event: push
        repo: bjodah/pycovdes
     depends_on:
-      - compile-documentation
+      - build-and-test
