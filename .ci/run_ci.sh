@@ -26,7 +26,11 @@ git clean -xfd
 
 if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
-    CXX=clang++ CC=clang CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" ${PYTHON:-python3} setup.py build_ext -i
+    # so one would think that the setuptools regression wrt. language='c++' would be solved 4 years
+    # after the report (https://github.com/pypa/setuptools/issues/1732), but nope, as of 2024-04-03
+    # it still isn't: https://github.com/pypa/distutils/pull/228 (but soon! ...maybe).
+    #CXX=clang++ CC=clang
+    CC=clang++ CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" ${PYTHON:-python3} setup.py build_ext -i
     export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
     export PYTHONPATH=$(pwd)
     #export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-15/bin/llvm-symbolizer
@@ -65,7 +69,7 @@ if [[ "${BUILD_DOCS:-0}" == "1" ]]; then
     ./scripts/generate_docs.sh
 fi
 
-(cd /tmp/dist/; CC=gcc-12 CXX=g++-12 ${PYTHON:-python3} -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
+(cd /tmp/dist/; CC=gcc-13 CXX=g++-13 ${PYTHON:-python3} -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
 (cd /; ${PYTHON:-python3} -m pytest --verbose --pyargs $PKG_NAME)
 (cd /; ${PYTHON:-python3} -c "from pycvodes import get_include as gi; import os; assert 'cvodes_cxx.pxd' in os.listdir(gi())")
 
