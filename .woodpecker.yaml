@@ -3,7 +3,7 @@ when:
 
 steps:
   - name: build-and-test
-    image: docker.io/bjodah/tomevermes-heavy:23.b.2.1.1
+    image: bjodah/triceratops-3:3
     environment:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
@@ -12,12 +12,12 @@ steps:
       - CXX=g++-12
     commands:
       - git fetch -tq  # used by ``git describe``
-      - .ci/run_ci.sh pycvodes /opt-3/sundials-6.4.1-release
-      - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt-3/sundials-5.8.0-extended
-      - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt-3/sundials-5.8.0-single
+      - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-extended
+      - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-single
+      - .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-release
       # sundials is underlinked...
-      - PATH=/opt-3/cpython-3.11-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
-      - PATH=/opt-3/cpython-3.11-debug/bin:$PATH PYTHON=python3.11 CFLAGS="-Werror -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt-3/sundials-5.8.0-release
+      # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
+      # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH PYTHON=python3.11 CFLAGS="-Werror -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt-3/sundials-5.8.0-release
       - ./scripts/run_tests.sh
       - ./scripts/prepare_deploy.sh
       - if grep "DO-NOT-MERGE!" -R . --exclude ".drone.yml"; then exit 1; fi
@@ -25,7 +25,7 @@ steps:
 
 
   - name: deploy-public-html
-    image: docker.io/bjodah/tomevermes-heavy:23.b.2.1.1
+    image: bjodah/triceratops-3:3
     commands:
       - tar czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
       - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
