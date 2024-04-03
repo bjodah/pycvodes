@@ -16,6 +16,7 @@ export LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib
 
 git clean -xfd
 
+${PYTHON:-python3} -m pip install cython
 PKG_VERSION=$(${PYTHON:-python3} setup.py --version)
 ${PYTHON:-python3} setup.py sdist
 
