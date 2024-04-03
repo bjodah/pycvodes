@@ -10,6 +10,8 @@ steps:
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - CC=gcc-12
       - CXX=g++-12
+      - PATH=/opt-2/llvm-18/bin:$PATH
+      - LLVM_ROOT=/opt-2/llvm-18
     commands:
 #      - git fetch -tq  # used by ``git describe``
       - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-extended

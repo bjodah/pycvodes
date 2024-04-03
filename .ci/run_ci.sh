@@ -25,10 +25,10 @@ git clean -xfd
 
 if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     if [ -d build/ ]; then rm -r build/; fi
-    CXX=clang++-15 CC=clang-15 CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" ${PYTHON:-python3} setup.py build_ext -i
-    export PYTHON="env LD_PRELOAD=$(clang++-15 --print-file-name=libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+    CXX=clang++ CC=clang CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" ${PYTHON:-python3} setup.py build_ext -i
+    export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
     export PYTHONPATH=$(pwd)
-    export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-15/bin/llvm-symbolizer
+    #export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-15/bin/llvm-symbolizer
     export ASAN_OPTIONS=symbolize=1
     gdb -ex r -args $PYTHON -m pytest -v
     
@@ -46,10 +46,10 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
 
 
     if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-        LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=/usr/lib/llvm-15/lib:$LIBRARY_PATH make CXX=clang++-15 EXTRA_FLAGS=-fsanitize=address
+        LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=$LLVM_ROOT/lib:$LIBRARY_PATH make CXX=clang++ EXTRA_FLAGS=-fsanitize=address
         make clean
         
-        LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++-15 EXTRA_FLAGS=-fsanitize=undefined
+        LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++ EXTRA_FLAGS=-fsanitize=undefined
         make clean
     fi
     unset PYTHONPATH PYTHON
