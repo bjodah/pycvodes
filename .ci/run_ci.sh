@@ -16,7 +16,7 @@ export LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib
 
 git clean -xfd
 
-${PYTHON:-python3} -m pip install cython
+${PYTHON:-python3} -m pip install cython pytest
 PKG_VERSION=$(${PYTHON:-python3} setup.py --version)
 ${PYTHON:-python3} setup.py sdist
 
@@ -31,7 +31,9 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     # it still isn't: https://github.com/pypa/distutils/pull/228 (but soon! ...maybe).
     #CXX=clang++ CC=clang
     CC=clang++ CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13" ${PYTHON:-python3} setup.py build_ext -i
-    export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan-$(uname -m).so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+    ORI_PYTHON="${PYTHON:-python3}"
+    export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"  # asan-$(uname -m).so
+    ORI_PYTHONPATH="$PYTHONPATH"
     export PYTHONPATH=$(pwd)
     #export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-15/bin/llvm-symbolizer
     export ASAN_OPTIONS=symbolize=1
@@ -57,7 +59,7 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
         LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++ EXTRA_FLAGS=-fsanitize=undefined
         make clean
     fi
-    unset PYTHONPATH PYTHON
+    export PYTHONPATH=$ORI_PYTHONPATH PYTHON=$ORI_PYTHON
     cd -
     (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
 fi
