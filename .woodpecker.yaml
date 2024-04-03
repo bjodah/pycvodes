@@ -3,7 +3,7 @@ when:
 
 steps:
   - name: build-and-test
-    image: bjodah/triceratops-3:3
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:3
     environment:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
@@ -25,7 +25,7 @@ steps:
 
 
   - name: deploy-public-html
-    image: bjodah/triceratops-3:3
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:3
     commands:
       - tar czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
       - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
