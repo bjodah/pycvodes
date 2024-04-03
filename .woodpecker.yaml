@@ -16,6 +16,7 @@ steps:
 #      - git fetch -tq  # used by ``git describe``
       - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-extended
       - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-single
+      - python3 -m pip install cython
       - .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-release
       # sundials is underlinked...
       # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
