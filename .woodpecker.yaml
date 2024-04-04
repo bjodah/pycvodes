@@ -3,7 +3,7 @@ when:
 
 steps:
   - name: build-and-test
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:3
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:6
     environment:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
