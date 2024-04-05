@@ -36,6 +36,7 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
     std::vector<realtype> a(3, 9);
     vec2.load(&a[0]);
     REQUIRE(vec2[0] == 9);
+    SUNContext_Free(&ctx);
 }
 
 TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
@@ -63,4 +64,5 @@ TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
     std::vector<realtype> a(3, 9);
     vec2.load(&a[0]);
     REQUIRE(vec1[0] == 9);
+    SUNContext_Free(&ctx);
 }
