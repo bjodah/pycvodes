@@ -30,7 +30,12 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     # after the report (https://github.com/pypa/setuptools/issues/1732), but nope, as of 2024-04-03
     # it still isn't: https://github.com/pypa/distutils/pull/228 (but soon! ...maybe).
     #CXX=clang++ CC=clang
-    CC=clang++ CFLAGS="-fsanitize=address -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13" ${PYTHON:-python3} setup.py build_ext -i
+    LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
+    env \
+        CC=clang++ \
+        CFLAGS="-fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5 -stdlib=libc++ -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" \
+        LDFLAGS="-fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++" \
+        ${PYTHON:-python3} setup.py build_ext -i
     ORI_PYTHON="${PYTHON:-python3}"
     export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"  # asan-$(uname -m).so
     ORI_PYTHONPATH="$PYTHONPATH"
