@@ -8,8 +8,6 @@ steps:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-      - CC=gcc-13
-      - CXX=g++-13
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
       - export PATH=$LLVM_ROOT/bin:/opt-2/gcc-13/bin:$PATH
