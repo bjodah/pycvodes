@@ -8,11 +8,22 @@ using sundials_cxx::nvector_serial::VectorView;
 
 
 TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
-    auto vec1 = Vector(3);
+#if SUNDIALS_VERSION_MAJOR >= 6
+    SUNContext ctx = NULL;
+#endif
+    auto vec1 = Vector(3
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+);
     REQUIRE(vec1.size() == 3);
     vec1.set_all(42);
     REQUIRE(vec1[2] == 42);
-    auto vec2 = Vector(3);
+    auto vec2 = Vector(3
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+);
     vec2 = vec1;
     REQUIRE(vec2[2] == 42);
     vec1[2] = 7;
@@ -24,11 +35,19 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
 }
 
 TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
-    auto vec1 = Vector(3);
+    auto vec1 = Vector(3
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+);
     REQUIRE(vec1.size() == 3);
     vec1.set_all(42);
     REQUIRE(vec1[2] == 42);
-    auto vec2 = VectorView(vec1);
+    auto vec2 = VectorView(vec1
+#if SUNDIALS_VERSION_MAJOR >= 6
+                   , ctx
+#endif
+);
     REQUIRE(vec2[2] == 42);
     vec1[2] = 7;
     REQUIRE(vec1[2] == 7);
