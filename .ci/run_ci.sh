@@ -31,7 +31,7 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     # it still isn't: https://github.com/pypa/distutils/pull/228 (but soon! ...maybe).
     #CXX=clang++ CC=clang
     LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
-    CLANG_FLAGS="-stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5 -stdlib=libc++"
+    CLANG_FLAGS="-stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5"  #  -stdlib=libc++
     env \
         CC=clang++ \
         CXX=clang++ \
