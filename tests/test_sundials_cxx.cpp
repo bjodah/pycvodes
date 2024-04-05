@@ -9,7 +9,8 @@ using sundials_cxx::nvector_serial::VectorView;
 
 TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
 #if SUNDIALS_VERSION_MAJOR >= 6
-    SUNContext ctx = NULL;
+    SUNContext ctx;
+    SUNContext_Create(SUN_COMM_NULL, &ctx);
 #endif
     auto vec1 = Vector(3
 #if SUNDIALS_VERSION_MAJOR >= 6
@@ -36,7 +37,8 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
 
 TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
 #if SUNDIALS_VERSION_MAJOR >= 6
-    SUNContext ctx = NULL;
+    SUNContext ctx;
+    SUNContext_Create(SUN_COMM_NULL, &ctx);
 #endif
     auto vec1 = Vector(3
 #if SUNDIALS_VERSION_MAJOR >= 6
