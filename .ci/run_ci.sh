@@ -31,12 +31,18 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     # it still isn't: https://github.com/pypa/distutils/pull/228 (but soon! ...maybe).
     #CXX=clang++ CC=clang
     LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
-    CLANG_FLAGS="-stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5"  #  -stdlib=libc++
+    CLANG_ASAN_CXXFLAGS="-fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5"
+    CLANG_ASAN_LDFLAGS="-fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
+
+    LIBCXX_DBG_ROOT=$(compgen -G "/opt-2/libcxx*-debug")
+    CLANG_UBSAN_CXXFLAGS="-fsanitize=undefined -stdlib++-isystem ${LIBCXX_DBG_ROOT}/include/c++/v1 -ferror-limit=5"
+    CLANG_UBSAN_LDFLAGS="-fsanitize=undefined -Wl,-rpath,${LIBCXX_DBG_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
+
     env \
         CC=clang++ \
         CXX=clang++ \
-        CFLAGS="-fsanitize=address $CLANG_FLAGS -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" \
-        LDFLAGS="-fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++ $LDFLAGS" \
+        CFLAGS="$CLANG_ASAN_CXXFLAGS -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" \
+        LDFLAGS="$CLANG_ASAN_LDFLAGS $LDFLAGS" \
         ${PYTHON:-python3} setup.py build_ext -i
     ORI_PYTHON="${PYTHON:-python3}"
     export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"  # asan-$(uname -m).so
@@ -60,10 +66,10 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
 
 
     if [[ "${TEST_NATIVE_CLANG:-1}" == "1" ]]; then
-        LDFLAGS="$LDFLAGS $LINKLIBS" LIBRARY_PATH=$LLVM_ROOT/lib:$LIBRARY_PATH make CXX=clang++ EXTRA_FLAGS="-fsanitize=address $CLANG_FLAGS"
+        LDFLAGS="$CLANG_ASAN_LDFLAGS $LDFLAGS $LINKLIBS" LIBRARY_PATH=$LLVM_ROOT/lib:$LIBRARY_PATH make CXX=clang++ EXTRA_FLAGS="$CLANG_ASAN_CXXFLAGS"
         make clean
         
-        LDFLAGS="$LDFLAGS $LINKLIBS" make CXX=clang++ EXTRA_FLAGS="-fsanitize=undefined $CLANG_FLAGS"
+        LDFLAGS="$CLANG_UBSAN_LDFLAGS $LDFLAGS $LINKLIBS" make CXX=clang++ EXTRA_FLAGS="$CLANG_UBSAN_CXXFLAGS"
         make clean
     fi
     export PYTHONPATH=$ORI_PYTHONPATH PYTHON=$ORI_PYTHON
