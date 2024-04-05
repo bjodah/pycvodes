@@ -8,10 +8,13 @@ steps:
       - PYCVODES_STRICT=1
       - CPATH=/usr/include/suitesparse
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      - CC=gcc
+      - CXX=g++
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
       - export PATH=$LLVM_ROOT/bin:/opt-2/gcc-13/bin:$PATH
       - rm /usr/lib/python3.*/EXTERNALLY-MANAGED
+      - bash -c '[[ $($CXX --version | head -n1) =~ g++*13* ]]'
 #      - git fetch -tq  # used by ``git describe``
       - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-extended
       - PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1 LOW_PRECISION=1 .ci/run_ci.sh pycvodes /opt-3/sundials-6.7.0-single
