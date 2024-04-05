@@ -33,6 +33,7 @@ if [[ "${LOW_PRECISION:-0}" == "0" ]]; then
     LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
     env \
         CC=clang++ \
+        CXX=clang++ \
         CFLAGS="-fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_ROOT}/include/c++/v1 -ferror-limit=5 -stdlib=libc++ -DPYCVODES_CLIP_TO_CONSTRAINTS=1 -UNDEBUG -O0 -g $CFLAGS" \
         LDFLAGS="-fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++" \
         ${PYTHON:-python3} setup.py build_ext -i
