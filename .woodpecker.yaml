@@ -13,6 +13,7 @@ steps:
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
       - export PATH=$LLVM_ROOT/bin:/opt-2/gcc-13/bin:$PATH
+      - export LD_LIBRARY_PATH=$LLVM_ROOT/lib:$LD_LIBRARY_PATH
       - rm /usr/lib/python3.*/EXTERNALLY-MANAGED
       - bash -c '[[ $($CXX --version | head -n1) =~ g++*13* ]]'
 #      - git fetch -tq  # used by ``git describe``
