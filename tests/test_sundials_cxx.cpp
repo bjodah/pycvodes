@@ -35,6 +35,9 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
 }
 
 TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
+#if SUNDIALS_VERSION_MAJOR >= 6
+    SUNContext ctx = NULL;
+#endif
     auto vec1 = Vector(3
 #if SUNDIALS_VERSION_MAJOR >= 6
                    , ctx
