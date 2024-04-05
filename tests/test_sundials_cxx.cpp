@@ -1,6 +1,9 @@
 // C++11 source code.
 #include "catch.hpp"
 #include "sundials_cxx.hpp" // realtype
+#if SUNDIALS_VERSION_MAJOR >= 6
+#include <sundials/sundials_context.h>
+#endif
 #include <vector>
 
 using sundials_cxx::nvector_serial::Vector;
