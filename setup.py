@@ -72,30 +72,33 @@ else:
     USE_CYTHON = False
 
 ext_modules = []
+env = dict(
+    LAPACK="blas,lapack",
+    NO_KLU="0",
+    NO_LAPACK="0",
+    SUNDIALS_LIBS="",
+)
+for k, v in list(env.items()):
+    env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+_USE_KLU = env.get('NO_KLU', '0') == '0'
 
-if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
+if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
+    _USE_LAPACK = False
+else:
+    _USE_LAPACK = True
+
+if env["SUNDIALS_LIBS"] == "":
+    get_libs = None  # silence linting check (pyflakes), get from _libs.py
+    exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
+    env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "--print-linkline":
+    print(' '.join(['-l%s' % _ for _ in env['SUNDIALS_LIBS'].split(',')]))
+    sys.exit(os.EX_OK)
+elif len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    env = None  # silence pyflakes, 'env' is actually set on the next line
-    _PYCVODES_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
-    env = dict(
-        LAPACK="blas,lapack",
-        NO_KLU="0",
-        NO_LAPACK="0",
-        SUNDIALS_LIBS="",
-    )
-    for k, v in list(env.items()):
-        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
-    _USE_KLU = env.get('NO_KLU', '0') == '0'
-    if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
-        _USE_LAPACK = False
-    else:
-        _USE_LAPACK = True
-
-    if env["SUNDIALS_LIBS"] == "":
-        get_libs = None  # silence linting check (pyflakes), get from _libs.py
-        exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
-        env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
 
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
@@ -119,7 +122,6 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
-
 
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
