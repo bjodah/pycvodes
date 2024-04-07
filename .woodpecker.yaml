@@ -10,7 +10,7 @@ steps:
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
-      - export PATH=$LLVM_ROOT/bin
+      - export PATH=$LLVM_ROOT/bin:$PATH
       - .ci/run-matrix.sh
       # sundials is underlinked...
       # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
