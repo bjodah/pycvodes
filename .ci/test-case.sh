@@ -50,7 +50,8 @@ if [ $TEST_ASAN -eq 1 ]; then
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    export PYTHON="env LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so) ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+    # LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+    export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
 else
     export PATH=/opt-2/gcc-13/bin:$PATH
     export CXX=g++
@@ -60,12 +61,10 @@ else
 fi
 
 
-if [ $NATIVE -eq 1 ]; then
-    cd tests/
-    make clean
-    make PYTHON=${PYTHON}
-else
-    CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
-    #gdb -ex r -args
-    PYTHONPATH=$(pwd) $PYTHON -m pytest -v -k 'not test_get_include'
-fi
+CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
+#gdb -ex r -args
+PYTHONPATH=$(pwd) $PYTHON -m pytest -v -k 'not test_get_include'
+
+cd tests/
+make clean
+make PYTHON=${PYTHON}
