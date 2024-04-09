@@ -10,13 +10,9 @@ steps:
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
       - .ci/run-matrix.sh
-      # sundials is underlinked...
-      # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH python3.11 -m pip install --upgrade --upgrade-strategy=eager pytest-cov pytest-flakes
-      # - PATH=/opt-3/cpython-v3.11.8-debug/bin:$PATH PYTHON=python3.11 CFLAGS="-Werror -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" LDFLAGS="-llapack -lblas" BUILD_DOCS=1 .ci/run_ci.sh pycvodes /opt-3/sundials-5.8.0-release
-      - ./scripts/run_tests.sh
+      - bash -c "source /opt-3/cpython-v3.11-apt-deb/bin/activate && ./scripts/run_tests.sh --cov pycvodes --cov-report html && ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg && ./scripts/generate_docs.sh && [[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]"
       - ./scripts/prepare_deploy.sh
       - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yml"; then exit 1; fi
-      - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
 
 
   - name: deploy-public-html
