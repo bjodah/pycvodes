@@ -9,6 +9,7 @@ steps:
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LLVM_ROOT=/opt-2/llvm-18
     commands:
+      - python3 setup.py --version
       - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
       - .ci/run-matrix.sh
       - bash -c "source /opt-3/cpython-v3.11-apt-deb/bin/activate && ./scripts/run_tests.sh --cov pycvodes --cov-report html && ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg && ./scripts/generate_docs.sh"
