@@ -7,7 +7,7 @@ git clean -xfd
 python3 setup.py sdist
 cd ./dist/
 SUNDBASE=/opt-3/sundials-6.7.0-release
-CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" CC=gcc pip install pycvodes-*.tar.gz
+CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" CC=gcc CXX=g++ pip install pycvodes-*.tar.gz
 LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS"
 pip install pytest-flakes pytest-cov
 ./scripts/run_tests.sh --cov pycvodes --cov-report html
