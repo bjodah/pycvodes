@@ -9,7 +9,7 @@ cd ./dist/
 SUNDBASE=/opt-3/sundials-6.7.0-release
 env \
     CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
-    LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS" \
+    LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
     CC=gcc CXX=g++ pip install pycvodes-*.tar.gz
 
 pip install pytest-flakes pytest-cov
