@@ -7,8 +7,11 @@ git clean -xfd
 python3 setup.py sdist
 cd ./dist/
 SUNDBASE=/opt-3/sundials-6.7.0-release
-CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" CC=gcc CXX=g++ pip install pycvodes-*.tar.gz
-LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS"
+env \
+    CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
+    LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib $LDFLAGS" \
+    CC=gcc CXX=g++ pip install pycvodes-*.tar.gz
+
 pip install pytest-flakes pytest-cov
 ./scripts/run_tests.sh --cov pycvodes --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
