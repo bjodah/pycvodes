@@ -14,4 +14,6 @@ env \
 pip install pytest-flakes pytest-cov matplotlib
 ../scripts/run_tests.sh --cov pycvodes --cov-report html
 ../scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-../scripts/generate_docs.sh
+
+cd -
+./scripts/generate_docs.sh
