@@ -796,3 +796,39 @@ def test_sparse_jac_predefined():
     assert info['success']
     assert info['njev'] > 0
     assert np.allclose(yout, yref, rtol=10*rtol, atol=10*atol)
+
+
+def test_none_dealloc_gh137():
+    mu = 1.0
+
+    def f(t, y, dydt):
+        dydt[0] = y[1]
+        dydt[1] = -y[0] + mu*y[1]*(1 - y[0]**2)
+
+    def j(t, y, Jmat, dfdt=None, fy=None):
+        Jmat[0, 0] = 0
+        Jmat[0, 1] = 1
+        Jmat[1, 0] = -1 - mu*2*y[1]*y[0]
+        Jmat[1, 1] = mu*(1 - y[0]**2)
+        if dfdt is not None:
+            dfdt[:] = 0
+
+    atol=1e-4; rtol=1e-20
+    for iiter in range(1000):
+        k = 0
+        for jiter in range(1000):
+            t0 = k
+            tend = k + 1 # so let the step to be 1 second
+            k+=1
+            if t0==0:
+                y0 = [1, 0]
+            else:
+                y0 = [y_prev1, y_prev2]
+
+            tout, yout, info = integrate_adaptive(f, j, y0, t0, tend, atol, rtol,
+                                                  method='bdf')
+
+            y_prev1 = yout.T[0][-1]
+            y_prev2 = yout.T[1][-1]
+
+            print(iiter, jiter)
