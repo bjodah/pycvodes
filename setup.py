@@ -51,7 +51,7 @@ else:  # set `__version__` from _release.py:
                 ['git', 'describe', '--dirty']).rstrip().decode('utf-8')
         except subprocess.CalledProcessError:
             warnings.warn("A git-archive is being installed - version information incomplete.")
-            assert _HAVE_CYTHON
+            #assert _HAVE_CYTHON
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
