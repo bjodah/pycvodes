@@ -11,8 +11,8 @@ env \
     CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
     CC=gcc CXX=g++ pip install pycvodes-*.tar.gz
-
 pip install pytest-flakes pytest-cov
+cd -
 ./scripts/run_tests.sh --cov pycvodes --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
 ./scripts/generate_docs.sh
