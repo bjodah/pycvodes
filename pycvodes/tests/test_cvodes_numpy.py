@@ -800,6 +800,7 @@ def test_sparse_jac_predefined():
 
 def test_none_dealloc_gh137():
     mu = 1.0
+    N, M = 1000, 1000
 
     def f(t, y, dydt):
         dydt[0] = y[1]
@@ -813,10 +814,11 @@ def test_none_dealloc_gh137():
         if dfdt is not None:
             dfdt[:] = 0
 
+
     atol=1e-4; rtol=1e-20
-    for iiter in range(1000):
+    for iiter in range(N):
         k = 0
-        for jiter in range(1000):
+        for jiter in range(M):
             t0 = k
             tend = k + 1 # so let the step to be 1 second
             k+=1

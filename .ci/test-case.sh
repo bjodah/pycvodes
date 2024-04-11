@@ -67,7 +67,14 @@ fi
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
-echo $PYTHONPATH
+
+set +e
+ulimit -S -c unlimited
+env \
+    PYTHONPATH=$(pwd) \
+    PYTHONTRACEMALLOC=16 \
+    $PYTHON -c "from pycvodes.tests.test_cvodes_numpy import test_none_dealloc_gh137 as t; t()"
+gdb $PYTHON
 
 if [[ $SUNDBASE =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"
