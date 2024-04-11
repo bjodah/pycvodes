@@ -1,0 +1,30 @@
+when:
+  - event: [pull_request, tag, cron, push]
+
+steps:
+  - name: build-and-test-asan
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+    environment:
+      - PYCVODES_STRICT=1
+      - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      - LLVM_ROOT=/opt-2/llvm-18
+    commands:
+      #- git fetch -tq
+      # - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
+      - .ci/run-matrix.sh
+      - .ci/test-sdist.sh
+      - ./scripts/prepare_deploy.sh
+      - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yml"; then exit 1; fi
+
+
+  - name: deploy-public-html
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+    commands:
+      - tar czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz ./deploy/public_html
+      - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
+    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
+    when:
+     - event: push
+       repo: bjodah/pycovdes
+    depends_on:
+      - build-and-test

@@ -28,7 +28,7 @@
 #  define CVLS_MEM_FAIL CVSPILS_MEM_FAIL
 #endif
 #if !defined(PYCVODES_NO_KLU)
-#  if defined(SUNDIALS_KLU)
+#  if defined(SUNDIALS_KLU) || defined(SUNDIALS_KLU_ENABLED)
 #    define PYCVODES_NO_KLU 0
 #  else
 #    define PYCVODES_NO_KLU 1
@@ -42,7 +42,7 @@
 #  include <sunmatrix/sunmatrix_band.h>
 #  include <sunmatrix/sunmatrix_sparse.h>
 #  if !defined(PYCVODES_NO_LAPACK)
-#    if defined(SUNDIALS_BLAS_LAPACK)
+#    if defined(SUNDIALS_BLAS_LAPACK) || defined(SUNDIALS_BLAS_LAPACK_ENABLED)
 #      define PYCVODES_NO_LAPACK 0
 #    else
 #      define PYCVODES_NO_LAPACK 1

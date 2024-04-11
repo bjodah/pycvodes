@@ -51,6 +51,7 @@ else:  # set `__version__` from _release.py:
                 ['git', 'describe', '--dirty']).rstrip().decode('utf-8')
         except subprocess.CalledProcessError:
             warnings.warn("A git-archive is being installed - version information incomplete.")
+            #assert _HAVE_CYTHON
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
@@ -71,30 +72,33 @@ else:
     USE_CYTHON = False
 
 ext_modules = []
+env = dict(
+    LAPACK="blas,lapack",
+    NO_KLU="0",
+    NO_LAPACK="0",
+    SUNDIALS_LIBS="",
+)
+for k, v in list(env.items()):
+    env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+_USE_KLU = env.get('NO_KLU', '0') == '0'
 
-if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
+if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
+    _USE_LAPACK = False
+else:
+    _USE_LAPACK = True
+
+if env["SUNDIALS_LIBS"] == "":
+    get_libs = None  # silence linting check (pyflakes), get from _libs.py
+    exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
+    env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "--print-linkline":
+    print(' '.join(['-l%s' % _ for _ in env['SUNDIALS_LIBS'].split(',')]))
+    sys.exit(os.EX_OK)
+elif len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    env = None  # silence pyflakes, 'env' is actually set on the next line
-    _PYCVODES_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
-    env = dict(
-        LAPACK="blas,lapack",
-        NO_KLU="0",
-        NO_LAPACK="0",
-        SUNDIALS_LIBS="",
-    )
-    for k, v in list(env.items()):
-        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
-    _USE_KLU = env.get('NO_KLU', '0') == '0'
-    if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
-        _USE_LAPACK = False
-    else:
-        _USE_LAPACK = True
-
-    if env["SUNDIALS_LIBS"] == "":
-        get_libs = None  # silence linting check (pyflakes), get from _libs.py
-        exec(open(_path_under_setup(pkg_name, "_libs.py")).read())
-        env["SUNDIALS_LIBS"] = get_libs(dict(LAPACK=_USE_LAPACK, KLU=_USE_KLU))
 
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
@@ -119,7 +123,6 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
 
-
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
     c_opts = {
@@ -132,7 +135,7 @@ class BuildExt(build_ext):
         opts = self.c_opts.get(ct, [])
         if ct == 'unix':
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append('--std=c++14')
+            opts.append('-std=c++17')
             if sys.platform == 'darwin' and re.search("clang", self.compiler.compiler[0]) is not None:
                 opts += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
         elif ct == 'msvc':
@@ -174,7 +177,7 @@ setup_kwargs = dict(
     author_email=_author_email.split('>')[0].strip(),
     url=url,
     license=license,
-    packages=[pkg_name] + tests,
+    packages=[pkg_name, f"{pkg_name}.include"] + tests,
     include_package_data=True,
     install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
