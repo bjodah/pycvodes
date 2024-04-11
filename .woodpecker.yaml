@@ -11,8 +11,8 @@ steps:
     commands:
       #- git fetch -tq
       # - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
-      - .ci/test-sdist.sh
       - .ci/run-matrix.sh
+      - .ci/test-sdist.sh
       - ./scripts/prepare_deploy.sh
       - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yml"; then exit 1; fi
 
