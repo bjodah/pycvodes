@@ -837,5 +837,6 @@ def test_none_dealloc_gh137():
             y_prev2 = yout.T[1][-1]
 
             print(iiter, jiter)
+        gc.collect()
         nNone -= sys.getrefcount(None)
         assert -5 < nNone < 5
