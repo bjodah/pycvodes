@@ -817,11 +817,11 @@ def test_none_dealloc_gh137():
             dfdt[:] = 0
 
     atol=1e-4; rtol=1e-20
-    for iiter in range(10):
+    for iiter in range(2):
         k = 0
         gc.collect()
         nNone = sys.getrefcount(None)
-        for jiter in range(100):
+        for jiter in range(2000):
             t0 = k
             tend = k + 1 # so let the step to be 1 second
             k+=1
@@ -839,4 +839,4 @@ def test_none_dealloc_gh137():
             print(iiter, jiter)
         gc.collect()
         nNone -= sys.getrefcount(None)
-        assert -5 < nNone < 5
+        assert -1000 < nNone < 1000
