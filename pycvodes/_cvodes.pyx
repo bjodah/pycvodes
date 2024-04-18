@@ -142,6 +142,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
     if np.isnan([x0, xend]).any(): raise ValueError("NaN found in x0/xend")
     if np.isinf(yq0).any(): raise ValueError("+/-Inf found in yq0")
     if np.isnan(yq0).any(): raise ValueError("NaN found in yq0")
+
     xyqout[0] = <realtype> x0
     for i in range(ny):
         xyqout[1+i] = <realtype> yq0[i]
@@ -152,6 +153,7 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
 
     for i in range(nquads):
         xyqout[1+ny*(nderiv+1)+i] = 0.0;
+
 
     odesys = new CvodesPyOdeSys(ny, <PyObject *>rhs, <PyObject *>jac, <PyObject *> jtimes, <PyObject *>quads,
                           <PyObject *>roots, <PyObject *>cb_kwargs, lband, uband, nquads, nroots,
@@ -171,7 +173,6 @@ def adaptive(rhs, jac, floating [:] yq0, floating x0, floating xend, atol,
             linear_solver_from_name(linear_solver.lower().encode('UTF-8')),
             maxl, eps_lin, nderiv, return_on_root, autorestart, return_on_error, with_jtimes,
             tidx, &ew_ele_out if ew_ele else NULL, constraints, max_num_steps_between_jac, stab_lim_det)
-
         xyqout_dims[0] = nout + 1
         xyqout_dims[1] = ny*(nderiv+1) + 1 + nquads
         xyqout_view = <realtype [:xyqout_dims[0], :xyqout_dims[1]]> xyqout
