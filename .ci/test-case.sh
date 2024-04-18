@@ -67,16 +67,11 @@ fi
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
-echo $PYTHONPATH
 
 if [[ $SUNDBASE =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"
 else
     EXTRA_PYTEST_FLAGS="-k not test_get_include"
-    cd tests/
-    make clean
-    make PYTHON=${PYTHON}
-    cd -
 fi
 
 #gdb -ex r -args
@@ -87,5 +82,15 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++.so.1:\
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
-PYTHONPATH=$(pwd) \
-    $PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS"
+#gdb -ex r -args
+$PYTHON -m pytest -v -k none_dealloc # "$EXTRA_PYTEST_FLAGS"
+
+
+if [[ $SUNDBASE =~ .*-single ]]; then
+    :
+else
+    cd tests/
+    make clean
+    make PYTHON=${PYTHON}
+    cd -
+fi

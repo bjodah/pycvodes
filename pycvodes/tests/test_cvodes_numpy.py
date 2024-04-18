@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from math import exp, pi
+import gc
 import os
+import sys
+import itertools as it
+
 import numpy as np
 import pytest
-import itertools as it
 
 from pycvodes import (
     integrate_adaptive, integrate_predefined, requires_jac, get_include, iterative_linsols, sundials_version, config
@@ -813,10 +816,16 @@ def test_none_dealloc_gh137():
         if dfdt is not None:
             dfdt[:] = 0
 
+    nIter = 1001
     atol=1e-4; rtol=1e-20
-    for iiter in range(1000):
+    for iiter in range(1):
         k = 0
-        for jiter in range(1000):
+        for jiter in range(nIter):
+            if jiter == 1:
+                gc.collect()
+                gc.collect()
+                nNone1 = sys.getrefcount(None)
+
             t0 = k
             tend = k + 1 # so let the step to be 1 second
             k+=1
@@ -824,11 +833,12 @@ def test_none_dealloc_gh137():
                 y0 = [1, 0]
             else:
                 y0 = [y_prev1, y_prev2]
-
+            y0 = np.array(y0, dtype=float)
             tout, yout, info = integrate_adaptive(f, j, y0, t0, tend, atol, rtol,
                                                   method='bdf')
-
             y_prev1 = yout.T[0][-1]
             y_prev2 = yout.T[1][-1]
-
-            print(iiter, jiter)
+        gc.collect()
+        gc.collect()
+        nNone2 = sys.getrefcount(None)
+        assert -10 < nNone1 - nNone2 < 10
