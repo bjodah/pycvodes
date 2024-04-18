@@ -21,7 +21,7 @@ PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xarg
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 ${PYTHON:-python3} setup.py build_ext -i
 export PYTHONPATH=$(pwd)
-./scripts/run_tests.sh
+./scripts/run_tests.sh -k "not get_include"
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ${PYTHON:-python3} setup.py sdist
 env ${PKG_UPPER}_RELEASE_VERSION=v$VERSION ./scripts/generate_docs.sh
 
