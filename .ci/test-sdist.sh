@@ -16,4 +16,5 @@ pip install pytest-flakes pytest-cov matplotlib sphinx numpydoc sphinx-rtd-theme
 ../scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
 
 cd -
+pip install .
 ./scripts/generate_docs.sh
