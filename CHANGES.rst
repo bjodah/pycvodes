@@ -1,3 +1,7 @@
+v0.14.4
+=======
+- Avoid over-counting None references
+
 v0.14.3
 =======
 - update AnyODE (fix refcounting bug)
