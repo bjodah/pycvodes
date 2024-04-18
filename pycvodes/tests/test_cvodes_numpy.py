@@ -824,9 +824,7 @@ def test_none_dealloc_gh137():
             if jiter == 1:
                 gc.collect()
                 gc.collect()
-                gc.collect()
                 nNone1 = sys.getrefcount(None)
-                print(f"{info=}")##DO-NOT-MERGE!!!
 
             t0 = k
             tend = k + 1 # so let the step to be 1 second
@@ -840,7 +838,6 @@ def test_none_dealloc_gh137():
                                                   method='bdf')
             y_prev1 = yout.T[0][-1]
             y_prev2 = yout.T[1][-1]
-        gc.collect()
         gc.collect()
         gc.collect()
         nNone2 = sys.getrefcount(None)
