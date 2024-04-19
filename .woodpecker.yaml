@@ -54,8 +54,8 @@ steps:
   - name: deploy-public-html
     image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     commands:
-      - tar -C ./deploy/public_html -czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz .
-      - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
+      - tar -C ./deploy/public_html -czf pycvodes-${CI_COMMIT_BRANCH}.tar.gz .
+      - curl -T pycvodes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycvodes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
