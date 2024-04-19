@@ -8,7 +8,7 @@ show_help() {
 
 NATIVE=0
 TEST_ASAN=0
-MAKE_TMPDIR=0
+MAKE_TMP_DIR=0
 while [ $# -gt 1 ]; do
     case $1 in
         --native)
@@ -25,7 +25,7 @@ while [ $# -gt 1 ]; do
             shift
             ;;
         --tmp)
-            MAKE_TMPDIR=1
+            MAKE_TMP_DIR=1
             shift
             ;;
         *)
@@ -33,11 +33,11 @@ while [ $# -gt 1 ]; do
             exit 1
     esac
 done
-if [ "$MAKE_TMPDIR" = 1 ]; then
-    TMPDIR=$(mktemp -d)
-    trap 'rm -rf -- "$TMPDIR"' EXIT
-    cp -ra . "$TMPDIR/."
-    cd "$TMPDIR"
+if [ "$MAKE_TMP_DIR" = 1 ]; then
+    REPO_TMP_DIR=$(mktemp -d)
+    trap 'rm -rf -- "$REPO_TMP_DIR"' EXIT
+    cp -ra . "$REPO_TMP_DIR/."
+    cd "$REPO_TMP_DIR"
 fi
 SUNDBASE=$1
 if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
