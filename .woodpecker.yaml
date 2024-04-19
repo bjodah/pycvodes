@@ -59,6 +59,6 @@ steps:
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
-       repo: github.com/bjodah/pycovdes
+       repo: bjodah/pycvodes
     depends_on:
       - sdist-and-docs
