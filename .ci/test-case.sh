@@ -8,6 +8,7 @@ show_help() {
 
 NATIVE=0
 TEST_ASAN=0
+MAKE_TMPDIR=0
 while [ $# -gt 1 ]; do
     case $1 in
         --native)
@@ -23,12 +24,21 @@ while [ $# -gt 1 ]; do
             TEST_ASAN=1
             shift
             ;;
+        --tmp)
+            MAKE_TMPDIR=1
+            shift
+            ;;
         *)
             >&2 echo "Unrecognized parameter: $1"
             exit 1
     esac
 done
-
+if [ "$MAKE_TMPDIR" = 1 ]; then
+    TMPDIR=$(mktemp -d)
+    trap 'rm -rf -- "$TMPDIR"' EXIT
+    cp -ra . "$TMPDIR/."
+    cd "$TMPDIR"
+fi
 SUNDBASE=$1
 if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
