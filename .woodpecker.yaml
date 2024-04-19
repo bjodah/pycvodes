@@ -3,7 +3,7 @@ when:
 
 steps:
   - name: build-and-test-asan
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     environment:
       - PYCVODES_STRICT=1
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
@@ -18,7 +18,7 @@ steps:
 
 
   - name: deploy-public-html
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     commands:
       - tar -C ./deploy/public_html czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz .
       - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/

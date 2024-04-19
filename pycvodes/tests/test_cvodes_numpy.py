@@ -13,6 +13,15 @@ from pycvodes import (
 )
 
 
+def _get_refcount_None():
+    if hasattr(sys, 'getrefcount'):
+        gc.collect()
+        gc.collect()
+        return sys.getrefcount(None)
+    else:  # e.g. pypy
+        return 0
+
+
 def test_config_env():
     # This test is useful for e.g. out-of-tree conda-recipes (e.g. conda-forge) where variables
     # are set manually (and could otherwise be forgotten unless tests fail).
@@ -822,10 +831,7 @@ def test_none_dealloc_gh137():
         k = 0
         for jiter in range(nIter):
             if jiter == 1:
-                gc.collect()
-                gc.collect()
-                nNone1 = sys.getrefcount(None)
-
+                nNone1 = _get_refcount_None()
             t0 = k
             tend = k + 1 # so let the step to be 1 second
             k+=1
@@ -840,5 +846,5 @@ def test_none_dealloc_gh137():
             y_prev2 = yout.T[1][-1]
         gc.collect()
         gc.collect()
-        nNone2 = sys.getrefcount(None)
-        assert -10 < nNone1 - nNone2 < 10
+        nNone2 = _get_refcount_None()
+        assert -nIter//10 < nNone1 - nNone2 < nIter//10
