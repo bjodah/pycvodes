@@ -1,9 +1,9 @@
 // C++11 source code.
-#include "catch.hpp"
+#include "doctest.h"
 #include "cvodes_anyode_parallel.hpp"
 #include "testing_utils.hpp"
 
-TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
+TEST_CASE( "decay_adaptive" ) {
     std::vector<realtype> k {{ 2.0, 3.0}};
     Decay odesys1(k[0]);
     Decay odesys2(k[1]);
@@ -44,7 +44,7 @@ TEST_CASE( "decay_adaptive", "[multi_adaptive]" ) {
     free(xyout_arr);
 }
 
-TEST_CASE( "decay_predefined", "[multi_predefined]" ) {
+TEST_CASE( "decay_predefined" ) {
     std::vector<realtype> k {{ 2.0, 3.0}};
     Decay odesys1(k[0]);
     Decay odesys2(k[1]);

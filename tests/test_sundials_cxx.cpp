@@ -1,5 +1,5 @@
 // C++11 source code.
-#include "catch.hpp"
+#include "doctest.h"
 #include "sundials_cxx.hpp" // realtype
 #if SUNDIALS_VERSION_MAJOR >= 6
 #include <sundials/sundials_context.h>
@@ -10,7 +10,7 @@ using sundials_cxx::nvector_serial::Vector;
 using sundials_cxx::nvector_serial::VectorView;
 
 
-TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
+TEST_CASE( "methods" ) {
 #if SUNDIALS_VERSION_MAJOR >= 6
     SUNContext ctx;
     SUNContext_Create(/*SUN_COMM_*/NULL, &ctx);
@@ -39,7 +39,7 @@ TEST_CASE( "methods" "[sundials::nvector_serial::Vector]" ) {
     SUNContext_Free(&ctx);
 }
 
-TEST_CASE( "methods" "[sundials::nvector_serial::VectorView]" ) {
+TEST_CASE( "methods" ) {
 #if SUNDIALS_VERSION_MAJOR >= 6
     SUNContext ctx;
     SUNContext_Create(/*SUN_COMM_*/NULL, &ctx);
