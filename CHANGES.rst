@@ -1,3 +1,7 @@
+v0.14.5
+=======
+- Support PyPy
+
 v0.14.4
 =======
 - Avoid over-counting None references
