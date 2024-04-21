@@ -1,30 +1,64 @@
 when:
-  - event: [pull_request, tag, cron, push]
+  - event: [push]  # pull_request, tag, cron, 
 
 steps:
-  - name: build-and-test-asan
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+  - name: pypy
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    commands:
+      - .ci/test-case.sh --tmp --python /opt-3/pypy3.10-v7.3.15-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
+
+  - name: py3.11-dbg
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    commands:
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.?-debug/bin/python3 /opt-3/sundials-6.7.0-debug
+
+  - name: py3.12-dbg
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    commands:
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-debug/bin/python3 /opt-3/sundials-6.7.0-debug
+
+  - name: py3.11-extended
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    environment:
+      - PYCVODES_NO_LAPACK=1
+      - PYCVODES_NO_KLU=1
+    commands:
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
+
+  - name: py3.12-single
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    environment:
+      - PYCVODES_NO_LAPACK=1
+      - PYCVODES_NO_KLU=1
+    commands:
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-release/bin/python3 /opt-3/sundials-6.7.0-single
+
+  - name: sdist-and-docs
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     environment:
       - PYCVODES_STRICT=1
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-      - LLVM_ROOT=/opt-2/llvm-18
     commands:
       #- git fetch -tq
       # - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
-      - .ci/run-matrix.sh
       - .ci/test-sdist.sh
       - ./scripts/prepare_deploy.sh
-      - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yml"; then exit 1; fi
-
+      - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yaml"; then exit 1; fi
+    depends_on:
+      - pypy
+      - py3.11-dbg
+      - py3.12-dbg
+      - py3.11-extended
+      - py3.12-single
 
   - name: deploy-public-html
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:14
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     commands:
-      - tar -C ./deploy/public_html czf pycovdes-${CI_COMMIT_BRANCH}.tar.gz .
-      - curl -T pycovdes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycovdes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
+      - tar -C ./deploy/public_html -czf pycvodes-${CI_COMMIT_BRANCH}.tar.gz .
+      - curl -T pycvodes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycvodes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
     secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
-       repo: github.com/bjodah/pycovdes
+       repo: bjodah/pycvodes
     depends_on:
-      - build-and-test
+      - sdist-and-docs

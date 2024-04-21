@@ -1,5 +1,5 @@
 // C++11 source code.
-#include "catch.hpp"
+#include "doctest.h"
 #include "cvodes_cxx.hpp" // realtype
 #include "testing_utils.hpp"
 
@@ -18,7 +18,7 @@ int rhs_cb3(realtype /* t */, N_Vector y, N_Vector f, void * /* user_data */){
 }
 
 
-TEST_CASE( "methods", "[Integrator]" ) {
+TEST_CASE( "methods" ) {
 #if SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
 #endif
@@ -47,7 +47,7 @@ realtype get_dx_max(realtype /* x */, const realtype * const /* y */){
     return 1e-3;
 }
 
-TEST_CASE( "adaptive", "[Integrator]" ) {
+TEST_CASE( "adaptive" ) {
     const int ny = 1;
 #if SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
@@ -92,7 +92,7 @@ realtype get_dx_max2(realtype /* x */, const realtype * const /* y */){
 }
 
 
-TEST_CASE( "predefined", "[Integrator]" ) {
+TEST_CASE( "predefined" ) {
     const int ny = 1;
 #if SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
@@ -128,7 +128,7 @@ TEST_CASE( "predefined", "[Integrator]" ) {
     }
 }
 
-TEST_CASE( "predefined_autorestart", "[Integrator]" ) {
+TEST_CASE( "predefined_autorestart" ) {
     const int ny = 3;
 #if SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);

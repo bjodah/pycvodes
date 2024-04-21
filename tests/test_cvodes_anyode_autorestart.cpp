@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "doctest.h"
 #include <math.h>
 #include <vector>
 #include "anyode/anyode.hpp"
@@ -7,7 +7,7 @@
 #include "cetsa_case.hpp"
 
 
-TEST_CASE( "adaptive_autorestart", "[simple_adaptive]" ) {
+TEST_CASE( "adaptive_autorestart" ) {
     std::vector<realtype> p = {{298.15, 39390, -135.3, 18010, 44960, 48.2, 65919.5, -93.8304, 1780, 3790, 57.44, 19700, -157.4}};
     OdeSys odesys(&p[0]);
     int td = 1;

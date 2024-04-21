@@ -11,9 +11,14 @@ env \
     CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
     CC=gcc CXX=g++ pip install ${CI_REPO_NAME}-*.tar.gz
-pip install pytest-flakes pytest-cov matplotlib sphinx numpydoc sphinx-rtd-theme
-../scripts/run_tests.sh --cov ${CI_REPO_NAME} --cov-report html
-../scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-
+python3 -m pytest --pyargs pycvodes
 cd -
-source ./scripts/generate_docs.sh
+env \
+    CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
+    LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
+    CC=gcc CXX=g++ python3 setup.py build_ext -i
+
+pip install pytest-flakes pytest-cov matplotlib sphinx numpydoc sphinx-rtd-theme
+./scripts/run_tests.sh --cov ${CI_REPO_NAME} --cov-report html
+./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
+./scripts/generate_docs.sh

@@ -50,22 +50,22 @@ else
 endif
 
 clean:
-	$(RM) catch.o
+	$(RM) doctest.o
 	$(RM) $(TARGETS)
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
-test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.o
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS)
+test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp doctest.o
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS)
 
-test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp catch.o
+test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp doctest.o
 ifeq ($(CXX),clang++-6.0)
 	@echo "skipping openmp when using clang"
 else
-	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS) $(OPENMP_LIB)
+	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS) $(OPENMP_LIB)
 endif
 
-catch.hpp: catch.hpp.bz2
+doctest.h: doctest.h.bz2
 	bzcat $< >$@
 
-catch.o: catch.cpp catch.hpp
+doctest.o: doctest.cpp doctest.h
 

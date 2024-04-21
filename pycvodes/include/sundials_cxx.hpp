@@ -1,7 +1,10 @@
 #pragma once
-#include <cstring> // std::memcpy
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_config.h>
+#include <stdexcept>
+#include <cstring> // std::memcpy
+#include <vector>
+
 namespace sundials_cxx {
 #if SUNDIALS_VERSION_MAJOR >= 3
     const int version_major = SUNDIALS_VERSION_MAJOR;
