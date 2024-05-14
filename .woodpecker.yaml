@@ -15,7 +15,7 @@ steps:
   - name: py3.12-dbg
     image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
     commands:
-      - /opt-3/cpython-v3.12.2-debug/bin/python3 -m pip install -U --pre --only-binary :all: -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+      - /opt-3/cpython-v3.12.2-debug/bin/python3 -m pip install -U --pre --only-binary ":all:" -i "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" numpy
       - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-debug/bin/python3 /opt-3/sundials-6.7.0-debug
 
   - name: py3.11-extended
