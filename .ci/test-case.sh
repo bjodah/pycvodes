@@ -76,6 +76,10 @@ fi
 if [ -d ./build ]; then
     rm -r ./build
 fi
+
+# https://numpy.org/devdocs/dev/depending_on_numpy.html#testing-against-the-numpy-main-branch-or-pre-releases
+$PYTHON -m pip install -U --pre --only-binary :all: -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy 
+
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
