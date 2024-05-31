@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "doctest.h"
 #include <math.h>
 #include <vector>
 #include "anyode/anyode.hpp"
@@ -45,7 +45,7 @@ realtype integral_A_exp_minus_k_t__squared(realtype A, realtype k, realtype t){
     return (1.0L/2.0L)*pow(A, 2)/k - 1.0L/2.0L*pow(A, 2)*exp(-2*k*t)/k;
 }
 
-TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
+TEST_CASE( "quadrature_adaptive" ) {
     auto odesys = OdeSys();
     int td = 1;
     realtype * xyqout = (realtype*)malloc(td*(odesys.get_ny()+odesys.get_nquads()+1)*sizeof(realtype));
@@ -92,7 +92,7 @@ TEST_CASE( "quadrature_adaptive", "[simple_adaptive]" ) {
     free(xyqout);
 }
 
-TEST_CASE( "quadrature_predefined", "[simple_predefined]" ) {
+TEST_CASE( "quadrature_predefined" ) {
     auto odesys = OdeSys();
     int nt = 37;
     realtype t0=0, tend=4.0;

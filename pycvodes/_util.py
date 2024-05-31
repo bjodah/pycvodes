@@ -4,15 +4,23 @@ from __future__ import division
 
 import numpy as np
 
-valid_arg_combs = [{}, {"lband", "uband"}, {"nnz"}]
+valid_arg_combs = ({}, {"lband", "uband"}, {"nnz"})
 
 
 def _check_jac_type(**kwargs):
-    nonnull_opts = dict((k, v) for k, v in kwargs.items() if v is not None)
-    if any(map(set(nonnull_opts).__eq__, valid_arg_combs)):
-        pass
-    else:
-        raise ValueError("Couldn't determine jacobian type from given non-default options: {}".format(nonnull_opts))
+    kk = []
+    for k, v in kwargs.items():
+        if v is None:
+            continue
+        kk.append(k)
+    kk = sorted(kk)
+    if kk == ["lband", "uband"]:
+        return
+    elif kk == ["nnz"]:
+        return
+    elif len(kk) == 0:
+        return
+    raise ValueError("Couldn't determine jacobian type from given non-default options: {}".format(str(kwargs)))
 
 
 def _get_jmat_out(ny, lband=None, uband=None, nnz=None):

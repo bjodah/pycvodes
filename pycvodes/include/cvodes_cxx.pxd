@@ -21,9 +21,9 @@ cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx":
     cdef cppclass CVodeIntegrator:
         CVodeIntegrator(LMM, IterType)
 
-    cdef LMM lmm_from_name(string) nogil except +
-    cdef IterType iter_type_from_name(string) nogil except +
-    cdef LinSol linear_solver_from_name(string) nogil except +
+    cdef LMM lmm_from_name(string) except + nogil
+    cdef IterType iter_type_from_name(string) except + nogil
+    cdef LinSol linear_solver_from_name(string) except + nogil
 
 cdef extern from "cvodes_cxx.hpp" namespace "cvodes_cxx::LMM":
     cdef LMM Adams

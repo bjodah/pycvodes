@@ -1,11 +1,11 @@
-#include "catch.hpp"
+#include "doctest.h"
 #include <math.h>
 #include <vector>
 #include "anyode/anyode.hpp"
 #include "cvodes_anyode.hpp"
 #include "cetsa_case_iterative.hpp"
 
-TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec", "[simple_adaptive]" ) {
+TEST_CASE( "adaptive_tricky_svd_no_jac_no_prec" ) {
     std::vector<realtype> p = {{321.14999999999998, 39390, -135.30000000000001, 18010, 44960, 48.200000000000003,
                               49320, -114.59999999999999, 1780, -34400.547966379738, -2.865040967667511,
                               93065.338440593958, 5.7581184659305222}};

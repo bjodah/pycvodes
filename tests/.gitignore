@@ -1,4 +1,5 @@
-catch.hpp
+doctest.h
+doctest.o
 test_cvodes_anyode
 test_cvodes_cxx
 test_sundials_cxx
@@ -8,6 +9,5 @@ test_cvodes_anyode_autorestart
 test_cvodes_anyode_svd
 test_tough_case
 test_cvodes_anyode_quad
-catch.o
 test_cvodes_anyode_jtimes
 test_cvodes_anyode_sparse

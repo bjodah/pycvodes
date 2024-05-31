@@ -1,9 +1,9 @@
 // C++11 source code.
-#include "catch.hpp"
+#include "doctest.h"
 #include "cvodes_anyode.hpp"
 #include "testing_utils.hpp"
 
-TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
+TEST_CASE( "decay_adaptive" ) {
     Decay odesys(1.0);
     std::vector<int> root_indices;
     int td = 1;
@@ -24,7 +24,7 @@ TEST_CASE( "decay_adaptive", "[simple_adaptive]" ) {
     free(xyout);
 }
 
-TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
+TEST_CASE( "decay_adaptive_ew_ele" ) {
     Decay odesys(1.0);
     std::vector<int> root_indices;
     int td = 1;
@@ -65,7 +65,7 @@ TEST_CASE( "decay_adaptive_ew_ele", "[simple_adaptive]" ) {
     free(ew_ele);
 }
 
-TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
+TEST_CASE( "decay_predefined_ew_ele" ) {
     Decay odesys(1.0);
     int nt = 37;
     realtype t0=0, tend=4.0;
@@ -108,7 +108,7 @@ TEST_CASE( "decay_predefined_ew_ele", "[simple_predefined]" ) {
     REQUIRE( odesys.current_info.nfo_int["n_steps"] < 997 );
 }
 
-TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
+TEST_CASE( "decay_adaptive_get_dx_max" ) {
     Decay odesys(1.0);
     realtype y0 = 1.0;
     std::vector<int> root_indices;
@@ -130,7 +130,7 @@ TEST_CASE( "decay_adaptive_get_dx_max", "[simple_adaptive]" ) {
 }
 
 
-TEST_CASE( "decay_adaptive_dx_max", "[simple_adaptive]" ) {
+TEST_CASE( "decay_adaptive_dx_max" ) {
     Decay odesys(1.0);
     realtype y0 = 1.0;
     std::vector<int> root_indices;

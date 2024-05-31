@@ -1,3 +1,15 @@
+v0.14.5
+=======
+- Support PyPy
+
+v0.14.4
+=======
+- Avoid over-counting None references
+
+v0.14.3
+=======
+- update AnyODE (fix refcounting bug)
+
 v0.14.2
 =======
 - Support Sundials-6.x

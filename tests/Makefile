@@ -2,7 +2,7 @@ CXX ?= g++
 PYTHON ?= python3
 PYCVODES_NO_LAPACK ?= 0
 PYCVODES_NO_KLU ?= 0
-CXXFLAGS ?= -std=c++20 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU)
+CXXFLAGS ?= -std=c++20 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU) $(CXXFLAGS)
 ifneq (,$(findstring clang,$(CXX)))
 	# Found "clang" in CXX
 	CXXFLAGS += -glldb
@@ -29,6 +29,7 @@ TARGETS += test_cvodes_anyode_sparse
 endif
 
 test: $(TARGETS) test_cvodes_anyode_parallel
+	env CFLAGS="$(CXXFLAGS)" $(PYTHON) ./_test_cvodes_anyode.py
 	$(CONTEXT) ./test_cvodes_anyode --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_autorestart --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_quad --abortx 1
@@ -47,25 +48,24 @@ ifeq ($(CXX),clang++-11)
 else
 	$(CONTEXT) ./test_cvodes_anyode_parallel --abortx 1
 endif
-	$(PYTHON) ./_test_cvodes_anyode.py
 
 clean:
-	rm catch.o
-	rm $(TARGETS)
+	$(RM) doctest.o
+	$(RM) $(TARGETS)
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
-test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp catch.o
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS)
+test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp doctest.o
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS)
 
-test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp catch.o
+test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp doctest.o
 ifeq ($(CXX),clang++-6.0)
 	@echo "skipping openmp when using clang"
 else
-	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< catch.o $(LDFLAGS) $(OPENMP_LIB)
+	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS) $(OPENMP_LIB)
 endif
 
-catch.hpp: catch.hpp.bz2
+doctest.h: doctest.h.bz2
 	bzcat $< >$@
 
-catch.o: catch.cpp catch.hpp
+doctest.o: doctest.cpp doctest.h
 
