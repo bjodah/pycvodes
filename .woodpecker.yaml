@@ -1,24 +1,29 @@
+variables:
+  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-3:17'
+
+
 when:
   - event: [push]  # pull_request, tag, cron, 
 
 steps:
   - name: pypy
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/pypy3.10-v7.3.15-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
+      - .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
 
   - name: py3.11-dbg
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     commands:
       - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.?-debug/bin/python3 /opt-3/sundials-6.7.0-debug
 
   - name: py3.12-dbg
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-debug/bin/python3 /opt-3/sundials-6.7.0-debug
+      - /opt-3/cpython-v3.12.2-debug/bin/python3 -m pip install -U --pre --only-binary ":all:" -i "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" numpy
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.?-debug/bin/python3 /opt-3/sundials-6.7.0-debug
 
   - name: py3.11-extended
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     environment:
       - PYCVODES_NO_LAPACK=1
       - PYCVODES_NO_KLU=1
@@ -26,7 +31,7 @@ steps:
       - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
 
   - name: py3.12-single
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     environment:
       - PYCVODES_NO_LAPACK=1
       - PYCVODES_NO_KLU=1
@@ -34,7 +39,7 @@ steps:
       - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-release/bin/python3 /opt-3/sundials-6.7.0-single
 
   - name: sdist-and-docs
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     environment:
       - PYCVODES_STRICT=1
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
@@ -52,7 +57,7 @@ steps:
       - py3.12-single
 
   - name: deploy-public-html
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-3:16
+    image: *ci_image
     commands:
       - tar -C ./deploy/public_html -czf pycvodes-${CI_COMMIT_BRANCH}.tar.gz .
       - curl -T pycvodes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycvodes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
