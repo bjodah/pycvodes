@@ -76,6 +76,7 @@ fi
 if [ -d ./build ]; then
     rm -r ./build
 fi
+
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
@@ -95,7 +96,7 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON -m pytest -v -k none_dealloc # "$EXTRA_PYTEST_FLAGS"
+$PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS"
 
 
 if [[ $SUNDBASE =~ .*-single ]]; then
