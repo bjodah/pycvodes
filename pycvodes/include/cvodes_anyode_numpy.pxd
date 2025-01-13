@@ -26,8 +26,8 @@ cdef extern from "cvodes_anyode_numpy.hpp" namespace "AnyODE":
         NPY_TYPES get_int_type_tag()
         int get_nquads()
         int get_nroots()
-        realtype get_dx0(realtype, realtype *) except +
-        realtype get_dx_max(realtype, realtype *) except +
+        realtype get_dx0(realtype, realtype *) except+
+        realtype get_dx_max(realtype, realtype *) except+
         bool autonomous_exprs
         bool use_get_dx_max
         bool record_rhs_xvals

@@ -34,7 +34,7 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         vector[realtype]&,
         long int
         bool
-    ) except +
+    ) except+
 
     cdef vector[pair[int, pair[vector[int], vector[realtype]]]] multi_predefined[U](
         vector[U*],
@@ -62,4 +62,4 @@ cdef extern from "cvodes_anyode_parallel.hpp" namespace "cvodes_anyode_parallel"
         vector[realtype]&,
         long int
         bool
-    ) except +
+    ) except+
