@@ -23,7 +23,7 @@ steps:
       - PYCVODES_NO_LAPACK=1
       - PYCVODES_NO_KLU=1
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
+      - bash -c "source /opt-3/cpython-v3.12-apt-deb/bin/activate; .ci/test-case.sh --tmp /opt-3/sundials-6.7.0-extended"
 
   - name: py3.11-single
     image: cont-reg.bjodah.se:443/bjodah/triceratops-4:16

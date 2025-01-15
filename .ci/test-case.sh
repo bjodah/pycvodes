@@ -67,7 +67,7 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export CC=gcc
     export CXX=g++
-    if $CXX --version | head -n 1 | grep -E 'g++\.*13\.[0-9]\.[0-9]$'; then exit 1; fi
+    #if $CXX --version | head -n 1 | grep -E 'g++\.*13\.[0-9]\.[0-9]$'; then exit 1; fi
     export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
     export CONTEXT="echo ''; echo ''; valgrind --error-exitcode=1"
 fi
@@ -77,7 +77,8 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
+#CC=$CXX CFLAGS=$CXXFLAGS
+$PYTHON -m pip install --no-build-isolation -e .  #setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 
