@@ -9,6 +9,7 @@ show_help() {
 NATIVE=0
 TEST_ASAN=0
 MAKE_TMP_DIR=0
+PYTHON=python3
 while [ $# -gt 1 ]; do
     case $1 in
         --native)
@@ -40,7 +41,7 @@ if [ "$MAKE_TMP_DIR" = 1 ]; then
     cd "$REPO_TMP_DIR"
 fi
 SUNDBASE=$1
-if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
+if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
@@ -62,7 +63,8 @@ if [ $TEST_ASAN -eq 1 ]; then
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    # LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+    #export LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+    export LD_PRELOAD=$(clang++ --print-file-name=libstdc++.so)
     export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
 else
     export CC=gcc
@@ -76,12 +78,20 @@ fi
 if [ -d ./build ]; then
     rm -r ./build
 fi
+if [ -d ./dist ]; then
+    rm -r ./dist
+fi
+
+$PYTHON -m pip install build #--upgrade --upgrade-strategy=eager build setuptools==72.1.0 wheel
+$PYTHON -m build . --sdist
+$PYTHON -m pip uninstall -y pycvodes
+cd dist/
+CC=$CXX CFLAGS=$CXXFLAGS $PYTHON -m pip install *.tar.gz
 
 #CC=$CXX CFLAGS=$CXXFLAGS
 #$PYTHON -m pip install wheel
-$PYTHON -m pip install -e .  #--no-build-isolation / setup.py build_ext -i
-
-export PYTHONPATH=$(pwd)
+#$PYTHON -m pip install -e .  #--no-build-isolation / setup.py build_ext -i
+#export PYTHONPATH=$(pwd)
 
 if [[ $SUNDBASE =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"
@@ -98,8 +108,8 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS"
-
+$PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS" --pyargs pycvodes
+cd -
 
 if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
     :

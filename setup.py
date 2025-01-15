@@ -62,7 +62,7 @@ package_include = os.path.join(pkg_name, 'include')
 
 _src = {ext: _path_under_setup(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
 if os.path.exists(_src['cpp']):
-        os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
+    os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
 
 ext_modules = []
 env = dict(
@@ -87,7 +87,10 @@ if env["SUNDIALS_LIBS"] == "":
 
 
 if len(sys.argv) == 2 and sys.argv[1] == "--print-linkline":
-    print(' '.join(['-l%s' % _ for _ in env['SUNDIALS_LIBS'].split(',')]))
+    libs = env['SUNDIALS_LIBS'].split(',')
+    if len(libs) <= 1:
+        raise ValueError("Failed to determine what libraries to link with")
+    print(' '.join(['-l%s' % _ for _ in libs]))
     sys.exit(os.EX_OK)
 elif len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):

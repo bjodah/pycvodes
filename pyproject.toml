@@ -1,0 +1,27 @@
+[build-system]
+requires = [
+         "setuptools==72.1.0",   # ==72.1.0, see https://github.com/pypa/setuptools/issues/4748
+         "wheel",
+         "numpy",
+         "cython"
+]
+
+# [build-system]
+# requires = ["setuptools>=61", "setuptools-scm", "wheel", "numpy", "cython"]
+# build-backend = "setuptools.build_meta"
+
+# [project]
+# name = "pycvodes"
+# version = {attr = "pycvodes.__version__"}
+# description = "Python wrapper around cvode(s) from SUNDIALS"
+# authors = [{name = "Björn Dahlgren", email = "bjodah+pycvodes@gmail.com"}]
+# dependencies = ["numpy"]
+
+# [tool.setuptools]
+# zip-safe = false
+
+# [tool.setuptools.ext-modules]
+# pycvodes = {source = ["pycvodes/_cvodes.pyx"], language = "c++"}
+
+# [tool.setuptools-scm]
+# write_to = "pycvodes/_release.py"
