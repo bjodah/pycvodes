@@ -3,7 +3,7 @@ requires = [
          "setuptools==72.1.0",   # ==72.1.0, see https://github.com/pypa/setuptools/issues/4748
          "wheel",
          "numpy",
-         "cython"
+         "cython",
 ]
 
 # [build-system]

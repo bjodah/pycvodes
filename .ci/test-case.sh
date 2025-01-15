@@ -116,6 +116,7 @@ if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
 else
     cd tests/
     make clean
+    $PYTHON -m pip install "setuptools==72.1.0"  # temporary work-around, see https://github.com/pypa/setuptools/issues/4748
     make PYTHON=${PYTHON}
     cd -
 fi
