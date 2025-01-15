@@ -99,7 +99,7 @@ fi
 $PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS"
 
 
-if [[ $SUNDBASE =~ .*-single ]]; then
+if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
     :
 else
     cd tests/
