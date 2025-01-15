@@ -78,7 +78,8 @@ if [ -d ./build ]; then
 fi
 
 #CC=$CXX CFLAGS=$CXXFLAGS
-$PYTHON -m pip install --no-build-isolation -e .  #setup.py build_ext -i
+#$PYTHON -m pip install wheel
+$PYTHON -m pip install -e .  #--no-build-isolation / setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 
