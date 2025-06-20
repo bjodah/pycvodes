@@ -11,14 +11,16 @@ from ._cvodes import (
 )
 from ._util import _check_callable, _check_indexing, _check_jac_type
 from ._release import __version__
+from pathlib import Path
 
 
-def get_include() -> str:
-    print('foo')
-    return str(Path(__file__).parent / 'include')
+def get_include():
+    # This does not work with layered virtual envs:
+
     # from pkg_resources import resource_filename, Requirement
     # return resource_filename(Requirement.parse(__name__),
     #                          '%s/include' % __name__)
+    return str(Path(__file__).parent / "include")
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
