@@ -2,7 +2,7 @@
 """
 Python binding for cvodes from the sundials library.
 """
-from __future__ import division, absolute_import
+from pathlib import Path
 
 import numpy as np
 
@@ -13,10 +13,12 @@ from ._util import _check_callable, _check_indexing, _check_jac_type
 from ._release import __version__
 
 
-def get_include():
-    from pkg_resources import resource_filename, Requirement
-    return resource_filename(Requirement.parse(__name__),
-                             '%s/include' % __name__)
+def get_include() -> str:
+    print('foo')
+    return str(Path(__file__).parent / 'include')
+    # from pkg_resources import resource_filename, Requirement
+    # return resource_filename(Requirement.parse(__name__),
+    #                          '%s/include' % __name__)
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
