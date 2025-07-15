@@ -28,7 +28,7 @@ license = 'BSD'
 
 
 def _path_under_setup(*args):
-    return os.path.join(*args)
+    return os.path.abspath(os.path.join(*args))
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 
