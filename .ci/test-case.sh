@@ -44,7 +44,12 @@ if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUN
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
-LINKLIBS="$(${PYTHON:-python3} setup.py --print-linkline)"
+if [ $TEST_ASAN -eq 1 ]; then
+    export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+else
+    export PYTHON=${PYTHON:-python3}
+fi
+LINKLIBS="${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
 export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
@@ -63,7 +68,6 @@ if [ $TEST_ASAN -eq 1 ]; then
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
     # LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
-    export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
 else
     export CC=gcc
     export CXX=g++
