@@ -19,7 +19,7 @@ steps:
   - name: py3.13-asan
     image: *ci_image
     commands:
-      - .bash -l ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.13.*-asan/bin/python3 /opt-3/sundials-6.7.0-asan
+      - bash -l ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.13.*-asan/bin/python3 /opt-3/sundials-6.7.0-asan
 
   - name: py3.13-extended
     image: *ci_image
