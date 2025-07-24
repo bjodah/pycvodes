@@ -13,7 +13,8 @@ else
 endif
 
 CXXFLAGS += $(EXTRA_FLAGS) $(CFLAGS)
-INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
+#INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
+INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON) -c "import sysconfig; print('-I' + sysconfig.get_path('include'))")
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
