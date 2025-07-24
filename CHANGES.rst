@@ -1,3 +1,7 @@
+v0.14.6
+=======
+- update AnyODE (drop deprecated Py2 C-API calls)
+
 v0.14.5
 =======
 - Support PyPy
