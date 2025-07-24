@@ -49,7 +49,7 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export PYTHON=${PYTHON:-python3}
 fi
-LINKLIBS="${PYTHON} setup.py --print-linkline)"
+LINKLIBS="$(${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
 export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
