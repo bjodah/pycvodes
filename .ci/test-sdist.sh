@@ -7,14 +7,15 @@ git clean -xfd
 python3 setup.py sdist
 cd ./dist/
 SUNDBASE=$(compgen -G "/opt-3/sundials-6.*-release")
+export CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse"
 env \
-    CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
+    CXXFLAGS="${CFLAGS}" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
     CC=gcc CXX=g++ pip install ${CI_REPO_NAME}-*.tar.gz
 python3 -m pytest --pyargs pycvodes
 cd -
 env \
-    CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
+    CXXFLAGS="${CFLAGS}" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
     CC=gcc CXX=g++ python3 setup.py build_ext -i
 
