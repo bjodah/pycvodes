@@ -59,6 +59,8 @@ export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 if [ $TEST_ASAN -eq 1 ]; then
     export CC=clang
     export CXX=clang++
+    LLVM_ROOT=$(compgen -G "/opt-2/llvm-??")
+    LLVM_LIB_DIR=$(compgen -G "${LLVM_ROOT}/lib/$(uname -m)-*")
     LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
     LIBCXX_ASAN_INCLUDE=${LIBCXX_ASAN_ROOT}/include/c++/v1
     if [ ! -d "$LIBCXX_ASAN_INCLUDE" ]; then
@@ -70,14 +72,15 @@ if [ $TEST_ASAN -eq 1 ]; then
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
     #LD_PRELOAD=
 
-    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=${LIBCXX_ASAN_ROOT}/lib/libc++.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libc++abi.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libunwind.so.1.0:$(clang++ --print-file-name=libclang_rt.asan.so)"  # Or this failure appears:
+    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so):${LIBCXX_ASAN_ROOT}/lib/libc++.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libc++abi.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libunwind.so.1.0"  # Or this failure appears:
     # AddressSanitizer: CHECK failed: asan_interceptors.cpp:463 "((__interception::real___cxa_throw)) != (0)" (0x0, 0x0)
+    OPENMP_LIB="-Wl,-rpath,${LLVM_LIB_DIR} -lomp"
 else
     export CC=gcc
     export CXX=g++
-    if $CXX --version | head -n 1 | grep -E 'g++\.*13\.[0-9]\.[0-9]$'; then exit 1; fi
     export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
     export CONTEXT="echo ''; echo ''; valgrind --error-exitcode=1"
+    OPENMP_LIB="-lgomp"
 fi
 
 
@@ -85,7 +88,7 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS=$CXXFLAGS $PYTHON_ENV $PYTHON setup.py build_ext -i
+CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 
@@ -112,6 +115,6 @@ if [[ $SUNDBASE =~ .*-single ]]; then
 else
     cd tests/
     make clean
-    make PYTHON="$PYTHON_ENV ${PYTHON}"
+    make PYTHON="$PYTHON_ENV ${PYTHON}" OPENMP_LIB="${OPENMP_LIB}"
     cd -
 fi
