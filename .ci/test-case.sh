@@ -68,9 +68,9 @@ if [ $TEST_ASAN -eq 1 ]; then
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    #LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+    #LD_PRELOAD=
 
-    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=${LIBCXX_ASAN_ROOT}/lib/libc++.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libc++abi.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libunwind.so.1.0"  # Or this failure appears:
+    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=${LIBCXX_ASAN_ROOT}/lib/libc++.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libc++abi.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libunwind.so.1.0:$(clang++ --print-file-name=libclang_rt.asan.so)"  # Or this failure appears:
     # AddressSanitizer: CHECK failed: asan_interceptors.cpp:463 "((__interception::real___cxa_throw)) != (0)" (0x0, 0x0)
 else
     export CC=gcc
