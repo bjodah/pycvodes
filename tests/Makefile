@@ -14,7 +14,7 @@ endif
 
 CXXFLAGS += $(EXTRA_FLAGS) $(CFLAGS)
 #INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
-INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON) -c "import sysconfig; print('-I' + sysconfig.get_path('include'))")
+INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON) -c "import sysconfig; print('-isystem ' + sysconfig.get_path('include'))")
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
@@ -30,7 +30,7 @@ TARGETS += test_cvodes_anyode_sparse
 endif
 
 test: $(TARGETS) test_cvodes_anyode_parallel
-	env CFLAGS="$(CXXFLAGS)" $(PYTHON) ./_test_cvodes_anyode.py
+	env CFLAGS="$(CXXFLAGS) $(INCLUDE)" $(PYTHON) ./_test_cvodes_anyode.py
 	$(CONTEXT) ./test_cvodes_anyode --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_autorestart --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_quad --abortx 1
