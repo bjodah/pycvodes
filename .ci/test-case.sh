@@ -44,10 +44,11 @@ if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUN
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
+PYTHON=${PYTHON:-python3}
 if [ $TEST_ASAN -eq 1 ]; then
-    export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+    export PYTHON_ENV="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0"
 else
-    export PYTHON=${PYTHON:-python3}
+    export PYTHON_ENV="env"
 fi
 LINKLIBS="$(${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
@@ -67,7 +68,10 @@ if [ $TEST_ASAN -eq 1 ]; then
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    # LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+    #LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
+
+    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=$LLVM_ROOT/lib/libc++.so"  # Or this failure appears:
+    # AddressSanitizer: CHECK failed: asan_interceptors.cpp:463 "((__interception::real___cxa_throw)) != (0)" (0x0, 0x0)
 else
     export CC=gcc
     export CXX=g++
@@ -100,7 +104,7 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS"
+$PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS"
 
 
 if [[ $SUNDBASE =~ .*-single ]]; then
