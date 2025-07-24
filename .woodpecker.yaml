@@ -1,5 +1,5 @@
 variables:
-  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-3:17'
+  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-3:33'
 
 
 when:
@@ -9,26 +9,25 @@ steps:
   - name: pypy
     image: *ci_image
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
 
-  - name: py3.11-dbg
+  - name: py3.11-rel
     image: *ci_image
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.?-debug/bin/python3 /opt-3/sundials-6.7.0-debug
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.?-release/bin/python3 /opt-3/sundials-6.7.0-release
 
-  - name: py3.12-dbg
+  - name: py3.13-asan
     image: *ci_image
     commands:
-      - /opt-3/cpython-v3.12.2-debug/bin/python3 -m pip install -U --pre --only-binary ":all:" -i "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" numpy
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.?-debug/bin/python3 /opt-3/sundials-6.7.0-debug
+      - .bash -l ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.13.?-asan/bin/python3 /opt-3/sundials-6.7.0-asan
 
-  - name: py3.11-extended
+  - name: py3.13-extended
     image: *ci_image
     environment:
       - PYCVODES_NO_LAPACK=1
       - PYCVODES_NO_KLU=1
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
 
   - name: py3.12-single
     image: *ci_image
@@ -36,7 +35,7 @@ steps:
       - PYCVODES_NO_LAPACK=1
       - PYCVODES_NO_KLU=1
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.2-release/bin/python3 /opt-3/sundials-6.7.0-single
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-6.7.0-single
 
   - name: sdist-and-docs
     image: *ci_image
@@ -51,9 +50,9 @@ steps:
       - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yaml"; then exit 1; fi
     depends_on:
       - pypy
-      - py3.11-dbg
-      - py3.12-dbg
-      - py3.11-extended
+      - py3.11-rel
+      - py3.13-asan
+      - py3.13-extended
       - py3.12-single
 
   - name: deploy-public-html
