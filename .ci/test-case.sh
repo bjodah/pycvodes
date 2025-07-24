@@ -50,7 +50,7 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export PYTHON_ENV="env"
 fi
-LINKLIBS="$(${PYTHON} setup.py --print-linkline)"
+LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
 export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
@@ -85,7 +85,7 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS=$CXXFLAGS $PYTHON setup.py build_ext -i
+CC=$CXX CFLAGS=$CXXFLAGS $PYTHON_ENV $PYTHON setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 
@@ -112,6 +112,6 @@ if [[ $SUNDBASE =~ .*-single ]]; then
 else
     cd tests/
     make clean
-    make PYTHON=${PYTHON}
+    make PYTHON="$PYTHON_ENV ${PYTHON}"
     cd -
 fi
