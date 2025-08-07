@@ -24,7 +24,7 @@ else:
 
 pkg_name = 'pycvodes'
 url = 'https://github.com/bjodah/' + pkg_name
-license = 'BSD'
+license = 'BSD-2-Clause'
 
 
 def _path_under_setup(*args):
@@ -147,7 +147,6 @@ class BuildExt(build_ext):
 
 classifiers = [
     "Development Status :: 4 - Beta",
-    'License :: OSI Approved :: BSD License',
     'Operating System :: OS Independent',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Mathematics',
