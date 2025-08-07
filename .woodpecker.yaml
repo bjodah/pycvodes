@@ -41,8 +41,6 @@ steps:
 
   - name: py3.14-tsan
     image: *ci_image
-    environment:
-      - PYTHONMALLOC=malloc
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.14.*-tsan/bin/python3 /opt-3/sundials-6.7.0-release
 
