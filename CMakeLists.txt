@@ -20,14 +20,22 @@ cython_transpile(
 python_add_library(_cvodes MODULE "${_cvodes_cxx}" WITH_SOABI)
 
 target_link_libraries(_cvodes PRIVATE
-    SUNDIALS::cvodes
+    #SUNDIALS::cvodes
+    sundials_cvodes sundials_nvecserial
     Python::NumPy
 )
+
+#if (${SUNDIALS_SUNLINSOLLAPACKDENSE_FOUND})
+    find_package(LAPACK REQUIRED)
+    target_link_libraries(_cvodes PRIVATE LAPACK::LAPACK)
+#endif()
 
 target_include_directories(_cvodes PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/pycvodes/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/anyode/include"
 )
+
+
 
 # Install
 install(TARGETS _cvodes DESTINATION pycvodes)

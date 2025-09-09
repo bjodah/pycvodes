@@ -113,7 +113,8 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS"
+cd /
+$PYTHON_ENV $PYTHON -m pytest --pyargs pycvodes -sv "$EXTRA_PYTEST_FLAGS"
 
 
 if [[ $SUNDIALS_ROOT =~ .*-single ]]; then
