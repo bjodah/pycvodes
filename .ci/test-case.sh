@@ -4,6 +4,8 @@ show_help() {
     echo "Usage: ./$(basename $0) [opts] /path/to/sundials/prefix/e.g./usr/local"
     echo "--native"
     echo "--python <python-exe-path>"
+    echo "--tmp"
+    echo "--asan"
 }
 
 NATIVE=0
@@ -88,9 +90,13 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS="${CXXFLAGS:-} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON -m pip install .  # setup.py build_ext -i
+env \
+    CC=$CXX \
+    CFLAGS="${CXXFLAGS:-} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" \
+    $PYTHON_ENV \
+    $PYTHON -m pip install -v .  # setup.py build_ext -i
 
-export PYTHONPATH=$(pwd)
+#export PYTHONPATH=$(pwd)
 
 if [[ $SUNDIALS_ROOT =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"

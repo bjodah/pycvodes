@@ -20,14 +20,11 @@ cython_transpile(
 python_add_library(_cvodes MODULE "${_cvodes_cxx}" WITH_SOABI)
 
 target_link_libraries(_cvodes PRIVATE
-    ${SUNDIALS_LIBRARIES}
+    SUNDIALS::cvodes
     Python::NumPy
 )
 
 target_include_directories(_cvodes PRIVATE
-    ${SUNDIALS_INCLUDE_DIRS}
-    ${Python3_INCLUDE_DIRS}
-    ${NumPy_INCLUDE_DIRS}
     "${CMAKE_CURRENT_SOURCE_DIR}/pycvodes/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/anyode/include"
 )
