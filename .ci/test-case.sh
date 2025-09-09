@@ -50,11 +50,11 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export PYTHON_ENV="env"
 fi
-LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
+#LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
-export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
-export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
-export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
+#export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
+#export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
+#export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 
 if [ $TEST_ASAN -eq 1 ]; then
     export CC=clang
@@ -88,7 +88,7 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON setup.py build_ext -i
+CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON -m pip install .  # setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 

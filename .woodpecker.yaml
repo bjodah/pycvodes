@@ -65,7 +65,7 @@ steps:
     environment:
       - CPATH=/usr/include/mumps_seq:/usr/include/suitesparse
     commands:
-      - apt-get update && apt-get install --no-install-recommends -y libsundials-dev python3.13-venv
+      - apt-get update && apt-get install --no-install-recommends -y libsundials-dev python3-venv
       - python3 -m venv ~/venv
       - bash -c '. ~/venv/bin/activate && pip install -e . && cd / && python -m pytest --pyargs pycvodes'
 
