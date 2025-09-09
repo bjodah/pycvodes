@@ -39,9 +39,9 @@ if [ "$MAKE_TMP_DIR" = 1 ]; then
     cp -ra . "$REPO_TMP_DIR/."
     cd "$REPO_TMP_DIR"
 fi
-SUNDBASE=$1
-if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
-if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
+export SUNDIALS_ROOT=$1
+if [ ! -d "$SUNDIALS_ROOT/include/sundials" ]; then >&2 echo "No such directory: $SUNDIALS_ROOT"; exit 1; fi
+if [[ $SUNDIALS_ROOT =~ *-extended || $SUNDIALS_ROOT =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
 PYTHON=${PYTHON:-python3}
@@ -52,8 +52,8 @@ else
 fi
 #LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
-#export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
-#export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
+#export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDIALS_ROOT/include"
+#export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDIALS_ROOT/lib -L$SUNDIALS_ROOT/lib -lopenblas"
 #export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 
 if [ $TEST_ASAN -eq 1 ]; then
@@ -92,7 +92,7 @@ CC=$CXX CFLAGS="${CXXFLAGS:-} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTH
 
 export PYTHONPATH=$(pwd)
 
-if [[ $SUNDBASE =~ .*-single ]]; then
+if [[ $SUNDIALS_ROOT =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"
 else
     EXTRA_PYTEST_FLAGS="-k not test_get_include"
@@ -110,7 +110,7 @@ fi
 $PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS"
 
 
-if [[ $SUNDBASE =~ .*-single ]]; then
+if [[ $SUNDIALS_ROOT =~ .*-single ]]; then
     :
 else
     cd tests/
