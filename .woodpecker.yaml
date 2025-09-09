@@ -61,7 +61,7 @@ steps:
       - py3.12-single
 
   - name: install-on-debian
-    image: cont-reg.bjodah.se:443/bjodah/triceratops-1:18
+    image: cont-reg.bjodah.se:443/bjodah/triceratops-2:19
     commands:
       - apt-get update && apt-get install --no-install-recommends -y libsundials-dev python3.13-venv
       - python3 -m venv ~/venv
