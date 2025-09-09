@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools", "wheel", "cython", "scikit-build-core", "cmake", "ninja", "numpy", "cython-cmake"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+cmake.args = [
+    "-DCMAKE_BUILD_TYPE=Release",
+]
+wheel.packages = ["pycvodes"]
+
+[project]
+name = "pycvodes"
+version = "0.14.7"
+description = "A python wrapper around SUNDIALS' CVCODES"
+readme = "README.rst"
+authors = [{name = "Björn Dahlgren"}]
+license = {text = "BSD-2-Clause"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/bjodah/pycvodes"
+Repository = "https://github.com/bjodah/pycvodes"

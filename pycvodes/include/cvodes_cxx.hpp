@@ -35,9 +35,13 @@
 #  endif
 #endif
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
-#include <cvodes/cvodes_spils.h>
+#if SUNDIALS_VERSION_MAJOR < 7
+#  include <cvodes/cvodes_spils.h>
+#endif
 #if SUNDIALS_VERSION_MAJOR >= 3
-#  include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#  if SUNDIALS_VERSION_MAJOR < 7
+#    include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#  endif
 #  include <sunmatrix/sunmatrix_dense.h>
 #  include <sunmatrix/sunmatrix_band.h>
 #  include <sunmatrix/sunmatrix_sparse.h>

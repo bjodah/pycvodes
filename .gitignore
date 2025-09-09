@@ -16,3 +16,6 @@ htmlcov/
 .eggs/
 tmp/
 .gdb*
+CMakeFiles/
+_skbuild
+.#*

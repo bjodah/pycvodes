@@ -11,12 +11,14 @@ from ._cvodes import (
 )
 from ._util import _check_callable, _check_indexing, _check_jac_type
 from ._release import __version__
+from pathlib import Path
 
 
 def get_include():
-    from pkg_resources import resource_filename, Requirement
-    return resource_filename(Requirement.parse(__name__),
-                             '%s/include' % __name__)
+    inc = Path(__file__).parent / 'include'
+    if inc.exists() and inc.is_dir():
+        return str(inc)
+    raise ValueError("Could not find include directory")
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
