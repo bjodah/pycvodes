@@ -20,8 +20,8 @@ cython_transpile(
 python_add_library(_cvodes MODULE "${_cvodes_cxx}" WITH_SOABI)
 
 target_link_libraries(_cvodes PRIVATE
-    #SUNDIALS::cvodes
-    sundials_cvodes sundials_nvecserial
+    SUNDIALS::cvodes
+    SUNDIALS::nvecserial
     Python::NumPy
 )
 
