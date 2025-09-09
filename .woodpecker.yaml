@@ -63,7 +63,7 @@ steps:
   - name: install-on-debian
     image: cont-reg.bjodah.se:443/bjodah/triceratops-1:18
     commands:
-      - apt-get update && apt-get install --no-install-recommends -y libsundials-dev
+      - apt-get update && apt-get install --no-install-recommends -y libsundials-dev python3.13-venv
       - python3 -m venv ~/venv
       - bash -c '. ~/venv/bin/activate && pip install -e . && cd / && python -m pytest --pyargs pycvodes'
 
