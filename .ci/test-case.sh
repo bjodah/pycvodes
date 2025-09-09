@@ -78,7 +78,7 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export CC=gcc
     export CXX=g++
-    export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
+    export CXXFLAGS="${CXXFLAGS:-} -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
     export CONTEXT="echo ''; echo ''; valgrind --error-exitcode=1"
     OPENMP_LIB="-lgomp"
 fi
@@ -88,7 +88,7 @@ if [ -d ./build ]; then
     rm -r ./build
 fi
 
-CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON -m pip install .  # setup.py build_ext -i
+CC=$CXX CFLAGS="${CXXFLAGS:-} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON -m pip install .  # setup.py build_ext -i
 
 export PYTHONPATH=$(pwd)
 
