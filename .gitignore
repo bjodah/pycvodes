@@ -17,3 +17,5 @@ htmlcov/
 tmp/
 .gdb*
 CMakeFiles/
+_skbuild
+.#*
