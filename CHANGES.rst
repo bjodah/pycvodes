@@ -1,3 +1,7 @@
+v0.14.7
+=======
+- no longer rely on pkg_resources
+
 v0.14.6
 =======
 - update AnyODE (drop deprecated Py2 C-API calls)
