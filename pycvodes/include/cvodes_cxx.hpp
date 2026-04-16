@@ -34,10 +34,20 @@
 #    define PYCVODES_NO_KLU 1
 #  endif
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <sundials/sundials_types_deprecated.h>
+#  include <sundials/sundials_context.hpp>
+#endif
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
-#include <cvodes/cvodes_spils.h>
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <cvodes/cvodes_ls.h>
+#else
+#  include <cvodes/cvodes_spils.h>
+#endif
 #if SUNDIALS_VERSION_MAJOR >= 3
-#  include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#  if SUNDIALS_VERSION_MAJOR < 7
+#    include <cvodes/cvodes_direct.h> /* CVODE fcts., CV_BDF, CV_ADAMS */
+#  endif
 #  include <sunmatrix/sunmatrix_dense.h>
 #  include <sunmatrix/sunmatrix_band.h>
 #  include <sunmatrix/sunmatrix_sparse.h>
@@ -187,9 +197,9 @@ enum class LinSol : int {DEFAULT, DENSE, BANDED, GMRES,
 #endif
                         };
 enum class IterLinSolEnum : int {GMRES, BICGSTAB, TFQMR};
-enum class PrecType : int {None=PREC_NONE, Left=PREC_LEFT,
-                           Right=PREC_RIGHT, Both=PREC_BOTH};
-enum class GramSchmidtType : int {Classical=CLASSICAL_GS, Modified=MODIFIED_GS};
+enum class PrecType : int {None=SUN_PREC_NONE, Left=SUN_PREC_LEFT,
+                           Right=SUN_PREC_RIGHT, Both=SUN_PREC_BOTH};
+enum class GramSchmidtType : int {Classical=SUN_CLASSICAL_GS, Modified=SUN_MODIFIED_GS};
 
 inline LinSol linear_solver_from_name(std::string name) {
     if (name == "default")
@@ -461,8 +471,12 @@ public:
     }
     // Main solver optional input functions
     void set_err_file(FILE * errfp){
+#if SUNDIALS_VERSION_MAJOR < 7
         int status = CVodeSetErrFile(this->mem, errfp);
         check_flag(status);
+#else
+        (void)errfp; // CVodeSetErrFile removed in sundials 7; use SUNContext error handlers
+#endif
     }
 
     void set_err_file_path(const char * filename) {
@@ -664,7 +678,9 @@ public:
     }
 
     void set_dense_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVDlsDenseJacFn
@@ -866,7 +882,9 @@ public:
     }
 
     void set_sparse_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
         CVDlsJacFn
 #else
         CVSlsSparseJacFn
@@ -986,7 +1004,13 @@ public:
             throw std::runtime_error("Bad input.");
         }
     }
-    void set_jtimes_fn(CVSpilsJacTimesVecFn jtimes){
+    void set_jtimes_fn(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacTimesVecFn
+#else
+        CVSpilsJacTimesVecFn
+#endif
+        jtimes){
 #if SUNDIALS_VERSION_MAJOR >= 3
         int flag =
 # if SUNDIALS_VERSION_MAJOR >= 6
@@ -1001,8 +1025,15 @@ public:
         this->cvspils_check_flag(flag);
     }
 #if SUNDIALS_VERSION_MAJOR >=3
-    void set_jtimes_fn(CVSpilsJacTimesSetupFn jtsetup,
-                       CVSpilsJacTimesVecFn jtimes){
+    void set_jtimes_fn(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsJacTimesSetupFn jtsetup,
+        CVLsJacTimesVecFn jtimes
+#else
+        CVSpilsJacTimesSetupFn jtsetup,
+        CVSpilsJacTimesVecFn jtimes
+#endif
+    ){
 #if SUNDIALS_VERSION_MAJOR >=4
         int flag = CVodeSetJacTimes(this->mem, jtsetup, jtimes);
 #else
@@ -1011,7 +1042,13 @@ public:
         this->cvspils_check_flag(flag);
     }
 #endif
-    void set_preconditioner(CVSpilsPrecSetupFn setup_fn, CVSpilsPrecSolveFn solve_fn){
+    void set_preconditioner(
+#if SUNDIALS_VERSION_MAJOR >= 6
+        CVLsPrecSetupFn setup_fn, CVLsPrecSolveFn solve_fn
+#else
+        CVSpilsPrecSetupFn setup_fn, CVSpilsPrecSolveFn solve_fn
+#endif
+    ){
         int flag =
 #if SUNDIALS_VERSION_MAJOR >= 6
             CVodeSetPreconditioner
