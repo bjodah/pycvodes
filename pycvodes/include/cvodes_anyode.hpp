@@ -287,7 +287,9 @@ std::unique_ptr<Integrator> get_integrator(
     const int nroots = odesys->get_nroots();
     const int nq = odesys->get_nquads();
     auto integr_ptr = AnyODE::make_unique<Integrator>(lmm, iter_type
-#if SUNDIALS_VERSION_MAJOR >= 6
+#if SUNDIALS_VERSION_MAJOR >= 7
+                   , std::make_shared<sundials::Context>(SUN_COMM_NULL)
+#elif SUNDIALS_VERSION_MAJOR >= 6
                    , std::make_shared<sundials::Context>(nullptr)
 #endif
 );

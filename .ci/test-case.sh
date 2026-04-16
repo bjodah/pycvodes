@@ -50,9 +50,9 @@ if [ $TEST_ASAN -eq 1 ]; then
 else
     export PYTHON_ENV="env"
 fi
-LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
+LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
 export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 

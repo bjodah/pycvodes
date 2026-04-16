@@ -1,6 +1,9 @@
 #pragma once
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <sundials/sundials_types_deprecated.h>
+#endif
 #include <stdexcept>
 #include <cstring> // std::memcpy
 #include <vector>
