@@ -14,9 +14,8 @@ from ._release import __version__
 
 
 def get_include():
-    from pkg_resources import resource_filename, Requirement
-    return resource_filename(Requirement.parse(__name__),
-                             '%s/include' % __name__)
+    import os
+    return os.path.join(os.path.dirname(__file__), 'include')
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
