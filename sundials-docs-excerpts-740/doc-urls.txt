@@ -1,0 +1,15 @@
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/cvodes/guide/source/Usage/SIM.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sundials/Types.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sundials/SUNContext.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_API.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_Band.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_Dense.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_KLU.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_LapackBand.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunlinsol/SUNLinSol_LapackDense.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunmatrix/SUNMatrix_Band.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunmatrix/SUNMatrix_Dense.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunmatrix/SUNMatrix_Description.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunmatrix/SUNMatrix_Operations.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunnonlinsol/SUNNonlinSol_API.rst
+https://raw.githubusercontent.com/llnl/sundials/refs/tags/v7.4.0/doc/shared/sunnonlinsol/SUNNonlinSol_Newton.rst
