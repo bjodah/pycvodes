@@ -1,3 +1,7 @@
+v0.15.0
+=======
+- support for sundials 7.x
+
 v0.14.7
 =======
 - no longer rely on pkg_resources
