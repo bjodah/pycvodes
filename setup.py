@@ -60,7 +60,7 @@ else:  # set `__version__` from _release.py:
 
 package_include = os.path.join(pkg_name, 'include')
 
-_src = {ext: _path_under_setup(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
+_src = {ext: os.path.join(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
 # if os.path.exists(_src['cpp']):
 #     os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
 
