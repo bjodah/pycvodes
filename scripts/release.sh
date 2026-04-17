@@ -1,9 +1,17 @@
-#!/bin/bash -xeu
+#!/bin/bash
 # Usage:
 #
 #    $ ./scripts/release.sh v1.2.3 GITHUB_USER GITHUB_REPO
 #
-
+set -e
+if [[ $container == podman ]]; then
+    # assume we're running in same container as used in CI.
+    source "$(compgen -G /opt-3/cpython-v3.*-apt-deb/bin/activate)"
+    SUNDBASE=/opt-3/sundials-6.7.0-release
+    export CPATH=/usr/include/suitesparse  # include <klu.h>
+    export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
+    export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
+fi
 if [[ $1 != v* ]]; then
     echo "Argument does not start with 'v'"
     exit 1

@@ -45,15 +45,23 @@ if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No su
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
-LINKLIBS="$(${PYTHON:-python3} setup.py --print-linkline)"
+PYTHON=${PYTHON:-python3}
+if [ $TEST_ASAN -eq 1 ]; then
+    export PYTHON_ENV="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0"
+else
+    export PYTHON_ENV="env"
+fi
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
+LINKLIBS="$(${PYTHON_ENV} ${PYTHON} setup.py --print-linkline)"
 export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
 export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 
 if [ $TEST_ASAN -eq 1 ]; then
     export CC=clang
     export CXX=clang++
+    LLVM_ROOT=$(compgen -G "/opt-2/llvm-??")
+    LLVM_LIB_DIR=$(compgen -G "${LLVM_ROOT}/lib/$(uname -m)-*")
     LIBCXX_ASAN_ROOT=$(compgen -G "/opt-2/libcxx*-asan")
     LIBCXX_ASAN_INCLUDE=${LIBCXX_ASAN_ROOT}/include/c++/v1
     if [ ! -d "$LIBCXX_ASAN_INCLUDE" ]; then
@@ -63,15 +71,17 @@ if [ $TEST_ASAN -eq 1 ]; then
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    #export LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
-    export LD_PRELOAD=$(clang++ --print-file-name=libstdc++.so)
-    export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
+    #LD_PRELOAD=
+
+    export PYTHON_ENV="$PYTHON_ENV LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so):${LIBCXX_ASAN_ROOT}/lib/libc++.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libc++abi.so.1.0:${LIBCXX_ASAN_ROOT}/lib/libunwind.so.1.0"  # Or this failure appears:
+    # AddressSanitizer: CHECK failed: asan_interceptors.cpp:463 "((__interception::real___cxa_throw)) != (0)" (0x0, 0x0)
+    OPENMP_LIB="-Wl,-rpath,${LLVM_LIB_DIR} -lomp"
 else
     export CC=gcc
     export CXX=g++
-    #if $CXX --version | head -n 1 | grep -E 'g++\.*13\.[0-9]\.[0-9]$'; then exit 1; fi
     export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
     export CONTEXT="echo ''; echo ''; valgrind --error-exitcode=1"
+    OPENMP_LIB="-lgomp"
 fi
 
 
@@ -86,7 +96,7 @@ $PYTHON -m pip install build #--upgrade --upgrade-strategy=eager build setuptool
 $PYTHON -m build . --sdist
 $PYTHON -m pip uninstall -y pycvodes
 cd dist/
-CC=$CXX CFLAGS=$CXXFLAGS $PYTHON -m pip install *.tar.gz
+CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON -m pip install *.tar.gz
 
 #CC=$CXX CFLAGS=$CXXFLAGS
 #$PYTHON -m pip install wheel
@@ -108,7 +118,7 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS" --pyargs pycvodes
+$PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS" --pyargs pycvodes
 cd -
 
 if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
@@ -116,7 +126,6 @@ if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
 else
     cd tests/
     make clean
-    $PYTHON -m pip install "setuptools==72.1.0"  # temporary work-around, see https://github.com/pypa/setuptools/issues/4748
-    make PYTHON=${PYTHON}
+    make PYTHON="$PYTHON_ENV ${PYTHON}" OPENMP_LIB="${OPENMP_LIB}"
     cd -
 fi

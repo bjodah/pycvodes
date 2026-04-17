@@ -19,7 +19,9 @@ int rhs_cb3(realtype /* t */, N_Vector y, N_Vector f, void * /* user_data */){
 
 
 TEST_CASE( "methods" ) {
-#if SUNDIALS_VERSION_MAJOR >= 6
+#if SUNDIALS_VERSION_MAJOR >= 7
+    auto ctx = std::make_shared<sundials::Context>(SUN_COMM_NULL);
+#elif SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
 #endif
     auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
@@ -49,7 +51,9 @@ realtype get_dx_max(realtype /* x */, const realtype * const /* y */){
 
 TEST_CASE( "adaptive" ) {
     const int ny = 1;
-#if SUNDIALS_VERSION_MAJOR >= 6
+#if SUNDIALS_VERSION_MAJOR >= 7
+    auto ctx = std::make_shared<sundials::Context>(SUN_COMM_NULL);
+#elif SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
 #endif
     auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional
@@ -94,7 +98,9 @@ realtype get_dx_max2(realtype /* x */, const realtype * const /* y */){
 
 TEST_CASE( "predefined" ) {
     const int ny = 1;
-#if SUNDIALS_VERSION_MAJOR >= 6
+#if SUNDIALS_VERSION_MAJOR >= 7
+    auto ctx = std::make_shared<sundials::Context>(SUN_COMM_NULL);
+#elif SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
 #endif
 
@@ -130,7 +136,9 @@ TEST_CASE( "predefined" ) {
 
 TEST_CASE( "predefined_autorestart" ) {
     const int ny = 3;
-#if SUNDIALS_VERSION_MAJOR >= 6
+#if SUNDIALS_VERSION_MAJOR >= 7
+    auto ctx = std::make_shared<sundials::Context>(SUN_COMM_NULL);
+#elif SUNDIALS_VERSION_MAJOR >= 6
     auto ctx = std::make_shared<sundials::Context>(nullptr);
 #endif
     auto intgr = cvodes_cxx::Integrator(cvodes_cxx::LMM::Adams, cvodes_cxx::IterType::Functional

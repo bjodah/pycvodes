@@ -2,7 +2,7 @@ CXX ?= g++
 PYTHON ?= python3
 PYCVODES_NO_LAPACK ?= 0
 PYCVODES_NO_KLU ?= 0
-CXXFLAGS ?= -std=c++20 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU) $(CXXFLAGS)
+CXXFLAGS := -std=c++23 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU) -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION $(CXXFLAGS)
 ifneq (,$(findstring clang,$(CXX)))
 	# Found "clang" in CXX
 	CXXFLAGS += -glldb
@@ -13,7 +13,8 @@ else
 endif
 
 CXXFLAGS += $(EXTRA_FLAGS) $(CFLAGS)
-INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
+#INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON)-config --includes)
+INCLUDE ?= -I../pycvodes/include -I../external/anyode/include $(shell $(PYTHON) -c "import sysconfig; print('-isystem ' + sysconfig.get_path('include'))")
 DEFINES ?=
 OPENMP_FLAG ?= -fopenmp
 OPENMP_LIB ?= -lgomp
@@ -29,7 +30,7 @@ TARGETS += test_cvodes_anyode_sparse
 endif
 
 test: $(TARGETS) test_cvodes_anyode_parallel
-	env CFLAGS="$(CXXFLAGS)" $(PYTHON) ./_test_cvodes_anyode.py
+	env CFLAGS="$(CXXFLAGS) $(INCLUDE)" $(PYTHON) ./_test_cvodes_anyode.py
 	$(CONTEXT) ./test_cvodes_anyode --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_autorestart --abortx 1
 	$(CONTEXT) ./test_cvodes_anyode_quad --abortx 1
