@@ -1,5 +1,5 @@
 variables:
-  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-3:34'
+  - &ci_image 'cont-reg.bjodah.se:443/bjodah/triceratops-3:41'
 
 
 when:
@@ -21,7 +21,7 @@ steps:
   - name: py3.12-asan
     image: *ci_image
     environment:
-      - PYTHONMALLOC=malloc
+      PYTHONMALLOC: malloc
     commands:
       - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-6.7.0-asan
       - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.4.0-asan
@@ -29,8 +29,8 @@ steps:
   - name: py3.13-extended
     image: *ci_image
     environment:
-      - PYCVODES_NO_LAPACK=1
-      - PYCVODES_NO_KLU=1
+      PYCVODES_NO_LAPACK: 1
+      PYCVODES_NO_KLU: 1
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-7.4.0-extended
@@ -38,8 +38,8 @@ steps:
   - name: py3.12-single
     image: *ci_image
     environment:
-      - PYCVODES_NO_LAPACK=1
-      - PYCVODES_NO_KLU=1
+      PYCVODES_NO_LAPACK: 1
+      PYCVODES_NO_KLU: 1
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-6.7.0-single
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.4.0-single
@@ -52,8 +52,8 @@ steps:
   - name: sdist-and-docs
     image: *ci_image
     environment:
-      - PYCVODES_STRICT=1
-      - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      PYCVODES_STRICT: 1
+      LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu
     commands:
       - .ci/test-sdist.sh
       - ./scripts/prepare_deploy.sh
@@ -67,10 +67,14 @@ steps:
 
   - name: deploy-public-html
     image: *ci_image
+    environment:
+      ARTIFACTS_PASS:
+        from_secret: ARTIFACTS_PASS
+      FTP_SERVER:
+        from_secret: FTP_SERVER
     commands:
       - tar -C ./deploy/public_html -czf pycvodes-${CI_COMMIT_BRANCH}.tar.gz .
       - curl -T pycvodes-${CI_COMMIT_BRANCH}.tar.gz ftp://pycvodes:$${ARTIFACTS_PASS}@$${FTP_SERVER}/public_html/
-    secrets: [ ARTIFACTS_PASS, FTP_SERVER ]
     when:
      - event: push
        repo: bjodah/pycvodes
