@@ -10,13 +10,13 @@ steps:
     image: *ci_image
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-6.7.0-debug
-      - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-7.4.0-debug
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.??-v*-linux64/bin/python3 /opt-3/sundials-7.7.0-debug
 
   - name: py3.11-rel
     image: *ci_image
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 /opt-3/sundials-6.7.0-release
-      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 /opt-3/sundials-7.4.0-release
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 /opt-3/sundials-7.7.0-release
 
   - name: py3.12-asan
     image: *ci_image
@@ -24,7 +24,7 @@ steps:
       PYTHONMALLOC: malloc
     commands:
       - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-6.7.0-asan
-      - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.4.0-asan
+      - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.7.0-asan
 
   - name: py3.13-extended
     image: *ci_image
@@ -33,7 +33,7 @@ steps:
       PYCVODES_NO_KLU: 1
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-6.7.0-extended
-      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-7.4.0-extended
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.13-apt-deb/bin/python3 /opt-3/sundials-7.7.0-extended
 
   - name: py3.12-single
     image: *ci_image
@@ -42,7 +42,7 @@ steps:
       PYCVODES_NO_KLU: 1
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-6.7.0-single
-      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.4.0-single
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 /opt-3/sundials-7.7.0-single
 
   # - name: py3.14-tsan
   #   image: *ci_image

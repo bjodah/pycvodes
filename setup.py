@@ -13,13 +13,13 @@ import warnings
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
 from setuptools.extension import Extension
-try:
-    import cython
-except ImportError:
-    _HAVE_CYTHON = False
-else:
-    _HAVE_CYTHON = True
-    assert cython  # silence pep8
+# try:
+#     import cython
+# except ImportError:
+#     _HAVE_CYTHON = False
+# else:
+#     _HAVE_CYTHON = True
+#     assert cython  # silence pep8
 
 
 pkg_name = 'pycvodes'
@@ -28,7 +28,7 @@ license = 'BSD-2-Clause'
 
 
 def _path_under_setup(*args):
-    return os.path.join(*args)
+    return os.path.abspath(os.path.join(*args))
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
 
@@ -60,16 +60,9 @@ else:  # set `__version__` from _release.py:
 
 package_include = os.path.join(pkg_name, 'include')
 
-_src = {ext: _path_under_setup(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
-if _HAVE_CYTHON and os.path.exists(_src["pyx"]):
-    # Possible that a new release of Python needs a re-rendered Cython source,
-    # or that we want to include possible bug-fix to Cython, disable by manually
-    # deleting .pyx file from source distribution.
-    USE_CYTHON = True
-    if os.path.exists(_src['cpp']):
-        os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
-else:
-    USE_CYTHON = False
+_src = {ext: os.path.join(pkg_name, '_cvodes.' + ext) for ext in "cpp pyx".split()}
+# if os.path.exists(_src['cpp']):
+#     os.unlink(_src['cpp'])  # ensure c++ source is re-generated.
 
 ext_modules = []
 env = dict(
@@ -94,7 +87,10 @@ if env["SUNDIALS_LIBS"] == "":
 
 
 if len(sys.argv) == 2 and sys.argv[1] == "--print-linkline":
-    print(' '.join(['-l%s' % _ for _ in env['SUNDIALS_LIBS'].split(',')]))
+    libs = env['SUNDIALS_LIBS'].split(',')
+    if len(libs) <= 1:
+        raise ValueError("Failed to determine what libraries to link with")
+    print(' '.join(['-l%s' % _ for _ in libs]))
     sys.exit(os.EX_OK)
 elif len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
@@ -102,14 +98,14 @@ elif len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 
     logger = logging.getLogger(__name__)
     logger.info("Config for pycvodes: %s" % str(env))
-    sources = [_src["pyx" if USE_CYTHON else "cpp"]]
+    sources = [_src["pyx"]]
     ext_modules = [Extension('%s._cvodes' % pkg_name, sources)]
-    if USE_CYTHON:
-        from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=[
-            package_include,
-            os.path.join('external', 'anyode', 'cython_def')
-        ])
+
+    from Cython.Build import cythonize
+    ext_modules = cythonize(ext_modules, include_path=[
+        package_include,
+        os.path.join('external', 'anyode', 'cython_def')
+    ])
     ext_modules[0].language = 'c++'
     ext_modules[0].include_dirs = [np.get_include(), package_include,
                                    os.path.join('external', 'anyode', 'include')]
@@ -178,8 +174,8 @@ setup_kwargs = dict(
     license=license,
     packages=[pkg_name, f"{pkg_name}.include"] + tests,
     include_package_data=True,
-    install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
-    setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
+    install_requires=['numpy'],
+    setup_requires=['numpy', 'cython'],
     extras_require={'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc']},
     ext_modules=ext_modules,
     cmdclass={'build_ext': BuildExt}
