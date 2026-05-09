@@ -2,7 +2,7 @@
 """
 Python binding for cvodes from the sundials library.
 """
-from __future__ import division, absolute_import
+from pathlib import Path
 
 import numpy as np
 
@@ -14,8 +14,7 @@ from ._release import __version__
 
 
 def get_include():
-    import os
-    return os.path.join(os.path.dirname(__file__), 'include')
+    return str(Path(__file__).parent / "include")
 
 
 def integrate_adaptive(rhs, jac, y0, x0, xend, atol, rtol, dx0=.0,
