@@ -9,6 +9,7 @@ show_help() {
 NATIVE=0
 TEST_ASAN=0
 MAKE_TMP_DIR=0
+PYTHON=python3
 while [ $# -gt 1 ]; do
     case $1 in
         --native)
@@ -40,7 +41,7 @@ if [ "$MAKE_TMP_DIR" = 1 ]; then
     cd "$REPO_TMP_DIR"
 fi
 SUNDBASE=$1
-if [ ! -d "$SUNDBASE/include/sundials" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
+if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
 fi
@@ -87,10 +88,20 @@ fi
 if [ -d ./build ]; then
     rm -r ./build
 fi
+if [ -d ./dist ]; then
+    rm -r ./dist
+fi
 
-CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON_ENV $PYTHON setup.py build_ext -i
+$PYTHON -m pip install build #--upgrade --upgrade-strategy=eager build setuptools==72.1.0 wheel
+$PYTHON -m build . --sdist
+$PYTHON -m pip uninstall -y pycvodes
+cd dist/
+CC=$CXX CFLAGS="$CXXFLAGS -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION" $PYTHON -m pip install *.tar.gz
 
-export PYTHONPATH=$(pwd)
+#CC=$CXX CFLAGS=$CXXFLAGS
+#$PYTHON -m pip install wheel
+#$PYTHON -m pip install -e .  #--no-build-isolation / setup.py build_ext -i
+#export PYTHONPATH=$(pwd)
 
 if [[ $SUNDBASE =~ .*-single ]]; then
     EXTRA_PYTEST_FLAGS="-k not test_get_include and not test_examples"
@@ -107,10 +118,10 @@ fi
 # /opt-2/libcxx18-asan/lib/libc++abi.so:\
 # /opt-2/libcxx18-asan/lib/libunwind.so \
 #gdb -ex r -args
-$PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS"
+$PYTHON_ENV $PYTHON -m pytest -sv "$EXTRA_PYTEST_FLAGS" --pyargs pycvodes
+cd -
 
-
-if [[ $SUNDBASE =~ .*-single ]]; then
+if [[ $SUNDBASE =~ .*-single || $SUNDBASE =~ .*-extended ]]; then
     :
 else
     cd tests/

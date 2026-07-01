@@ -2,7 +2,7 @@ CXX ?= g++
 PYTHON ?= python3
 PYCVODES_NO_LAPACK ?= 0
 PYCVODES_NO_KLU ?= 0
-CXXFLAGS := -std=c++23 -Wall -Wextra -Werror -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU) -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION $(CXXFLAGS)
+CXXFLAGS := -std=c++23 -Wall -Wextra -pedantic -g -O0 -DANYODE_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_LAPACK=$(PYCVODES_NO_LAPACK) -DPYCVODES_NO_KLU=$(PYCVODES_NO_KLU) -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION $(CXXFLAGS)
 ifneq (,$(findstring clang,$(CXX)))
 	# Found "clang" in CXX
 	CXXFLAGS += -glldb
@@ -56,14 +56,10 @@ clean:
 	if [ -f test_cvodes_anyode_parallel ] ; then rm test_cvodes_anyode_parallel ; fi;
 
 test_%: test_%.cpp ../pycvodes/include/cvodes_cxx.hpp doctest.o
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -Werror $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS)
 
 test_cvodes_anyode_parallel: test_cvodes_anyode_parallel.cpp ../pycvodes/include/cvodes_*.hpp doctest.o
-ifeq ($(CXX),clang++-6.0)
-	@echo "skipping openmp when using clang"
-else
-	$(CXX) $(CXXFLAGS) $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS) $(OPENMP_LIB)
-endif
+	$(CXX) $(CXXFLAGS) -Werror $(OPENMP_FLAG) $(INCLUDE) $(DEFINES) -o $@ $< doctest.o $(LDFLAGS) $(OPENMP_LIB)
 
 doctest.h: doctest.h.bz2
 	bzcat $< >$@
